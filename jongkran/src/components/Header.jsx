@@ -1,0 +1,73 @@
+import { Link, NavLink } from "react-router-dom";
+import { Menu, UserCircle } from "lucide-react";
+import { useState } from "react";
+
+export default function Header() {
+  const [open, setOpen] = useState(false);
+
+  const links = [
+    { name: "Home", path: "/" },
+    { name: "Menu", path: "/recipes" },
+    { name: "About", path: "/about" },
+    { name: "Favorite", path: "/favorite" },
+    { name: "Contact Us", path: "/about" },
+  ];
+
+  return (
+    <header className="sticky top-0 z-50 bg-white border-b border-gray-200">
+      <div className="mx-[25px] flex h-16 items-center justify-between">
+        <Link to="/" className="flex items-center gap-2">
+          <span className="text-2xl">🍲</span>
+          <span className="title-font text-xl font-bold text-[#468432]">
+            JongKran
+          </span>
+        </Link>
+
+        <nav className="hidden md:flex items-center gap-8 text-sm font-semibold">
+          {links.map((link) => (
+            <NavLink
+              key={link.name}
+              to={link.path}
+              className={({ isActive }) =>
+                isActive ? "text-[#468432]" : "text-black hover:text-[#468432]"
+              }
+            >
+              {link.name}
+            </NavLink>
+          ))}
+
+          <Link to="/profile">
+            <UserCircle size={22} className="hover:text-[#468432]" />
+          </Link>
+        </nav>
+
+        <button onClick={() => setOpen(!open)} className="md:hidden">
+          <Menu size={28} />
+        </button>
+      </div>
+
+      {open && (
+        <div className="md:hidden bg-white border-t border-gray-200 px-[25px] py-4 space-y-3">
+          {links.map((link) => (
+            <Link
+              key={link.name}
+              to={link.path}
+              onClick={() => setOpen(false)}
+              className="block text-sm font-semibold hover:text-[#468432]"
+            >
+              {link.name}
+            </Link>
+          ))}
+
+          <Link
+            to="/profile"
+            onClick={() => setOpen(false)}
+            className="block text-sm text-red-900 font-semibold hover:text-[#468432]"
+          >
+            Account
+          </Link>
+        </div>
+      )}
+    </header>
+  );
+}
