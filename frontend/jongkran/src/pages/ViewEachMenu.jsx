@@ -22,6 +22,11 @@ export default function ViewEachMenu() {
     setMissingIngredients(missingIngredients.filter((i) => i !== item));
   };
 
+  const removeYourIngredient = (item) => {
+    setMissingIngredients([...missingIngredients, item]);
+    setYourIngredients(yourIngredients.filter((i) => i !== item));
+  }
+
   return (
     <>
       <Header />
@@ -59,8 +64,9 @@ export default function ViewEachMenu() {
             </button>
           </div>
 
-          <div className="bg-[#E5F1E2] rounded-xl p-6 max-w-3xl">
-            <span className="bg-[#468432] text-white px-5 py-2 rounded-full text-sm">
+          <div className="max-w-3xl mx-auto">
+            <div className="bg-[#E5F1E2] rounded-xl p-6">
+              <span className="bg-[#468432] text-white px-5 py-2 rounded-full text-sm">
               Your Ingredients
             </span>
 
@@ -68,7 +74,9 @@ export default function ViewEachMenu() {
               {yourIngredients.map((item) => (
                 <div key={item} className="flex justify-between py-4">
                   <span>{item}</span>
-                  <Trash2 className="text-red-500" size={20} />
+                  <button onClick={() => removeYourIngredient(item)}>
+                    <Trash2 className="text-red-500" size={20} />
+                  </button>
                 </div>
               ))}
             </div>
@@ -87,14 +95,17 @@ export default function ViewEachMenu() {
                 </div>
               ))}
             </div>
-          </div>
+            </div>
 
-          <button
-            onClick={() => navigate("/instruction/1")}
-            className="mt-8 bg-[#468432] hover:bg-[#1A5C05] text-white px-10 py-4 rounded-lg font-bold"
-          >
-            Start Cooking
-          </button>
+            <div className="flex justify-end mt-8">
+              <button
+                onClick={() => navigate(`/instruction/${recipe.id}`)}
+                className="bg-[#468432] hover:bg-[#1A5C05] text-white px-10 py-4 rounded-lg font-bold"
+              >
+                Start Cooking
+              </button>
+            </div>
+          </div>
         </section>
       </main>
     </>
