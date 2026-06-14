@@ -1,6 +1,8 @@
 import { Link, NavLink } from "react-router-dom";
 import { Menu, UserCircle } from "lucide-react";
 import { useState } from "react";
+import logo from '../assets/logo.png';
+
 
 export default function Header() {
   const [open, setOpen] = useState(false);
@@ -17,11 +19,16 @@ export default function Header() {
     <header className="sticky top-0 z-50 bg-white border-b border-gray-200">
       <div className="mx-[25px] flex h-16 items-center justify-between">
         <Link to="/" className="flex items-center gap-2">
-          <span className="text-2xl">🍲</span>
-          <span className="title-font text-xl font-bold text-[#468432]">
+          <img 
+            src={logo} 
+            alt="JongKran Logo" 
+            className="h-14 w-14 object-contain"
+          />
+          <span className="title-font text-2xl font-bold text-[#468432]">
             JongKran
           </span>
         </Link>
+
 
         <nav className="hidden md:flex items-center gap-8 text-sm font-semibold">
           {links.map((link) => (

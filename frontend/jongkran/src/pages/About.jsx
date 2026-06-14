@@ -1,5 +1,8 @@
 import Header from "../components/Header";
 import Footer from "../components/Footer";
+import logo from '../assets/logo.png';
+
+
 
 export default function About() {
   return (
@@ -14,11 +17,15 @@ export default function About() {
 
           <div className="grid md:grid-cols-2 gap-10 items-center mt-10">
             <div className="text-center">
-              <div className="text-9xl">🍲</div>
-              <h2 className="title-font text-3xl font-bold text-[#468432] mt-4">
-                JongKran
-              </h2>
+              <img 
+                src={logo} 
+                alt="JongKran Logo" 
+                className="mx-auto h-64 object-contain"
+
+              />
             </div>
+          </div>
+
 
             <div>
               <h2 className="title-font text-3xl font-bold">
@@ -31,7 +38,7 @@ export default function About() {
                 ingredients and discover meals you can prepare instantly.
               </p>
             </div>
-          </div>
+    
         </section>
 
         <section className="bg-black text-white px-[25px] py-12">
