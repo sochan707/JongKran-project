@@ -1,22 +1,46 @@
 import { useNavigate, useParams } from "react-router-dom";
 import Header from "../components/Header";
 import { Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
-
+import { useEffect, useState } from "react";
+import recipes from "../data/recipes";
 
 export default function ViewEachMenu() {
   const navigate = useNavigate();
+  const { id } = useParams();
 
-  const [yourIngredients, setYourIngredients] = useState([
-    "Pinch of Sea Salt & Black Pepper",
-    "200g Beef",
-    "1 tbsp Soy Sauce",
-  ]);
+  const recipe = recipes.find((item) => item.id === Number(id));
 
-  const [missingIngredients, setMissingIngredients] = useState([
-    "1 Onion",
-    "1 Tomato",
-  ]);
+  const [yourIngredients, setYourIngredients] = useState([]);
+  const [missingIngredients, setMissingIngredients] = useState([]);
+
+  useEffect(() => {
+    if (!recipe) return;
+
+    const userIngredients =
+      JSON.parse(localStorage.getItem("selectedIngredients")) || [];
+
+    const isMatched = (recipeIngredient) =>
+      userIngredients.some(
+        (userIngredient) =>
+          recipeIngredient.toLowerCase().includes(userIngredient.toLowerCase()) ||
+          userIngredient.toLowerCase().includes(recipeIngredient.toLowerCase())
+      );
+
+    const your = recipe.ingredients.filter((ingredient) =>
+      isMatched(ingredient)
+    );
+
+    const missing = recipe.ingredients.filter(
+      (ingredient) => !isMatched(ingredient)
+    );
+
+    setYourIngredients(your);
+    setMissingIngredients(missing);
+  }, [recipe]);
+
+  if (!recipe) {
+    return <h1 className="p-10 text-3xl font-bold">Recipe not found</h1>;
+  }
 
   const addMissing = (item) => {
     setYourIngredients([...yourIngredients, item]);
@@ -26,14 +50,17 @@ export default function ViewEachMenu() {
   const removeYourIngredient = (item) => {
     setMissingIngredients([...missingIngredients, item]);
     setYourIngredients(yourIngredients.filter((i) => i !== item));
-  }
+  };
 
   return (
     <>
       <Header />
 
       <main>
-        <section className="relative h-[360px] bg-[url('https://images.unsplash.com/photo-1544025162-d76694265947')] bg-cover bg-center">
+        <section
+          className="relative h-[360px] bg-cover bg-center"
+          style={{ backgroundImage: `url(${recipe.image})` }}
+        >
           <div className="absolute inset-0 bg-black/35" />
 
           <div className="absolute bottom-8 left-[25px] text-white">
@@ -46,8 +73,11 @@ export default function ViewEachMenu() {
               </span>
             </div>
 
-            <h1 className="title-font text-5xl font-bold">Beef Lok Lak</h1>
-            <p className="mt-2">20 min • Easy • 4 servings</p>
+            <h1 className="title-font text-5xl font-bold">{recipe.name}</h1>
+            <p className="mt-2">
+              {recipe.time} min • {recipe.difficulty || "Easy"} •{" "}
+              {recipe.servings} servings
+            </p>
           </div>
         </section>
 
@@ -58,7 +88,7 @@ export default function ViewEachMenu() {
             </button>
 
             <button
-              onClick={() => navigate("/instruction/1")}
+              onClick={() => navigate(`/instruction/${recipe.id}`)}
               className="flex-1 py-4 font-bold"
             >
               Instructions
@@ -68,34 +98,34 @@ export default function ViewEachMenu() {
           <div className="max-w-3xl mx-auto">
             <div className="bg-[#E5F1E2] rounded-xl p-6">
               <span className="bg-[#468432] text-white px-5 py-2 rounded-full text-sm">
-              Your Ingredients
-            </span>
+                Your Ingredients
+              </span>
 
-            <div className="mt-5 divide-y divide-gray-300">
-              {yourIngredients.map((item) => (
-                <div key={item} className="flex justify-between py-4">
-                  <span>{item}</span>
-                  <button onClick={() => removeYourIngredient(item)}>
-                    <Trash2 className="text-red-500" size={20} />
-                  </button>
-                </div>
-              ))}
-            </div>
+              <div className="mt-5 divide-y divide-gray-300">
+                {yourIngredients.map((item) => (
+                  <div key={item} className="flex justify-between py-4">
+                    <span>{item}</span>
+                    <button onClick={() => removeYourIngredient(item)}>
+                      <Trash2 className="text-red-500" size={20} />
+                    </button>
+                  </div>
+                ))}
+              </div>
 
-            <span className="inline-block mt-8 bg-orange-400 text-white px-5 py-2 rounded-full text-sm">
-              Missing Ingredients
-            </span>
+              <span className="inline-block mt-8 bg-orange-400 text-white px-5 py-2 rounded-full text-sm">
+                Missing Ingredients
+              </span>
 
-            <div className="mt-5 divide-y divide-gray-300">
-              {missingIngredients.map((item) => (
-                <div key={item} className="flex justify-between py-4">
-                  <span>{item}</span>
-                  <button onClick={() => addMissing(item)}>
-                    <Plus className="text-green-600" size={24} />
-                  </button>
-                </div>
-              ))}
-            </div>
+              <div className="mt-5 divide-y divide-gray-300">
+                {missingIngredients.map((item) => (
+                  <div key={item} className="flex justify-between py-4">
+                    <span>{item}</span>
+                    <button onClick={() => addMissing(item)}>
+                      <Plus className="text-green-600" size={24} />
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div className="flex justify-end mt-8">
