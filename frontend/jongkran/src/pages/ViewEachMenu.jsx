@@ -1,7 +1,8 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import Header from "../components/Header";
 import { Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
+
 
 export default function ViewEachMenu() {
   const navigate = useNavigate();
