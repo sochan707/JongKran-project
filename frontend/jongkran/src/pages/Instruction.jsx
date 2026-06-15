@@ -154,7 +154,7 @@ export default function Instruction() {
                     onClick={completeCooking}
                     className="bg-[#468432] hover:bg-[#1A5C05] text-white px-8 py-3 rounded-md font-bold transition"
                   >
-                    Complete Cooking ✓
+                    Complete Cooking
                   </button>
                 )}
               </div>
