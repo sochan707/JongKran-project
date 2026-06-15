@@ -1,27 +1,22 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import Header from "../components/Header";
+import recipes from "../data/recipes";
 
-const recipe = {
-  id: 1,
-  name: "Beef Lok Lak",
-  image:
-    "https://images.unsplash.com/photo-1544025162-d76694265947",
-  time: 20,
-  difficulty: "Easy",
-  servings: 4,
-};
-
-const steps = [
-  "Pat the salmon fillets dry with paper towels. Season both sides generously with salt, black pepper, and half of the minced garlic.",
-  "Heat oil in a pan and cook the beef until brown.",
-  "Add sauce and vegetables, then stir well.",
-  "Serve hot with rice.",
-];
 
 export default function Instruction() {
   const [step, setStep] = useState(0);
   const navigate = useNavigate();
+  const { id } = useParams();
+
+  const recipe = recipes.find(
+  (item) => item.id === Number(id)
+  );
+
+  if (!recipe) {
+  return <h1>Recipe not found</h1>;
+  }
+  const steps = recipe.steps;
 
   const completeCooking = () => {
     const savedHistory =
@@ -44,7 +39,7 @@ export default function Instruction() {
       );
     }
 
-    navigate("/history");
+    navigate("/");
   };
 
   return (
@@ -76,10 +71,11 @@ export default function Instruction() {
               {recipe.name}
             </h1>
 
-            <p className="mt-2">
-              {recipe.time} min • {recipe.difficulty} •{" "}
-              {recipe.servings} servings
-            </p>
+            <div className="flex gap-4 mt-3 text-sm md:test-base">
+              <span>{recipe.time} min</span>
+              <span>{recipe.difficulty}</span>
+              <span>{recipe.servings} servings</span>
+            </div>
           </div>
         </section>
 

@@ -1,14 +1,17 @@
+import { useEffect, useState } from "react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import RecipeCart from "../components/RecipeCart";
 
-const history = [
-  { id: 1, name: "Nom Banh Jok", image: "https://images.unsplash.com/photo-1569718212165-3a8278d5f624", time: 25, servings: 2 },
-  { id: 2, name: "French Fries", image: "https://images.unsplash.com/photo-1573080496219-bb080dd4f877", time: 15, servings: 2 },
-  { id: 3, name: "Noodles", image: "https://images.unsplash.com/photo-1552611052-33e04de081de", time: 20, servings: 2 },
-];
 
 export default function History() {
+  const [history, setHistory] = useState([]);
+
+  useEffect(() => {
+    const saveHistory = JSON.parse(localStorage.getItem("history")) || [];
+    setHistory(saveHistory.reverse());
+  }, []);
+
   return (
     <>
       <Header />
