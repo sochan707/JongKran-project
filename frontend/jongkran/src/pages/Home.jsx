@@ -3,23 +3,8 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import RecipeCart from "../components/RecipeCart";
 import Hero from "../components/ui/homescreen/hero";
+import recipes from "../data/recipes";
 
-const recipes = [
-  {
-    id: 1,
-    name: "Hoisin Garlic Noodles",
-    image: "https://images.unsplash.com/photo-1552611052-33e04de081de",
-    time: 20,
-    servings: 2,
-  },
-  {
-    id: 2,
-    name: "Nom Banh Jok",
-    image: "https://images.unsplash.com/photo-1569718212165-3a8278d5f624",
-    time: 25,
-    servings: 2,
-  },
-];
 
 export default function Home() {
   return (
@@ -65,7 +50,7 @@ export default function Home() {
           </h2>
 
           <div className="grid gap-5 md:grid-cols-2">
-            {recipes.map((recipe) => (
+            {recipes.slice(0, 2).map((recipe) => (
               <RecipeCart key={recipe.id} recipe={recipe} />
             ))}
           </div>
