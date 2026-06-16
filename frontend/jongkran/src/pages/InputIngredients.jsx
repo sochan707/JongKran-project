@@ -96,7 +96,10 @@ export default function InputIngredients() {
             </div>
 
             <button
-              onClick={() => navigate("/recipe-match")}
+              onClick={() => {
+                localStorage.setItem("selectedIngredients", JSON.stringify(ingredients));
+                navigate("/matched-recipes");
+              }}
               className="w-full mt-8 bg-[#468432] hover:bg-[#1A5C05] text-white py-4 rounded-md font-bold"
             >
               Find Recipes →

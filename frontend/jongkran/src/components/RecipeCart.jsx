@@ -1,25 +1,45 @@
 import { Heart } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-export default function RecipeCart({ recipe, matched = false }) {
-  const [favorite, setFavorite] = useState(recipe?.favorite || false);
+export default function RecipeCart({ recipe, matched = false, onFavoriteChange }) {
   const navigate = useNavigate();
+  const [favorite, setFavorite] = useState(false);
+
+  useEffect(() => {
+    const saved = JSON.parse(localStorage.getItem("favorites")) || [];
+    setFavorite(saved.some((item) => item.id === recipe.id));
+  }, [recipe.id]);
+
+  const toggleFavorite = (e) => {
+    e.stopPropagation();
+
+    let saved = JSON.parse(localStorage.getItem("favorites")) || [];
+
+    if (favorite) {
+      saved = saved.filter((item) => item.id !== recipe.id);
+      setFavorite(false);
+    } else {
+      saved.push({ ...recipe, favorite: true });
+      setFavorite(true);
+    }
+
+    localStorage.setItem("favorites", JSON.stringify(saved));
+
+    if (onFavoriteChange) {
+      onFavoriteChange(saved);
+    }
+  };
 
   return (
     <div className="relative bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition">
       <button
-        onClick={(e) => {
-          e.stopPropagation();
-          setFavorite(!favorite);
-        }}
+        onClick={toggleFavorite}
         className="absolute top-3 right-3 z-10 bg-white rounded-full p-2 shadow"
       >
         <Heart
           size={20}
-          className={
-            favorite ? "fill-red-500 text-red-500" : "text-gray-500"
-          }
+          className={favorite ? "fill-red-500 text-red-500" : "text-gray-500"}
         />
       </button>
 
