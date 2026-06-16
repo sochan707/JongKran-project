@@ -7,7 +7,7 @@ export default function RecipeCart({ recipe, matched = false }) {
   const navigate = useNavigate();
 
   return (
-    <div className="relative bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition">
+    <div className="relative bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden transition-transform duration-300 hover:scale-105 hover:shadow-lg">
       <button
         onClick={(e) => {
           e.stopPropagation();
@@ -17,9 +17,7 @@ export default function RecipeCart({ recipe, matched = false }) {
       >
         <Heart
           size={20}
-          className={
-            favorite ? "fill-red-500 text-red-500" : "text-gray-500"
-          }
+          className={favorite ? "fill-red-500 text-red-500" : "text-gray-500"}
         />
       </button>
 
@@ -29,11 +27,14 @@ export default function RecipeCart({ recipe, matched = false }) {
         </span>
       )}
 
-      <div onClick={() => navigate(`/recipe/${recipe.id}`)} className="cursor-pointer">
+      <div
+        onClick={() => navigate(`/recipe/${recipe.id}`)}
+        className="cursor-pointer"
+      >
         <img
           src={recipe.image}
           alt={recipe.name}
-          className="w-full h-48 object-cover"
+          className="w-full h-48 md:h-72 object-cover transition-transform duration-300 hover:scale-110"
         />
 
         <div className="p-4">
