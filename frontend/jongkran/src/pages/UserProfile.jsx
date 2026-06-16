@@ -2,6 +2,8 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { Bell, BookOpen, HelpCircle, Lock, LogOut, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import profile from '../assets/profile.png';
+
 
 export default function UserProfile() {
   const navigate = useNavigate();
@@ -21,15 +23,17 @@ export default function UserProfile() {
       <main className="mx-[25px] py-12 max-w-2xl md:mx-auto">
         <div className="text-center">
           <img
-            src="https://images.unsplash.com/photo-1494790108377-be9c29b29330"
-            className="w-32 h-32 object-cover rounded-full mx-auto"
-          />
+              src={profile}
+              alt="Phea Sreynith"
+              className="w-32 h-32 object-cover rounded-full mx-auto"
+            />
+
 
           <h1 className="title-font text-3xl font-bold mt-5">
             Phea Sreynith
           </h1>
 
-          <p className="text-gray-500 mt-2">I love him being single</p>
+          <p className="text-gray-500 mt-2">I love being single</p>
         </div>
 
         <h2 className="title-font text-2xl font-bold mt-10">

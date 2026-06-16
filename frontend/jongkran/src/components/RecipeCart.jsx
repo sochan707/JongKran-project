@@ -32,7 +32,7 @@ export default function RecipeCart({ recipe, matched = false, onFavoriteChange }
   };
 
   return (
-    <div className="relative bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition">
+    <div className="relative bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden transition-transform duration-300 hover:scale-105 hover:shadow-lg">
       <button
         onClick={toggleFavorite}
         className="absolute top-3 right-3 z-10 bg-white rounded-full p-2 shadow"
@@ -49,11 +49,14 @@ export default function RecipeCart({ recipe, matched = false, onFavoriteChange }
         </span>
       )}
 
-      <div onClick={() => navigate(`/recipe/${recipe.id}`)} className="cursor-pointer">
+      <div
+        onClick={() => navigate(`/recipe/${recipe.id}`)}
+        className="cursor-pointer"
+      >
         <img
           src={recipe.image}
           alt={recipe.name}
-          className="w-full h-48 object-cover"
+          className="w-full h-48 md:h-72 object-cover transition-transform duration-300 hover:scale-110"
         />
 
         <div className="p-4">
