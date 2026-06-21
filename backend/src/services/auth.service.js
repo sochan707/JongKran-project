@@ -1,3 +1,7 @@
-const authService = {};
+const registerUser = async () => {
+    return "User created in service";
+};
 
-export default authService;
+export default {
+    registerUser,
+};
