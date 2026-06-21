@@ -26,16 +26,14 @@ export default function About() {
             </div>
           </div>
 
-
+      
             <div>
               <h2 className="title-font text-3xl font-bold">
                 What is JongKran?
               </h2>
 
               <p className="mt-5 leading-8">
-                JongKran is a smart cooking platform that recommends recipes
-                based on the ingredients you already have. Simply enter your
-                ingredients and discover meals you can prepare instantly.
+                JongKran is a smart cooking platform that recommends recipes based on the ingredients you already have. Simply enter your ingredients and discover meals you can prepare instantly.
               </p>
             </div>
     
@@ -46,18 +44,14 @@ export default function About() {
             <div className="bg-[#242424] rounded-xl p-8">
               <h2 className="title-font text-3xl font-bold">Why JongKran?</h2>
               <p className="mt-4 leading-8">
-                Many people struggle to decide what to cook or forget important
-                ingredients. JongKran simplifies meal planning by recommending
-                suitable recipes and helping users save time and reduce food
-                waste.
+                Many people struggle to decide what to cook or forget important ingredients. JongKran simplifies meal planning by recommending suitable recipes and identifying missing ingredients, helping users save time and reduce food waste.
               </p>
             </div>
 
             <div className="bg-[#242424] rounded-xl p-8">
               <h2 className="title-font text-3xl font-bold">Our Mission</h2>
               <p className="mt-4 leading-8">
-                To make home cooking easier, smarter, and more sustainable by
-                helping users turn available ingredients into delicious meals.
+                Many people struggle to decide what to cook or forget important ingredients. JongKran simplifies meal planning by recommending suitable recipes and identifying missing ingredients, helping users save time and reduce food waste.
               </p>
             </div>
           </div>

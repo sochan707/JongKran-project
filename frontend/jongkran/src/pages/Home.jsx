@@ -69,8 +69,8 @@ export default function Home() {
                 alt="About JongKran"
                 className="rounded-xl w-full h-[420px] object-cover"
               />
-              <p className="text-base leading-8">
-                JongKran was created from a simple idea: everyone should feel confident cooking at home. Our name is inspired by the warmth of the kitchen — the place where families gather, stories are shared, and meals bring people together.We make cooking easier for busy home cooks by turning complicated recipes into simple, step-by-step experiences. With clear instructions, helpful visual guides, and a supportive community, JongKran helps you grow from a beginner into someone who truly enjoys cooking and sharing food with others.
+              <p className="text-base md:text-xl leading-8">
+                JongKran was created from a simple idea: everyone should feel confident cooking at home. Our name is inspired by the warmth of the kitchen the place where families gather, stories are shared, and meals bring people together.We make cooking easier for busy home cooks by turning complicated recipes into simple, step-by-step experiences. With clear instructions, helpful visual guides, and a supportive community, JongKran helps you grow from a beginner into someone who truly enjoys cooking and sharing food with others.
               </p>
             </div>
 
