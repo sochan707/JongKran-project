@@ -16,7 +16,7 @@ const Hero = () => {
             What recipe is waiting in your <br /> kitchen today?
           </h1>
           <p className="mt-5 text-base md:text-xl">
-            JongKran helps users discover recipes based on ingredients they already have, making cooking easier, faster, and smarter.
+            JongKran helps users discover recipes based on ingredients they already have, <br /> making cooking easier, faster, and smarter.
           </p>
           <Link
             to="/input-ingredients"
