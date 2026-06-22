@@ -136,8 +136,22 @@ export default function Instruction() {
                 </p>
               </div>
 
+
               {/* Buttons */}
-              <div className="flex justify-end mt-8">
+              <div className="flex justify-between mt-8">
+                {/* Previous Button */}
+                {step > 0 ? (
+                  <button
+                    onClick={() => setStep(step - 1)}
+                    className="bg-[#468432] hover:bg-[#1A5C05] text-white px-8 py-3 rounded-md font-bold transition"
+                  >
+                    ← Previous Step
+                  </button>
+                ) : (
+                  <div />
+                )}
+
+                {/* Next / Complete Button */}
                 {step < steps.length - 1 ? (
                   <button
                     onClick={() => setStep(step + 1)}
