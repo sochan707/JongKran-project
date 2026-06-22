@@ -1,5 +1,13 @@
+import prisma from "../prismaClient.js"
+
 const registerUser = async () => {
-    return "User created in service";
+    const user = await prisma.user.create({
+        data : {
+            user_name: "Test_user",
+        },
+
+    });
+    return user;
 };
 
 export default {
