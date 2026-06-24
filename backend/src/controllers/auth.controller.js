@@ -1,9 +1,7 @@
-import authService from "../services/auth.service.js";
+import {registerUser} from "../services/auth.service.js";
 
 export const register = async (req, res) => {
-    const result = await authService.registerUser();
-
-    res.json({
-        message: result,
-    });
+    const {user_name} = req.body;
+    const user = await registerUser({user_name});
+    res.json(user);
 };
