@@ -2,26 +2,55 @@ import prisma from "../prismaClient.js";
 import bcrypt from "bcrypt";
 
 export const registerUser = async ({user_name, email, password }) => {
-    const hashed = await bcrypt.hash(password,10);
+    try {
+        const exitingAuth = await prisma.userAuth.findUnique({
+            where: {email},
+        });
 
-    return await prisma.user.create({
-        data: {
-            user_name,
-            role_id: 2,
+        if(exitingAuth){
+            return {
+                success: false,
+                message: "Email already exists :)"
+            };
+        }
 
-            auth: { // when create user, it will automatically create auth
-                create: {
-                    email,
-                    password_hash: hashed,
-                },
-            },
-        },
-        include: {
-            auth: true,
-        },
-    });
-    
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const user = await prisma.user.create({
+            data: {
+                user_name,
+                role_id: 2,
+            }
+        });
+
+        await prisma.userAuth.create({
+            data: {
+                user_id: user.user_id,
+                email,
+                password_hash: hashedPassword,
+            }
+        });
+
+        return {
+            success: true,
+            data: {
+                user_id: user.user_id,
+                user_name: user.user_name,
+                email
+            }
+        };
+
+    } catch(err){
+        console.error("Register Error: ", err);
+
+        return {
+            success: false,
+            message: "Internal server error :("
+        }
+    }
 };
+
+
 
 export default {
     registerUser,

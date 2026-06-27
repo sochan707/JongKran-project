@@ -7,21 +7,15 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-# =========================
-# ROLE
-# =========================
 model Role {
   role_id   Int    @id @default(autoincrement())
   role_name String @unique @db.VarChar(20)
 
-  users     User[]
+  users User[]
 
   @@map("roles")
 }
 
-# =========================
-# USER
-# =========================
 model User {
   user_id      Int     @id @default(autoincrement())
   user_name    String  @db.VarChar(25)
@@ -42,9 +36,6 @@ model User {
   @@map("users")
 }
 
-# =========================
-# AUTH
-# =========================
 model UserAuth {
   user_id Int @id
 
@@ -57,9 +48,6 @@ model UserAuth {
   @@map("user_auth")
 }
 
-# =========================
-# INGREDIENT
-# =========================
 model Ingredient {
   ingredient_id Int    @id @default(autoincrement())
   name          String @unique @db.VarChar(20)
@@ -69,32 +57,27 @@ model Ingredient {
   @@map("ingredients")
 }
 
-# =========================
-# RECIPE
-# =========================
 model Recipe {
-  recipe_id    Int     @id @default(autoincrement())
-  title        String  @db.VarChar(30)
-  description  String?
-  difficulty   Difficulty
-  cook_time    Int
+  recipe_id   Int        @id @default(autoincrement())
+  title       String     @db.VarChar(30)
+  description String?
+  difficulty  Difficulty
+  cook_time   Int
 
   created_by Int
   creator    User @relation(fields: [created_by], references: [user_id])
 
   recipeIngredients RecipeIngredient[]
-  steps            RecipeStep[]
+  steps             RecipeStep[]
 
   favorites   Favorite[]
   histories   History[]
   suggestions Suggestion[]
+  logs        Logs_audit[]
 
   @@map("recipes")
 }
 
-# =========================
-# RECIPE INGREDIENT (M:N)
-# =========================
 model RecipeIngredient {
   recipe_id     Int
   ingredient_id Int
@@ -108,9 +91,6 @@ model RecipeIngredient {
   @@map("recipe_ingredients")
 }
 
-# =========================
-# RECIPE STEPS
-# =========================
 model RecipeStep {
   step_id          Int      @id @default(autoincrement())
   recipe_id        Int
@@ -124,9 +104,6 @@ model RecipeStep {
   @@map("recipe_steps")
 }
 
-# =========================
-# FAVORITE
-# =========================
 model Favorite {
   favorite_id Int      @id @default(autoincrement())
   user_id     Int
@@ -140,9 +117,6 @@ model Favorite {
   @@map("favorites")
 }
 
-# =========================
-# HISTORY
-# =========================
 model History {
   history_id Int      @id @default(autoincrement())
   user_id    Int
@@ -155,9 +129,6 @@ model History {
   @@map("history")
 }
 
-# =========================
-# SUGGESTION
-# =========================
 model Suggestion {
   suggestion_id   Int              @id @default(autoincrement())
   user_id         Int
@@ -172,17 +143,14 @@ model Suggestion {
   @@map("suggestions")
 }
 
-# =========================
-# LOGS / AUDIT 
-# =========================
 model Logs_audit {
   log_id Int @id @default(autoincrement())
 
-  admin_id Int
+  admin_id  Int
   recipe_id Int?
 
-  action_type AdminActionType
-  action_timestamp DateTime @default(now())
+  action_type      AdminActionType
+  action_timestamp DateTime        @default(now())
 
   admin  User    @relation(fields: [admin_id], references: [user_id])
   recipe Recipe? @relation(fields: [recipe_id], references: [recipe_id])
@@ -190,9 +158,6 @@ model Logs_audit {
   @@map("logs_audit")
 }
 
-# =========================
-# ENUMS
-# =========================
 enum Difficulty {
   easy
   medium
