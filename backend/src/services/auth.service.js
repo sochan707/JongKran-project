@@ -50,8 +50,51 @@ export const registerUser = async ({user_name, email, password }) => {
     }
 };
 
+export const loginUser = async ({email, password}) => {
+    try{
+        const auth = await prisma.userAuth.findUnique({
+            where: {email},
+            include: {
+                user: true
+            }
+        });
 
+        if (!auth) {
+            return {
+                success: false,
+                message: "Invalid email or password!"
+            };
+        }
+
+        const isMatch = await bcrypt.compare(password, auth.password_hash);
+
+        if(!isMatch) {
+            return{
+                success: false,
+                message: "Invalid email or password"
+            };
+        }
+
+        return {
+            success: true,
+            data: {
+                user_id: auth.user.user_id,
+                user_name: auth.user.user_name,
+                email: auth.email
+            }
+        };
+
+    } catch(err){
+        console.error("Login Error: ", err);
+
+        return{
+            success: false,
+            message: "Internal server error o(╥﹏╥)o"
+        }
+    }
+}
 
 export default {
     registerUser,
+    loginUser,
 };

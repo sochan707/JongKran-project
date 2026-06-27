@@ -9,3 +9,13 @@ export const register = async (req, res) => {
 
     return res.status(201).json(result);
 };
+
+export const login = async (req, res) => {
+    const result = await authService.loginUser(req.body);
+
+    if(!result.success){
+        return res.status(401).json(result);
+    }
+
+    return res.status(200).json(result);
+}
