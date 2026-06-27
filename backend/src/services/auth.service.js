@@ -1,25 +1,26 @@
 import prisma from "../prismaClient.js";
+import bcrypt from "bcrypt";
 
+export const registerUser = async ({user_name, email, password }) => {
+    const hashed = await bcrypt.hash(password,10);
 
-export const registerUser = async () => {
-    try {
-        const user = await prisma.User.create({
-            data : {
-                user_name: "TestUser1",
-                role: {
-                    connect: {role_id: 2}
-                }
+    return await prisma.user.create({
+        data: {
+            user_name,
+            role_id: 2,
+
+            auth: { // when create user, it will automatically create auth
+                create: {
+                    email,
+                    password_hash: hashed,
+                },
             },
-
-        });
-        console.log("User created: ", user);
-    } catch (err) {
-        console.log("Error creating user: ", err);
-    } finally {
-        await prisma.$disconnect();
-    }
+        },
+        include: {
+            auth: true,
+        },
+    });
     
-    return user;
 };
 
 export default {
