@@ -26,18 +26,16 @@ export default function Instruction() {
       (item) => item.id === recipe.id
     );
 
-    if (!alreadyExists) {
-      localStorage.setItem(
-        "history",
-        JSON.stringify([
-          ...savedHistory,
-          {
-            ...recipe,
-            completedAt: new Date().toISOString(),
-          },
-        ])
-      );
-    }
+    localStorage.setItem(
+      "history",
+      JSON.stringify([
+        ...savedHistory,
+        {
+          ...recipe,
+          completedAt: new Date().toISOString(),
+        },
+      ])
+    );
 
     navigate("/");
   };
