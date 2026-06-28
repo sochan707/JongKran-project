@@ -9,7 +9,7 @@ export default function History() {
 
   useEffect(() => {
     const saveHistory = JSON.parse(localStorage.getItem("history")) || [];
-    setHistory(saveHistory.reverse());
+    setHistory([...saveHistory].reverse());
   }, []);
 
   return (
