@@ -1,5 +1,6 @@
 import prisma from "../prismaClient.js";
 import bcrypt from "bcrypt";
+import { generateToken } from "../utils/jwt.js";
 
 export const registerUser = async ({user_name, email, password }) => {
     try {
@@ -75,12 +76,19 @@ export const loginUser = async ({email, password}) => {
             };
         }
 
+        const token = generateToken({
+            user_id: auth.user.user_id,
+            email: auth.email,
+            role_id: auth.user.role_id
+        });
+
         return {
             success: true,
             data: {
                 user_id: auth.user.user_id,
                 user_name: auth.user.user_name,
-                email: auth.email
+                email: auth.email,
+                token
             }
         };
 
@@ -89,7 +97,7 @@ export const loginUser = async ({email, password}) => {
 
         return{
             success: false,
-            message: "Internal server error o(╥﹏╥)o"
+            message: "Internal server error! o(╥﹏╥)o"
         }
     }
 }
