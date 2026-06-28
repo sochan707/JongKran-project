@@ -6,6 +6,14 @@ export default function RecipeCart({ recipe, matched = false, onFavoriteChange }
   const navigate = useNavigate();
   const [favorite, setFavorite] = useState(false);
 
+  const date = new Date(recipe.completedAt);
+  const formatted = recipe.completedAt
+    ? `${recipe.name} (${new Date(recipe.completedAt).toLocaleDateString("en-GB")} ${new Date(recipe.completedAt).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      })})`
+    : recipe.name;
+
   useEffect(() => {
     const saved = JSON.parse(localStorage.getItem("favorites")) || [];
     setFavorite(saved.some((item) => item.id === recipe.id));
@@ -59,8 +67,22 @@ export default function RecipeCart({ recipe, matched = false, onFavoriteChange }
           className="w-full h-48 md:h-72 object-cover transition-transform duration-300 hover:scale-110"
         />
 
+
         <div className="p-4">
-          <h3 className="title-font text-xl font-bold">{recipe.name}</h3>
+          <h3 className="text-lg font-bold">
+            {recipe.name}
+            {recipe.completedAt && (
+              <span className="text-sm text-gray-500 font-normal">
+                {" "}(
+                {new Date(recipe.completedAt).toLocaleDateString("en-GB")}{" "}
+                {new Date(recipe.completedAt).toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+                )
+              </span>
+            )}
+          </h3>
           <p className="text-sm text-gray-500 mt-1">
             {recipe.time} min • {recipe.servings} servings
           </p>
