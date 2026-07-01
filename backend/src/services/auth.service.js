@@ -1,6 +1,6 @@
 import prisma from "../prismaClient.js";
 import bcrypt from "bcrypt";
-import { generateToken } from "../utils/jwt.js";
+import {generateAccessToken, generateRefreshToken} from "../utils/jwt.js";
 
 export const registerUser = async ({user_name, email, password }) => {
     try {
@@ -76,20 +76,22 @@ export const loginUser = async ({email, password}) => {
             };
         }
 
-        const token = generateToken({
+        const payload = {
             user_id: auth.user.user_id,
             email: auth.email,
             role_id: auth.user.role_id
-        });
+        }
+
+        const accessToken = generateAccessToken(payload);
+        const refreshToken = generateRefreshToken(payload);
 
         return {
             success: true,
             data: {
-                user_id: auth.user.user_id,
-                user_name: auth.user.user_name,
-                email: auth.email,
-                token
-            }
+                user: payload,
+                accessToken
+            },
+            refreshToken
         };
 
     } catch(err){
