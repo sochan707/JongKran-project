@@ -14,6 +14,9 @@ import History from "./pages/History";
 import About from "./pages/About";
 import UserProfile from "./pages/UserProfile";
 import RecipeMatch from "./pages/RecipeMatch";
+import RecipeManagement from "./pages/admin/RecipeManagement";
+import CreateRecipe from "./pages/admin/CreateRecipe";
+import EditRecipe from "./pages/admin/EditRecipe";
 
 export default function App() {
   return (
@@ -39,6 +42,10 @@ export default function App() {
         <Route path="/profile" element={<UserProfile />} />
 
         <Route path="/recipe-match" element={<RecipeMatch />} />
+
+        <Route path="/admin" element={<RecipeManagement />} />
+  <Route path="/admin/create" element={<CreateRecipe />} />
+  <Route path="/admin/edit/:id" element={<EditRecipe />} />
       </Routes>
     </BrowserRouter>
 
