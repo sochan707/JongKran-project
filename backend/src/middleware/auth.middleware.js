@@ -1,37 +1,73 @@
 import jwt from "jsonwebtoken";
+import prisma from "../prismaClient.js"
 
-const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_key";
+const JWT_SECRET = process.env.JWT_SECRET;
 
-export const verifyToken = (req, res, next) => {
+export const authenticate = async (req, res, next) => {
     try {
         const authHeader = req.headers.authorization;
 
-        if (!authHeader) {
-            return res.status(401).json({
-                success: false,
-                message: "No token provided! (; •́ᆺ•̀)"
-            })
+        if(!authHeader || !authHeader.startsWith("Bearer ")){
+            return res.status(401).json({message: "No token provided"});
         }
 
         const token = authHeader.split(" ")[1];
 
-        if (!token) {
-            return res.status(401).json({
-                success: false,
-                message: "Invalid token format! (; •́ᆺ•̀)"
-            });
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+        const user = await prisma.user.findUnique({
+            where: {user_id: decoded.userId},
+            include: {
+                role: true,
+            },
+        });
+
+        if(!user){
+            return res.status(401).json({message: "User not found"});
         }
 
-        const decoded = jwt.verify(token, JWT_SECRET);
+        req.user = {
+            userId: user.user_id,
+            role: user.role.role_name,
+        };
 
-        req.user = decoded;
-
-        next()
+        next();
 
     } catch(err){
-        return res.status(401).json({
-            success: false,
-            message: "Invalid or expired token! o(╥﹏╥)o"
-        });
+        return res.status(401).json({ message: "Invalid token" });
     }
 }
+
+// export const verifyToken = (req, res, next) => {
+//     try {
+//         const authHeader = req.headers.authorization;
+
+//         if (!authHeader) {
+//             return res.status(401).json({
+//                 success: false,
+//                 message: "No token provided! (; •́ᆺ•̀)"
+//             })
+//         }
+
+//         const token = authHeader.split(" ")[1];
+
+//         if (!token) {
+//             return res.status(401).json({
+//                 success: false,
+//                 message: "Invalid token format! (; •́ᆺ•̀)"
+//             });
+//         }
+
+//         const decoded = jwt.verify(token, JWT_SECRET);
+
+//         req.user = decoded;
+
+//         next()
+
+//     } catch(err){
+//         return res.status(401).json({
+//             success: false,
+//             message: "Invalid or expired token! o(╥﹏╥)o"
+//         });
+//     }
+// }

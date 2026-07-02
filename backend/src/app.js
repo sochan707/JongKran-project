@@ -3,6 +3,7 @@ import "dotenv/config";
 import recipeRoutes from "./routes/recipe.routes.js";
 import authRoutes from "./routes/auth.routes.js"
 import recommendationRoutes from "./routes/recommendation.routes.js";
+import testRoutes from "./routes/test.routes.js";
 
 const app = express();
 
@@ -15,4 +16,6 @@ app.get("/", (req, res) => {
 app.use("/api/recipes", recipeRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/recommendations", recommendationRoutes);
+app.use("/api/auth", testRoutes);
+
 export default app;

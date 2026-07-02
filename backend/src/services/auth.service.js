@@ -1,6 +1,7 @@
 import prisma from "../prismaClient.js";
 import bcrypt from "bcrypt";
 import {generateAccessToken, generateRefreshToken} from "../utils/jwt.js";
+import { buildAuthPayload } from "./token.service.js";
 
 export const registerUser = async ({user_name, email, password }) => {
     try {
@@ -56,7 +57,11 @@ export const loginUser = async ({email, password}) => {
         const auth = await prisma.userAuth.findUnique({
             where: {email},
             include: {
-                user: true
+                user: {
+                    include: {
+                        role: true
+                    }
+                }
             }
         });
 
@@ -76,11 +81,7 @@ export const loginUser = async ({email, password}) => {
             };
         }
 
-        const payload = {
-            user_id: auth.user.user_id,
-            email: auth.email,
-            role_id: auth.user.role_id
-        }
+        const payload = buildAuthPayload(auth.user);
 
         const accessToken = generateAccessToken(payload);
         const refreshToken = generateRefreshToken(payload);
