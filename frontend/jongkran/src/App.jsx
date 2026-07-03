@@ -17,7 +17,7 @@ import RecipeMatch from "./pages/RecipeMatch";
 import RecipeManagement from "./pages/admin/RecipeManagement";
 import CreateRecipe from "./pages/admin/CreateRecipe";
 import EditRecipe from "./pages/admin/EditRecipe";
-
+import NotFound from "./pages/NotFound";
 export default function App() {
   return (
     <BrowserRouter>
@@ -44,9 +44,11 @@ export default function App() {
         <Route path="/recipe-match" element={<RecipeMatch />} />
 
         <Route path="/admin" element={<RecipeManagement />} />
-  <Route path="/admin/create" element={<CreateRecipe />} />
-  <Route path="/admin/edit/:id" element={<EditRecipe />} />
-      </Routes>
+        <Route path="/admin/create" element={<CreateRecipe />} />
+        <Route path="/admin/edit/:id" element={<EditRecipe />} />
+        <Route path="*" element={<NotFound />} />
+            </Routes>
+
     </BrowserRouter>
 
   );
