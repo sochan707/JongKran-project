@@ -1,5 +1,5 @@
 import express from "express";
-import { register, login , refreshToken} from "../controllers/auth.controller.js";
+import { register, login , refreshToken, logoutController} from "../controllers/auth.controller.js";
 import { authenticate } from "../middleware/auth.middleware.js";
 import { authorize } from "../middleware/rbac.middleware.js";
 
@@ -8,6 +8,7 @@ const router = express.Router();
 router.post("/register", register);
 router.post("/login", login)
 router.post("/refresh", refreshToken);
+router.post("/logout", authenticate, logoutController);
 
 // router.post("/recipes", authenticate, authorize(["Admin"]), createRecipe);
 // router.post("/recipes", authenticate, authorize(["Admin"]), updateRecipe);

@@ -90,9 +90,9 @@ export const loginUser = async ({email, password}) => {
             success: true,
             data: {
                 user: payload,
-                accessToken
+                accessToken,
+                refreshToken
             },
-            refreshToken
         };
 
     } catch(err){
@@ -105,7 +105,25 @@ export const loginUser = async ({email, password}) => {
     }
 }
 
+export const logoutUser = async (userId) => {
+    try {
+        console.log("Logging out userId: ", userId);
+        return {
+            success: true,
+            message: "Logged out successfully. Please delete the refresh token on the client. ᕕ( ᐛ )ᕗ"
+        }
+
+    } catch(err) {
+        console.error("Logout Service Error: ", err);
+        return {
+            success: false,
+            message: "Logout failed! (~T༚T~)"
+        }
+    }
+}
+
 export default {
     registerUser,
     loginUser,
+    logoutUser
 };

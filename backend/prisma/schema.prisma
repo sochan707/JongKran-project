@@ -143,6 +143,18 @@ model Logs_audit {
   @@map("logs_audit")
 }
 
+model RefreshToken {
+  token_id    Int      @id @default(autoincrement())
+  token       String   @unique
+  user_id     Int
+  created_at  DateTime @default(now())
+  expires_at  DateTime
+
+  user User @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
 enum Difficulty {
   easy
   medium

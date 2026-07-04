@@ -16,6 +16,6 @@ app.get("/", (req, res) => {
 app.use("/api/recipes", recipeRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/recommendations", recommendationRoutes);
-app.use("/api/auth", testRoutes);
+app.use("/api/test", testRoutes);
 
 export default app;
