@@ -1,8 +1,41 @@
 import express from "express";
-import { register } from "../controllers/auth.controller.js";
+import { register, login , refreshTokenController, logoutController} from "../controllers/auth.controller.js";
+import { authenticate } from "../middleware/auth.middleware.js";
+import { authorize } from "../middleware/rbac.middleware.js";
 
 const router = express.Router();
 
 router.post("/register", register);
+router.post("/login", login)
+router.post("/refresh", refreshTokenController);
+router.post("/logout", authenticate, logoutController);
+
+// router.post("/recipes", authenticate, authorize(["Admin"]), createRecipe);
+// router.post("/recipes", authenticate, authorize(["Admin"]), updateRecipe);
+// router.post("/recipes", authenticate, authorize(["Admin"]), deleteRecipe);
+// router.get("/recipes", authenticate, authorize(["Admin"]), getRecipe);
+
+// router.get("/favorites", authenticate, authorize(["User", "Admin"]), getFavorites);
+// router.post("/favorites", authenticate, authorize(["User", "Admin"]), addFavorites);
+// router.get("/favorites", authenticate, authorize(["User", "Admin"]), removeFavorites);
+
+
+// ========================== TEST ===========================
+router.post(
+  "/admin/test",
+  authenticate,
+  authorize(["Admin"]),
+  (req, res) => {
+    res.json({ message: "Admin access granted" });
+  }
+);
+
+router.get("/test", authenticate, (req, res) => {
+    res.json({
+        message: "Middleware working",
+        user: req.user
+    });
+});
+// ============================================================
 
 export default router;

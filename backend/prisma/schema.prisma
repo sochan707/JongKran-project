@@ -7,6 +7,154 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Role {
+  role_id   Int    @id @default(autoincrement())
+  role_name String @unique @db.VarChar(20)
+  users     User[]
+
+  @@map("roles")
+}
+
+model User {
+  user_id        Int            @id @default(autoincrement())
+  user_name      String         @db.VarChar(25)
+  user_profile   String?
+  role_id        Int
+  bio            String?        @db.VarChar(100)
+  gender         String?        @db.VarChar(10)
+  dob            DateTime?      @db.Date
+  status         String?        @default("active") @db.VarChar(10)
+  favorites      Favorite[]
+  histories      History[]
+  logs_audit     Logs_audit[]
+  createdRecipes Recipe[]
+  refreshTokens  RefreshToken[]
+  suggestions    Suggestion[]
+  auth           UserAuth?
+  role           Role           @relation(fields: [role_id], references: [role_id])
+
+  @@map("users")
+}
+
+model UserAuth {
+  email         String   @unique @db.VarChar(40)
+  password_hash String   @db.VarChar(100)
+  created_at    DateTime @default(now())
+  user_id       Int      @id
+  user          User     @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@map("user_auth")
+}
+
+model Ingredient {
+  ingredient_id     Int                @id @default(autoincrement())
+  name              String             @unique @db.VarChar(20)
+  recipeIngredients RecipeIngredient[]
+
+  @@map("ingredients")
+}
+
+model Recipe {
+  recipe_id         Int                @id @default(autoincrement())
+  title             String             @db.VarChar(30)
+  description       String?
+  difficulty        Difficulty
+  cook_time         Int
+  created_by        Int
+  favorites         Favorite[]
+  histories         History[]
+  logs              Logs_audit[]
+  recipeIngredients RecipeIngredient[]
+  steps             RecipeStep[]
+  creator           User               @relation(fields: [created_by], references: [user_id])
+  suggestions       Suggestion[]
+
+  @@map("recipes")
+}
+
+model RecipeIngredient {
+  recipe_id     Int
+  ingredient_id Int
+  quantity      Decimal    @db.Decimal(10, 2)
+  unit          String     @db.VarChar(15)
+  ingredient    Ingredient @relation(fields: [ingredient_id], references: [ingredient_id])
+  recipe        Recipe     @relation(fields: [recipe_id], references: [recipe_id], onDelete: Cascade)
+
+  @@unique([recipe_id, ingredient_id])
+  @@map("recipe_ingredients")
+}
+
+model RecipeStep {
+  step_id          Int      @id @default(autoincrement())
+  recipe_id        Int
+  step_number      Int
+  instruction_text String
+  created_at       DateTime @default(now())
+  recipe           Recipe   @relation(fields: [recipe_id], references: [recipe_id], onDelete: Cascade)
+
+  @@unique([recipe_id, step_number])
+  @@map("recipe_steps")
+}
+
+model Favorite {
+  favorite_id Int      @id @default(autoincrement())
+  user_id     Int
+  recipe_id   Int
+  created_at  DateTime @default(now())
+  recipe      Recipe   @relation(fields: [recipe_id], references: [recipe_id], onDelete: Cascade)
+  user        User     @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@unique([user_id, recipe_id])
+  @@map("favorites")
+}
+
+model History {
+  history_id Int      @id @default(autoincrement())
+  user_id    Int
+  recipe_id  Int
+  cooked_at  DateTime @default(now())
+  recipe     Recipe   @relation(fields: [recipe_id], references: [recipe_id], onDelete: Cascade)
+  user       User     @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@map("history")
+}
+
+model Suggestion {
+  suggestion_id   Int              @id @default(autoincrement())
+  user_id         Int
+  recipe_id       Int
+  suggestion_text String
+  status          SuggestionStatus @default(pending)
+  created_at      DateTime         @default(now())
+  recipe          Recipe           @relation(fields: [recipe_id], references: [recipe_id], onDelete: Cascade)
+  user            User             @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@map("suggestions")
+}
+
+model Logs_audit {
+  audit_id         Int             @id @default(autoincrement())
+  user_id          Int
+  recipe_id        Int?
+  action_type      AdminActionType
+  action_timestamp DateTime        @default(now())
+  users            User            @relation(fields: [user_id], references: [user_id], map: "logs_audit_admin_id_fkey")
+  recipe           Recipe?         @relation(fields: [recipe_id], references: [recipe_id])
+
+  @@map("logs_audit")
+}
+
+model RefreshToken {
+  token_id   Int       @id @default(autoincrement())
+  token      String    @unique
+  user_id    Int
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  expires_at DateTime  @db.Timestamp(6)
+  user       User      @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("refresh_tokens")
+}
+
 enum Difficulty {
   easy
   medium
@@ -25,150 +173,4 @@ enum AdminActionType {
   delete
   approve
   reject
-}
-
-model Role {
-  role_id   Int    @id @default(autoincrement())
-  role_name String @unique @db.VarChar(20)
-
-  users User[]
-
-  @@map("roles")
-}
-
-model User {
-  user_id      Int     @id @default(autoincrement())
-  user_name    String  @db.VarChar(25)
-  user_profile String?
-  role_id      Int
-
-  role         Role          @relation(fields: [role_id], references: [role_id], onUpdate: Cascade, onDelete: Restrict)
-  auth         UserAuth?
-  recipes      Recipe[]
-  favorites    Favorite[]
-  histories    History[]
-  suggestions  Suggestion[]
-  adminActions AdminAction[]
-
-  @@map("users")
-}
-
-model UserAuth {
-  auth_id       Int      @id @default(autoincrement())
-  email         String   @unique @db.VarChar(40)
-  password_hash String   @db.VarChar(100)
-  created_at    DateTime @default(now())
-  user_id       Int      @unique
-
-  user User @relation(fields: [user_id], references: [user_id], onUpdate: Cascade, onDelete: Cascade)
-
-  @@map("user_auth")
-}
-
-model Ingredient {
-  ingredient_id Int    @id @default(autoincrement())
-  name          String @unique @db.VarChar(20)
-
-  recipeIngredients RecipeIngredient[]
-
-  @@map("ingredients")
-}
-
-model Recipe {
-  recipe_id    Int        @id @default(autoincrement())
-  title        String     @db.VarChar(30)
-  user_profile String?
-  description  String?
-  difficulty   Difficulty
-  cook_time    Int
-  created_by   Int
-
-  creator           User               @relation(fields: [created_by], references: [user_id], onUpdate: Cascade, onDelete: Restrict)
-  recipeIngredients RecipeIngredient[]
-  steps             RecipeStep[]
-  favorites         Favorite[]
-  histories         History[]
-  suggestions       Suggestion[]
-  adminActions      AdminAction[]
-
-  @@map("recipes")
-}
-
-model RecipeIngredient {
-  recipe_ingredient_id Int     @id @default(autoincrement())
-  recipe_id            Int
-  ingredient_id        Int
-  quantity             Decimal @db.Decimal(10, 2)
-  unit                 String  @db.VarChar(15)
-
-  recipe     Recipe     @relation(fields: [recipe_id], references: [recipe_id], onUpdate: Cascade, onDelete: Cascade)
-  ingredient Ingredient @relation(fields: [ingredient_id], references: [ingredient_id], onUpdate: Cascade, onDelete: Restrict)
-
-  @@unique([recipe_id, ingredient_id])
-  @@map("recipe_ingredients")
-}
-
-model RecipeStep {
-  step_id          Int      @id @default(autoincrement())
-  recipe_id        Int
-  step_number      Int
-  instruction_text String
-  created_at       DateTime @default(now())
-
-  recipe Recipe @relation(fields: [recipe_id], references: [recipe_id], onUpdate: Cascade, onDelete: Cascade)
-
-  @@unique([recipe_id, step_number])
-  @@map("recipe_steps")
-}
-
-model Favorite {
-  favorite_id Int      @id @default(autoincrement())
-  user_id     Int
-  recipe_id   Int
-  created_at  DateTime @default(now())
-
-  user   User   @relation(fields: [user_id], references: [user_id], onUpdate: Cascade, onDelete: Cascade)
-  recipe Recipe @relation(fields: [recipe_id], references: [recipe_id], onUpdate: Cascade, onDelete: Cascade)
-
-  @@unique([user_id, recipe_id])
-  @@map("favorites")
-}
-
-model History {
-  history_id Int      @id @default(autoincrement())
-  user_id    Int
-  recipe_id  Int
-  cooked_at  DateTime @default(now())
-
-  user   User   @relation(fields: [user_id], references: [user_id], onUpdate: Cascade, onDelete: Cascade)
-  recipe Recipe @relation(fields: [recipe_id], references: [recipe_id], onUpdate: Cascade, onDelete: Cascade)
-
-  @@map("history")
-}
-
-model Suggestion {
-  suggestion_id   Int              @id @default(autoincrement())
-  user_id         Int
-  recipe_id       Int
-  suggestion_text String
-  status          SuggestionStatus @default(pending)
-  created_at      DateTime         @default(now())
-
-  user   User   @relation(fields: [user_id], references: [user_id], onUpdate: Cascade, onDelete: Cascade)
-  recipe Recipe @relation(fields: [recipe_id], references: [recipe_id], onUpdate: Cascade, onDelete: Cascade)
-
-  @@map("suggestions")
-}
-
-model AdminAction {
-  action_id        Int             @id @default(autoincrement())
-  admin_id         Int
-  recipe_id        Int?
-  action_type      AdminActionType
-  action_timestamp DateTime        @default(now())
-
-  admin  User    @relation(fields: [admin_id], references: [user_id], onUpdate: Cascade, onDelete: Restrict)
-  recipe Recipe? @relation(fields: [recipe_id], references: [recipe_id], onUpdate: Cascade, onDelete: SetNull)
-
-  @@map("admin_actions")
 }
