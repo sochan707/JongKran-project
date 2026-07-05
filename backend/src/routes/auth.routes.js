@@ -1,5 +1,5 @@
 import express from "express";
-import { register, login , refreshToken, logoutController} from "../controllers/auth.controller.js";
+import { register, login , refreshTokenController, logoutController} from "../controllers/auth.controller.js";
 import { authenticate } from "../middleware/auth.middleware.js";
 import { authorize } from "../middleware/rbac.middleware.js";
 
@@ -7,7 +7,7 @@ const router = express.Router();
 
 router.post("/register", register);
 router.post("/login", login)
-router.post("/refresh", refreshToken);
+router.post("/refresh", refreshTokenController);
 router.post("/logout", authenticate, logoutController);
 
 // router.post("/recipes", authenticate, authorize(["Admin"]), createRecipe);
@@ -29,6 +29,13 @@ router.post(
     res.json({ message: "Admin access granted" });
   }
 );
+
+router.get("/test", authenticate, (req, res) => {
+    res.json({
+        message: "Middleware working",
+        user: req.user
+    });
+});
 // ============================================================
 
 export default router;

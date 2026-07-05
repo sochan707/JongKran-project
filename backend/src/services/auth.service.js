@@ -12,7 +12,7 @@ export const registerUser = async ({user_name, email, password }) => {
         if(exitingAuth){
             return {
                 success: false,
-                message: "Email already exists :)"
+                message: "Email already exists (ó﹏ò｡)"
             };
         }
 
@@ -47,13 +47,15 @@ export const registerUser = async ({user_name, email, password }) => {
 
         return {
             success: false,
-            message: "Internal server error :("
+            message: "Internal server error! o(╥﹏╥)o"
         }
     }
 };
 
 export const loginUser = async ({email, password}) => {
     try{
+        // const payload = buildAuthPayload(auth.user);
+
         const auth = await prisma.userAuth.findUnique({
             where: {email},
             include: {
@@ -68,7 +70,7 @@ export const loginUser = async ({email, password}) => {
         if (!auth) {
             return {
                 success: false,
-                message: "Invalid email or password!"
+                message: "Invalid email or password! (; •́ᆺ•̀)"
             };
         }
 
@@ -81,10 +83,25 @@ export const loginUser = async ({email, password}) => {
             };
         }
 
-        const payload = buildAuthPayload(auth.user);
+        const payload = {
+            userId: auth.user.user_id,
+            role: auth.user.role.role_name,
+            email: auth.email
+        };
 
         const accessToken = generateAccessToken(payload);
         const refreshToken = generateRefreshToken(payload);
+
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 7);
+
+        await prisma.refreshToken.create({
+            data: {
+                token: refreshToken,
+                user_id: payload.userId,
+                expires_at: expiresAt
+            }
+        });
 
         return {
             success: true,
@@ -107,10 +124,18 @@ export const loginUser = async ({email, password}) => {
 
 export const logoutUser = async (userId) => {
     try {
-        console.log("Logging out userId: ", userId);
+        if (refreshToken) {
+            await prisma.refreshToken.deleteMany({
+                where: {
+                    token: refreshToken,
+                    user_id: userId
+                }
+            });
+        }
+
         return {
             success: true,
-            message: "Logged out successfully. Please delete the refresh token on the client. ᕕ( ᐛ )ᕗ"
+            message: "Logged out successfully. ᕕ( ᐛ )ᕗ"
         }
 
     } catch(err) {

@@ -1,7 +1,8 @@
 import authService, { logoutUser } from "../services/auth.service.js";
 import jwt from "jsonwebtoken";
-import { generateAccessToken } from "../utils/jwt.js";
+import { generateAccessToken, generateRefreshToken } from "../utils/jwt.js";
 import { loginUser } from "../services/auth.service.js";
+import prisma from "../prismaClient.js";
 
 const REFRESH_SECRET = process.env.REFRESH_SECRET || "refresh_secret_key";
 
@@ -35,7 +36,7 @@ export const login = async (req, res) => {
     });
 }
 
-export const refreshToken = async (req, res) => {
+export const refreshTokenController = async (req, res) => {
     try{
         const {refreshToken} = req.body;
 
@@ -45,40 +46,122 @@ export const refreshToken = async (req, res) => {
             });
         }
 
+        const storedToken = await prisma.refreshToken.findUnique({
+            where: {token: refreshToken}
+        });
+
+        if(!storedToken){
+            return res.status(401).json({message: "Invalid refresh token! ʕ•̀ᆺ•́ʔ"});
+        }
+
         const decoded = jwt.verify(refreshToken, process.env.REFRESH_SECRET);
 
-        const newAccessToken = jwt.sign(
-            {
-                userId : decoded.userId,
-                role: decoded.role
-            },
-            process.env.JWT_SECRET,
-            {expiresIn: "15m"}
-        );
+        const payload = {
+            userId: decoded.userId,
+            role: decoded.role
+        };
+
+        const newAccessToken = generateAccessToken(payload);
+        const newRefreshToken = generateRefreshToken(payload);
+
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 7);
+
+        await prisma.refreshToken.create({
+            data: {
+                token: newRefreshToken,
+                user_id: payload.userId,
+                expires_at: expiresAt
+            }
+        });
+
+        await prisma.refreshToken.delete({
+            where: {
+                token: refreshToken
+            }
+        });
 
         return res.json({
-            accessToken: newAccessToken
+            success: true,
+            data: {
+                accessToken: newAccessToken,
+                refreshToken: newRefreshToken
+            }
         });
 
     } catch(err){
         return res.status(401).json({
-            message: "Invalid refresh token"
+            message: "Invalid or expired refresh token! (ó﹏ò｡)"
         });
     }
 };
 
 export const logoutController = async (req, res) => {
-    console.log("REQ.USER:", req.user);
-    if(!req.user){
-        return res.status(401).json({
+    try {
+        if (!req.user) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized! (; ･`д･´)"
+            });
+        }
+
+        const { refreshToken } = req.body;
+
+        if (!refreshToken) {
+            return res.status(400).json({
+                success: false,
+                message: "No refresh token provided! (; •́ᆺ•̀)"
+            });
+        }
+
+        // Delete this refresh token from DB
+        await prisma.refreshToken.deleteMany({
+            where: {
+                token: refreshToken,
+                user_id: req.user.userId
+            }
+        });
+
+        return res.json({
+            success: true,
+            message: "Logged out successfully. ᕕ( ᐛ )ᕗ"
+        });
+
+    } catch (err) {
+        console.error("Logout Error: ", err);
+        return res.status(500).json({
             success: false,
-            message: "Unauthorized! (; ･`д･´)"
+            message: "Logout failed! (~T༚T~)"
         });
     }
+};
 
-    const result = await logoutUser(req.user.userId);
-    return res.json(result);
-}
+// export const logoutController = async (req, res) => {
+//     const {refreshToken} = req.body;
+    
+//     if (!refreshToken) {
+//         return res.status(400).json({
+//             success: false,
+//             message: "No refresh token provided! (; •́ᆺ•̀)"
+//         })
+//     }
+
+//     if(!req.user){
+//         return res.status(401).json({
+//             success: false,
+//             message: "Unauthorized! (; ･`д･´)"
+//         });
+//     }
+
+//     const deleted = await prisma.refreshToken.deleteMany({
+//         where: {token: refreshToken}
+//     });
+
+    
+
+//     const result = await logoutUser(req.user.userId);
+//     return res.json(result);
+// }
 
 // export const logout = async (req, res) => {
 //     return res.json({

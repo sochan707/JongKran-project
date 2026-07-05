@@ -16,21 +16,22 @@ model Role {
 }
 
 model User {
-  user_id        Int          @id @default(autoincrement())
-  user_name      String       @db.VarChar(25)
+  user_id        Int            @id @default(autoincrement())
+  user_name      String         @db.VarChar(25)
   user_profile   String?
   role_id        Int
-  bio            String?      @db.VarChar(100)
-  gender         String?      @db.VarChar(10)
-  dob            DateTime?    @db.Date
-  status         String?      @default("active") @db.VarChar(10)
+  bio            String?        @db.VarChar(100)
+  gender         String?        @db.VarChar(10)
+  dob            DateTime?      @db.Date
+  status         String?        @default("active") @db.VarChar(10)
   favorites      Favorite[]
   histories      History[]
   logs_audit     Logs_audit[]
   createdRecipes Recipe[]
+  refreshTokens  RefreshToken[]
   suggestions    Suggestion[]
   auth           UserAuth?
-  role           Role         @relation(fields: [role_id], references: [role_id])
+  role           Role           @relation(fields: [role_id], references: [role_id])
 
   @@map("users")
 }
@@ -144,13 +145,12 @@ model Logs_audit {
 }
 
 model RefreshToken {
-  token_id    Int      @id @default(autoincrement())
-  token       String   @unique
-  user_id     Int
-  created_at  DateTime @default(now())
-  expires_at  DateTime
-
-  user User @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+  token_id   Int       @id @default(autoincrement())
+  token      String    @unique
+  user_id    Int
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  expires_at DateTime  @db.Timestamp(6)
+  user       User      @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
 
   @@map("refresh_tokens")
 }
