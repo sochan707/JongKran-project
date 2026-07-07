@@ -1,4 +1,5 @@
 import express from "express";
+import cookieParser from "cookie-parser";
 import "dotenv/config";
 import recipeRoutes from "./routes/recipe.routes.js";
 import authRoutes from "./routes/auth.routes.js"
@@ -8,6 +9,7 @@ import testRoutes from "./routes/test.routes.js";
 const app = express();
 
 app.use(express.json());
+app.use(cookieParser());
 
 app.get("/", (req, res) => {
   res.json({ message: "JongKran backend is running" });

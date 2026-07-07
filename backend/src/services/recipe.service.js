@@ -74,3 +74,26 @@ export const findRecipesByIngredients = async (ingredients) => {
     .map((recipe) => formatRecipe(recipe, normalizedIngredients))
     .sort((left, right) => right.matchCount - left.matchCount);
 };
+
+export const createRecipeService = async (data, userId) => {
+  const {title, description, image_url, difficulty, prep_time, cook_time, servings} = data;
+
+  if (!title || !difficulty || prep_time == null || cook_time == null || !servings){
+    throw new Error("Title, difficulty, prep_time, cook_time, and servings are required! ʕ•̀ᆺ•́ʔ");
+  }
+
+  const recipe = await prisma.recipe.create({
+    data: {
+      title,
+      description,
+      image_url,
+      difficulty,
+      prep_time,
+      cook_time,
+      servings,
+      created_by: userId,
+    },
+  });
+
+  return recipe;
+}
