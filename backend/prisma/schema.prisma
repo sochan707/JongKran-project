@@ -62,10 +62,10 @@ model Recipe {
   recipe_id         Int                @id @default(autoincrement())
   title             String             @db.VarChar(30)
   description       String?
-  image_url         String? 
+  image_url         String?
   difficulty        Difficulty
-  prep_time         Int @default(0)
-  cook_time         Int @default(0)
+  prep_time         Int                @default(0)
+  cook_time         Int                @default(0)
   servings          Int
   view_count        Int                @default(0)
   created_by        Int
@@ -76,7 +76,7 @@ model Recipe {
   logs              Logs_audit[]
   recipeIngredients RecipeIngredient[]
   steps             RecipeStep[]
-  creator           User               @relation(fields: [created_by], /references: [user_id])
+  creator           User               @relation(fields: [created_by], references: [user_id])
   suggestions       Suggestion[]
 
   @@map("recipes")

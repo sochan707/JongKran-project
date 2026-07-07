@@ -13,6 +13,8 @@ export const authenticate = async (req, res, next) => {
 
         const token = authHeader.split(" ")[1];
 
+        console.log("TOKEN:", token);
+
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
         const user = await prisma.user.findUnique({
@@ -34,6 +36,7 @@ export const authenticate = async (req, res, next) => {
         next();
 
     } catch(err){
+        console.log("AUTH ERROR:", err);
         return res.status(401).json({ message: "Invalid token" });
     }
 }
