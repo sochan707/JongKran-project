@@ -1,9 +1,11 @@
 import { useState } from "react";
+import Header from "../../components/Header";
 
 export default function CreateRecipe() {
   const [title, setTitle] = useState("");
   const [image, setImage] = useState(null);
   const [prepTime, setPrepTime] = useState("");
+  const [cookTime, setCookTime] = useState("");
   const [servings, setServings] = useState("");
   const [status, setStatus] = useState("pending");
 
@@ -91,65 +93,76 @@ export default function CreateRecipe() {
   };
 
   return (
-
+    <>
+    <Header />
     <div className="min-h-screen bg-gray-100 p-8">
       <div className="max-w-4xl mx-auto bg-white rounded-xl shadow p-8">
-        <h1 className="text-5xl font-bold mb-6">Create Recipe</h1>
+        <h1 className="text-4xl font-bold mb-6">Create New Recipe</h1>
 
         <form onSubmit={handleSubmit} className="space-y-6">
 
-          {/* TITLE */}
-          <div>
-            <label className="block font-medium mb-1">Recipe Title</label>
-            <input
-              className="w-full border rounded p-3"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Enter recipe name"
-            />
-          </div>
+          <div className="mb-6 mt-6 shadow max-w-4xl mx-auto bg-white rounded-xl p-6 border-[1px] border-[#468432]">
+            {/* TITLE */}
+            <div>
+              <label className="block font-medium mb-1 text-xl">Recipe Title</label>
+              <input
+                className="w-full border rounded p-3"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Enter recipe name"
+              />
+            </div>
 
-          {/* IMAGE */}
-          <div>
-            <label className="block font-medium mb-1">Image</label>
-            <input
-              type="file"
-              className="w-full"
-              onChange={(e) => setImage(e.target.files[0])}
-            />
+            {/* IMAGE */}
+            <div>
+              <button>
+                <div className="mb-6 mt-6">
+                  <input
+                    type="file"
+                    className="w-full"
+                    onChange={(e) => setImage(e.target.files[0])}
+                  />
+                </div>
+              </button>
+            </div>
           </div>
 
           {/* PREP + SERVINGS */}
-          <div className="grid grid-cols-2 gap-4">
-            <input
-              className="border p-3 rounded"
-              placeholder="Prep Time (min)"
-              value={prepTime}
-              onChange={(e) => setPrepTime(e.target.value)}
-            />
-            <input
-              className="border p-3 rounded"
-              placeholder="Servings"
-              value={servings}
-              onChange={(e) => setServings(e.target.value)}
-            />
+          <div>
+            <div className="grid grid-cols-3 gap-4  max-w-4xl mx-auto bg-white rounded-xl ">
+              <div className="border-[1px] border-[#468432] p-4 rounded-lg">
+                <label className="block font-medium mb-1">Prep Time(min)</label>
+                <input
+                  className="w-full border rounded p-3"
+                  value={prepTime}
+                  onChange={(e) => setPrepTime(e.target.value)}
+                  placeholder="Enter prep time"
+                />
+              </div>
+              <div className="border-[1px] border-[#468432] p-4 rounded-lg">
+                <label className="block font-medium mb-1">Cooking Time(min)</label>
+                <input
+                className="w-full border p-3 rounded"
+                placeholder="Enter cooking time"
+                value={cookTime}
+                onChange={(e) => setCookTime(e.target.value)}
+                />
+              </div> 
+              <div className="border-[1px] border-[#468432] p-4 rounded-lg">
+                <label className="block font-medium mb-1">Servings</label>
+                <input
+                className="w-full border p-3 rounded"
+                placeholder="Enter servings"
+                value={servings}
+                onChange={(e) => setServings(e.target.value)}
+                />
+              </div>             
+            </div>
           </div>
 
-          {/* STATUS */}
-          <div>
-            <label className="block font-medium mb-2">Status</label>
-            <select
-              className="border p-3 rounded w-full"
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-            >
-              <option value="pending">Pending</option>
-              <option value="published">Published</option>
-            </select>
-          </div>
 
           {/* INGREDIENTS */}
-          <div>
+          <div className="border-[1px] border-[#468432] p-4 rounded-lg">
             <div className="flex justify-between items-center mb-2">
               <h2 className="font-semibold">Ingredients</h2>
               <button
@@ -200,7 +213,7 @@ export default function CreateRecipe() {
           </div>
 
           {/* STEPS */}
-          <div>
+          <div className="border-[1px] border-[#468432] p-4 rounded-lg">
             <div className="flex justify-between items-center mb-2">
               <h2 className="font-semibold">Cooking Steps</h2>
               <button
@@ -214,7 +227,7 @@ export default function CreateRecipe() {
 
             {steps.map((step, index) => (
               <div key={index} className="flex gap-2 mb-2">
-                <textarea
+                <input
                   className="flex-1 border p-2 rounded"
                   value={step}
                   onChange={(e) =>
@@ -251,17 +264,24 @@ export default function CreateRecipe() {
           </div>
 
           {/* SUBMIT */}
-          <div className="flex justify-end">
+          <div className="grid grid-cols-5 gap-4 max-w-4xl mx-auto bg-white rounded-xl ">
             <button
               type="submit"
-              className="bg-green-700 text-white px-6 py-3 rounded-lg"
+              className="bg-white border-[1px] border-[#FFA02E] p-4 text-black px-6 py-3 rounded-lg col-span-2"
             >
-              Create Recipe
+              Pending Recipe
+            </button>
+            <button
+              type="submit"
+              className="bg-[#FFA02E] text-black px-6 py-3 rounded-lg col-span-3"
+            >
+              Public Recipe
             </button>
           </div>
-        </form>
+         </form>
+        </div>
       </div>
-    </div>
-
+      
+  </>
   );
 } 
