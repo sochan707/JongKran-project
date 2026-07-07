@@ -97,3 +97,25 @@ export const createRecipeService = async (data, userId) => {
 
   return recipe;
 }
+
+export const getAllRecipesService = async () => {
+  const recipes = await prisma.recipe.findMany({
+    select: {
+      recipe_id: true,
+      title: true,
+      description: true,
+      image_url: true,
+      difficulty: true,
+      prep_time: true,
+      cook_time: true,
+      servings: true,
+      view_count: true,
+      created_at: true,
+    },
+    orderBy: {
+      created_at: "desc",
+    },
+  });
+
+  return recipes;
+}

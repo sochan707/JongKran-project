@@ -1,4 +1,4 @@
-import {createRecipeService} from "../services/recipe.service.js"
+import {createRecipeService, getAllRecipesService} from "../services/recipe.service.js"
 
 export const createRecipeController = async (req, res) => {
   try {
@@ -18,6 +18,23 @@ export const createRecipeController = async (req, res) => {
     });
   }
 };
+
+export const getAllRecipesController = async (req, res) => {
+  try {
+    const recipes = await getAllRecipesService();
+
+    return res.status(200).json({
+      success: true,
+      data: recipes,
+    });
+
+  } catch(err){
+    return res.status(500).json({
+      success: false,
+      message: err.message,
+    })
+  }
+}
 
 // export const getRecipes = (req, res) => {
 //   res.json([

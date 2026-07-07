@@ -76,7 +76,7 @@ model Recipe {
   logs              Logs_audit[]
   recipeIngredients RecipeIngredient[]
   steps             RecipeStep[]
-  creator           User               @relation(fields: [created_by], references: [user_id])
+  creator           User               @relation(fields: [created_by], /references: [user_id])
   suggestions       Suggestion[]
 
   @@map("recipes")
