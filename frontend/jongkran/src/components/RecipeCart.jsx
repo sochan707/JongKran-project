@@ -40,7 +40,7 @@ export default function RecipeCart({ recipe, matched = false, onFavoriteChange }
   };
 
   return (
-    <div className="relative bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden transition-transform duration-300 hover:scale-105 hover:shadow-lg">
+    <div className="relative bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden transition-transform duration-300  hover:shadow-lg">
       <button
         onClick={toggleFavorite}
         className="absolute top-3 right-3 z-10 bg-white rounded-full p-2 shadow"
@@ -54,7 +54,7 @@ export default function RecipeCart({ recipe, matched = false, onFavoriteChange }
       {matched && (
         <span className="absolute top-3 left-3 z-10 bg-orange-400 text-white text-xs px-3 py-1 rounded-full">
           80% Matched
-        </span>
+        </span> 
       )}
 
       <div
