@@ -29,8 +29,8 @@ export default function InputIngredients() {
     <>
       <Header />
 
-      <main className="mx-[25px] py-12">
-        <h1 className="title-font text-4xl md:text-6xl font-bold">
+      <main className="mx-[25px] py-12 ml-10">
+        <h1 className="title-font text-4xl md:text-4xl font-bold">
           What’s in your Kitchen?
         </h1>
 
@@ -40,8 +40,8 @@ export default function InputIngredients() {
 
         <div className="grid lg:grid-cols-2 gap-8 mt-10">
           <section className="border border-gray-300 rounded-xl p-6">
-            <div className="relative">
-              <Search className="absolute left-4 top-4 text-white" size={18} />
+            <div className="relative mb-8">
+              <Search className="absolute left-4 top-4 text-black" size={18} />
               <input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
@@ -51,13 +51,10 @@ export default function InputIngredients() {
                   }
                 }}
                 placeholder="Add ingredients (e.g. egg...)"
-                className="w-full bg-[#468432] text-white placeholder-white rounded-md py-4 pl-12 pr-4 outline-none"
+                className="w-full rounded-lg bg-gray-100 border border-gray-300 px-4 py-3 focus:outline-none focus:ring-[1px] focus:ring-[#468432] pl-10"
               />
             </div>
 
-            <p className="text-center my-6 text-gray-600">
-              try some common ingredients
-            </p>
 
             <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
               {commonIngredients.map((item) => (
