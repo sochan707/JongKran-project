@@ -6,6 +6,7 @@ import authRoutes from "./routes/auth.routes.js"
 import recommendationRoutes from "./routes/recommendation.routes.js";
 import testRoutes from "./routes/test.routes.js";
 import favoriteRoutes from "./routes/favorite.routes.js";
+import historyRoutes from "./routes/history.routes.js";
 
 const app = express();
 
@@ -21,5 +22,6 @@ app.use("/api/auth", authRoutes);
 app.use("/api/recommendations", recommendationRoutes);
 app.use("/api/test", testRoutes);
 app.use("/api/favorites", favoriteRoutes);
+app.use("/api/history", historyRoutes);
 
 export default app;
