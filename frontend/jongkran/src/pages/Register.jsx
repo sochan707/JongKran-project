@@ -32,8 +32,8 @@ export default function Register() {
       return;
     }
 
-    if (!form.email.includes("@") || !form.email.includes(".")) {
-      setError("Please enter a valid email.");
+    if (!form.email.includes("@gmail.com")) {
+      setError("Please enter a valid Gmail address.");
       return;
     }
 
@@ -89,7 +89,7 @@ export default function Register() {
               </p>
               )}
 
-              <form className="mt-5 space-y-4">
+              <form onSubmit={handleCreateAccount} className="mt-5 space-y-4">
                 <div>
                   <label className="block text-sm font-semibold mb-1">
                     Username
@@ -159,6 +159,7 @@ export default function Register() {
 
                 <button
                   type="submit"
+                  onClick={() => navigate("/login")}
                   className="w-full bg-[#468432] hover:bg-[#1A5C05] text-white py-3 rounded-md font-semibold"
                 >
                   Create Account
