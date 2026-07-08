@@ -113,8 +113,6 @@ export const loginUser = async ({email, password}) => {
         };
 
     } catch(err){
-        console.error("Login Error: ", err);
-
         return{
             success: false,
             message: "Internal server error! o(╥﹏╥)o"
