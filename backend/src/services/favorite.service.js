@@ -44,3 +44,29 @@ export const toggleFavoriteService = async (userId, recipeId) => {
         data: favorite
     };
 };
+
+export const getUserFavoritesService = async (userId) => {
+    const favorites = await prisma.favorite.findMany({
+        where: {
+            user_id: userId
+        },
+        include: {
+            recipe: {
+                select: {
+                    recipe_id: true,
+                    title: true,
+                    image_url: true,
+                    difficulty: true,
+                    prep_time: true,
+                    cook_time: true,
+                    servings: true
+                }
+            }
+        },
+        orderBy: {
+            favorite_id: "desc"
+        }
+    });
+
+    return favorites;
+};
