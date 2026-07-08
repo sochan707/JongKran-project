@@ -9,10 +9,10 @@ export default function UserProfile() {
   const navigate = useNavigate();
 
   const items = [
-    { icon: User, name: "Personal Information" },
+    { icon: User, name: "Personal Information", path: "/profileinformation" },
     { icon: BookOpen, name: "Recipes History", path: "/history" },
-    { icon: Bell, name: "Notification Setting" },
-    { icon: Lock, name: "Security" },
+    { icon: Bell, name: "Account Setting", path: "/accountSetting" },
+    { icon: Lock, name: "Favorite Recipes", path: "/favorite" },
     { icon: HelpCircle, name: "Help & Support" },
   ];
 
