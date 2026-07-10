@@ -10,8 +10,8 @@ export default function About() {
       <Header />
 
       <main>
-        <section className="mx-[25px] py-12">
-          <h1 className="title-font text-4xl md:text-6xl font-bold">
+        <section className="mx-[25px] py-6">
+          <h1 className="title-font text-4xl md:text-4xl font-bold">
             About JongKran
           </h1>
 

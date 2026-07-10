@@ -131,33 +131,29 @@ export default function Instruction() {
       <main>
         {/* Hero Section */}
         <section
-          className="relative h-[300px] md:h-[420px] bg-cover bg-center"
+          className="relative h-[30px] md:h-[360px] bg-cover bg-center"
           style={{
             backgroundImage: `url(${recipe.image})`,
           }}
         >
           <div className="absolute inset-0 bg-black/35" />
 
+
           <div className="absolute bottom-8 left-[25px] text-white">
             <div className="flex gap-3 mb-3">
               <span className="bg-orange-400 px-4 py-1 rounded-full text-sm">
                 Smart Choice
               </span>
-
               <span className="bg-[#468432] px-4 py-1 rounded-full text-sm">
                 Healthy
               </span>
             </div>
 
-            <h1 className="title-font text-4xl md:text-6xl font-bold">
-              {recipe.name}
-            </h1>
-
-            <div className="flex gap-4 mt-3 text-sm md:text-base">
-              <span>{recipe.time} min</span>
-              <span>{recipe.difficulty}</span>
-              <span>{recipe.servings} servings</span>
-            </div>
+            <h1 className="title-font text-4xl md:text-5xl font-bold">{recipe.name}</h1>
+            <p className="mt-2">
+              {recipe.time} min • {recipe.difficulty || "Easy"} •{" "}
+              {recipe.servings} servings
+            </p>
           </div>
         </section>
 
@@ -213,7 +209,7 @@ export default function Instruction() {
               </div>
 
               {/* Current Step */}
-              <div className="mt-8 bg-white rounded-xl p-6">
+              <div className="mt-8 bg-white rounded-xl p-6 h-[220px] overflow-y-auto">
                 <h3 className="title-font text-2xl text-[#468432] font-bold">
                   Step {step + 1}
                 </h3>
