@@ -5,8 +5,9 @@ import Footer from "../components/Footer";
 import { useNavigate } from "react-router-dom";
 
 const commonIngredients = [
+
   {
-    name: "Garlic",
+    name: "Broccoli",
     image:
       "https://images.unsplash.com/photo-1615485290382-441e4d049cb5",
   },
@@ -30,11 +31,9 @@ const commonIngredients = [
     image:
       "https://images.unsplash.com/photo-1506976785307-8732e854ad03",
   },
-  {
-    name: "Cheese",
-    image:
-      "https://images.unsplash.com/photo-1486297678162-eb2a19b0a32d",
-  },
+  { name: "Cheese", image: "https://images.unsplash.com/photo-1486297678162-eb2a19b0a32d" },
+
+
 ];
 
 export default function InputIngredients() {
