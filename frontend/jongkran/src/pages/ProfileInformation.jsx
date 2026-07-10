@@ -2,8 +2,9 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import defaultProfile from "../assets/profile.png";
 import { Camera, Save } from "lucide-react";
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+
 
 export default function ProfileInformation() {
   const navigate = useNavigate();
@@ -14,6 +15,22 @@ export default function ProfileInformation() {
   const [phone, setPhone] = useState("+855 12 345 678");
   const [bio, setBio] = useState("I love being single.");
   const [photo, setPhoto] = useState(defaultProfile);
+
+  const [dob, setDob] = useState("2000-01-01"); // default DOB
+const [age, setAge] = useState(0);
+
+useEffect(() => {
+  if (dob) {
+    const birthDate = new Date(dob);
+    const today = new Date();
+    let calculatedAge = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      calculatedAge--;
+    }
+    setAge(calculatedAge);
+  }
+}, [dob]);
 
   // Handle photo upload
   const handlePhotoChange = (e) => {
@@ -91,6 +108,27 @@ export default function ProfileInformation() {
                 onChange={(e) => setPhone(e.target.value)}
                 className="w-full border rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#468432]"
               />
+            </div>
+          
+            <div className="grid grid-cols-2 gap-6">
+              <div>
+                <label className="block font-semibold mb-2">Date of Birth</label>
+                <input
+                  type="date"
+                  value={dob}
+                  onChange={(e) => setDob(e.target.value)}
+                  className="w-full border rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#468432]"
+                />
+              </div>
+              <div>
+                <label className="block font-semibold mb-2">Age</label>
+                <input
+                  type="number"
+                  value={age}
+                  readOnly
+                  className="w-full border rounded-xl px-4 py-3 bg-gray-100"
+                />
+              </div>
             </div>
 
             <div>
