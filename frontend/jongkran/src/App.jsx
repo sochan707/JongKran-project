@@ -46,6 +46,7 @@ export default function App() {
         <Route path="/profile" element={<UserProfile />} />
 
         <Route path="/recipe-match" element={<RecipeMatch />} />
+        <Route path="*" element={<NotFound />} />
 
         <Route path="/admin" element={<RecipeManagement />} />
         <Route path="/admin/create" element={<CreateRecipe />} />
