@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Header from "../../components/Header";
 
 export default function CreateRecipe() {
   const [title, setTitle] = useState("");
   const [image, setImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
   const [prepTime, setPrepTime] = useState("");
   const [cookTime, setCookTime] = useState("");
   const [servings, setServings] = useState("");
@@ -12,7 +13,53 @@ export default function CreateRecipe() {
   const [ingredients, setIngredients] = useState([""]);
   const [steps, setSteps] = useState([""]);
 
-  // ---------------- INGREDIENTS ----------- -----
+  const fileInputRef = useRef(null);
+
+  // ---------------- IMAGE ----------------
+  const handleImageChange = (e) => {
+    const file = e.target.files?.[0];
+
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      alert("Please select a valid image file.");
+      e.target.value = "";
+      return;
+    }
+
+    if (imagePreview) {
+      URL.revokeObjectURL(imagePreview);
+    }
+
+    setImage(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const removeImage = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (imagePreview) {
+      URL.revokeObjectURL(imagePreview);
+    }
+
+    setImage(null);
+    setImagePreview(null);
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (imagePreview) {
+        URL.revokeObjectURL(imagePreview);
+      }
+    };
+  }, [imagePreview]);
+
+  // ---------------- INGREDIENTS ----------------
   const handleIngredientChange = (value, index) => {
     const updated = [...ingredients];
     updated[index] = value;
@@ -24,6 +71,11 @@ export default function CreateRecipe() {
   };
 
   const removeIngredient = (index) => {
+    if (ingredients.length === 1) {
+      setIngredients([""]);
+      return;
+    }
+
     const updated = ingredients.filter((_, i) => i !== index);
     setIngredients(updated);
   };
@@ -54,6 +106,11 @@ export default function CreateRecipe() {
   };
 
   const removeStep = (index) => {
+    if (steps.length === 1) {
+      setSteps([""]);
+      return;
+    }
+
     const updated = steps.filter((_, i) => i !== index);
     setSteps(updated);
   };
@@ -73,215 +130,303 @@ export default function CreateRecipe() {
   };
 
   // ---------------- SUBMIT ----------------
-  const handleSubmit = (e) => {
+  const handleSubmit = (e, selectedStatus) => {
     e.preventDefault();
 
     const newRecipe = {
       title,
       image,
       prepTime,
+      cookTime,
       servings,
-      status,
-      ingredients,
-      steps,
+      status: selectedStatus,
+      ingredients: ingredients.filter((item) => item.trim() !== ""),
+      steps: steps.filter((step) => step.trim() !== ""),
       createdAt: new Date().toISOString(),
     };
 
+    setStatus(selectedStatus);
+
     console.log("Created Recipe:", newRecipe);
 
-    alert("Recipe created (check console)");
+    alert(
+      selectedStatus === "public"
+        ? "Recipe published successfully"
+        : "Recipe saved as pending"
+    );
   };
 
   return (
     <>
-    <Header />
-    <div className="min-h-screen bg-gray-100 p-8">
-      <div className="max-w-4xl mx-auto bg-white rounded-xl shadow p-8">
-        <h1 className="text-4xl font-bold mb-6">Create New Recipe</h1>
+      <Header />
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="min-h-screen bg-gray-100 p-4 md:p-8">
+        <div className="max-w-4xl mx-auto bg-white rounded-xl shadow p-6 md:p-8">
+          <h1 className="text-4xl font-bold mb-6">
+            Create New Recipe
+          </h1>
 
-          <div className="mb-6 mt-6 shadow max-w-4xl mx-auto bg-white rounded-xl p-6 border-[1px] border-[#468432]">
-            {/* TITLE */}
-            <div>
-              <label className="block font-medium mb-1 text-xl">Recipe Title</label>
-              <input
-                className="w-full border rounded p-3"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Enter recipe name"
-              />
-            </div>
+          <form className="space-y-6">
+            {/* TITLE AND IMAGE */}
+            <div className="shadow bg-white rounded-xl p-6 border border-[#468432]">
+              {/* TITLE */}
+              <div>
+                <label className="block font-medium mb-2 text-xl">
+                  Recipe Title
+                </label>
 
-            {/* IMAGE */}
-            <div>
-              <button>
-                <div className="mb-6 mt-6">
-                  <input
-                    type="file"
-                    className="w-full"
-                    onChange={(e) => setImage(e.target.files[0])}
-                  />
-                </div>
-              </button>
-            </div>
-          </div>
-
-          {/* PREP + SERVINGS */}
-          <div>
-            <div className="grid grid-cols-3 gap-4  max-w-4xl mx-auto bg-white rounded-xl ">
-              <div className="border-[1px] border-[#468432] p-4 rounded-lg">
-                <label className="block font-medium mb-1">Prep Time(min)</label>
                 <input
-                  className="w-full border rounded p-3"
+                  type="text"
+                  className="w-full border rounded-lg p-3 outline-none focus:border-[#468432]"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Enter recipe name"
+                  required
+                />
+              </div>
+
+              {/* IMAGE */}
+              <div className="mt-6">
+                <label
+                  htmlFor="imageUpload"
+                  className="relative h-[300px] rounded-[40px] border-2 border-dashed border-gray-400 bg-[#EAF1E7] flex items-center justify-center cursor-pointer overflow-hidden"
+                >
+                  {imagePreview ? (
+                    <>
+                      <img
+                        src={imagePreview}
+                        alt="Recipe preview"
+                        className="w-full h-full object-cover text-gray-50"
+                      />
+
+                      <button
+                        type="button"
+                        onClick={removeImage}
+                        className="absolute top-4 right-4 w-10 h-10 bg-red-500 hover:bg-red-600 text-white text-2xl rounded-full flex items-center justify-center"
+                      >
+                        ×
+                      </button>
+                    </>
+                  ) : (
+                    <div className="text-center">
+                      <div className="text-5xl">📷</div>
+
+                      <p className="text-2xl font-bold mt-3 text-gray-400">
+                        Upload Hero Photo
+                      </p>
+                    </div>
+                  )}
+                </label>
+
+                <input
+                  ref={fileInputRef}
+                  id="imageUpload"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleImageChange}
+                />
+
+                <p className="text-center text-gray-500 mt-3">
+                  {imagePreview
+                    ? "Click the image to change it"
+                    : "Click to upload an image"}
+                </p>
+              </div>
+            </div>
+
+            {/* TIME AND SERVINGS */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="border border-[#468432] p-4 rounded-lg">
+                <label className="block font-medium mb-2">
+                  Prep Time (min)
+                </label>
+
+                <input
+                  type="number"
+                  min="0"
+                  className="w-full border rounded-lg p-3 outline-none"
                   value={prepTime}
                   onChange={(e) => setPrepTime(e.target.value)}
                   placeholder="Enter prep time"
                 />
               </div>
-              <div className="border-[1px] border-[#468432] p-4 rounded-lg">
-                <label className="block font-medium mb-1">Cooking Time(min)</label>
-                <input
-                className="w-full border p-3 rounded"
-                placeholder="Enter cooking time"
-                value={cookTime}
-                onChange={(e) => setCookTime(e.target.value)}
-                />
-              </div> 
-              <div className="border-[1px] border-[#468432] p-4 rounded-lg">
-                <label className="block font-medium mb-1">Servings</label>
-                <input
-                className="w-full border p-3 rounded"
-                placeholder="Enter servings"
-                value={servings}
-                onChange={(e) => setServings(e.target.value)}
-                />
-              </div>             
-            </div>
-          </div>
 
+              <div className="border border-[#468432] p-4 rounded-lg">
+                <label className="block font-medium mb-2">
+                  Cooking Time (min)
+                </label>
 
-          {/* INGREDIENTS */}
-          <div className="border-[1px] border-[#468432] p-4 rounded-lg">
-            <div className="flex justify-between items-center mb-2">
-              <h2 className="font-semibold">Ingredients</h2>
-              <button
-                type="button"
-                onClick={addIngredient}
-                className="text-green-600 font-medium"
-              >
-                + Add
-              </button>
+                <input
+                  type="number"
+                  min="0"
+                  className="w-full border rounded-lg p-3 outline-none"
+                  value={cookTime}
+                  onChange={(e) => setCookTime(e.target.value)}
+                  placeholder="Enter cooking time"
+                />
+              </div>
+
+              <div className="border border-[#468432] p-4 rounded-lg">
+                <label className="block font-medium mb-2">
+                  Servings
+                </label>
+
+                <input
+                  type="number"
+                  min="1"
+                  className="w-full border rounded-lg p-3 outline-none"
+                  value={servings}
+                  onChange={(e) => setServings(e.target.value)}
+                  placeholder="Enter servings"
+                />
+              </div>
             </div>
 
-            {ingredients.map((item, index) => (
-              <div key={index} className="flex gap-2 mb-2">
-                <input
-                  className="flex-1 border p-2 rounded"
-                  value={item}
-                  onChange={(e) =>
-                    handleIngredientChange(e.target.value, index)
-                  }
-                  placeholder={`Ingredient ${index + 1}`}
-                />
+            {/* INGREDIENTS */}
+            <div className="border border-[#468432] p-4 rounded-lg">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold">
+                  Ingredients
+                </h2>
 
                 <button
                   type="button"
-                  onClick={() => moveIngredient(index, -1)}
-                  className="px-2 bg-gray-200 rounded"
+                  onClick={addIngredient}
+                  className="text-[#468432] font-semibold"
                 >
-                  ↑
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => moveIngredient(index, 1)}
-                  className="px-2 bg-gray-200 rounded"
-                >
-                  ↓
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => removeIngredient(index)}
-                  className="px-2 bg-red-500 text-white rounded"
-                >
-                  ✕
+                  + Add
                 </button>
               </div>
-            ))}
-          </div>
 
-          {/* STEPS */}
-          <div className="border-[1px] border-[#468432] p-4 rounded-lg">
-            <div className="flex justify-between items-center mb-2">
-              <h2 className="font-semibold">Cooking Steps</h2>
-              <button
-                type="button"
-                onClick={addStep}
-                className="text-green-600 font-medium"
-              >
-                + Add
-              </button>
+              {ingredients.map((item, index) => (
+                <div
+                  key={index}
+                  className="flex gap-2 mb-3"
+                >
+                  <input
+                    type="text"
+                    className="flex-1 border p-3 rounded-lg outline-none"
+                    value={item}
+                    onChange={(e) =>
+                      handleIngredientChange(
+                        e.target.value,
+                        index
+                      )
+                    }
+                    placeholder={`Ingredient ${index + 1}`}
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => moveIngredient(index, -1)}
+                    disabled={index === 0}
+                    className="px-3 bg-gray-200 rounded-lg disabled:opacity-40"
+                  >
+                    ↑
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => moveIngredient(index, 1)}
+                    disabled={index === ingredients.length - 1}
+                    className="px-3 bg-gray-200 rounded-lg disabled:opacity-40"
+                  >
+                    ↓
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => removeIngredient(index)}
+                    className="px-3 bg-red-500 text-white rounded-lg"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
             </div>
 
-            {steps.map((step, index) => (
-              <div key={index} className="flex gap-2 mb-2">
-                <input
-                  className="flex-1 border p-2 rounded"
-                  value={step}
-                  onChange={(e) =>
-                    handleStepChange(e.target.value, index)
-                  }
-                  placeholder={`Step ${index + 1}`}
-                />
+            {/* COOKING STEPS */}
+            <div className="border border-[#468432] p-4 rounded-lg">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold">
+                  Cooking Steps
+                </h2>
 
                 <button
                   type="button"
-                  onClick={() => moveStep(index, -1)}
-                  className="px-2 bg-gray-200 rounded"
+                  onClick={addStep}
+                  className="text-[#468432] font-semibold"
                 >
-                  ↑
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => moveStep(index, 1)}
-                  className="px-2 bg-gray-200 rounded"
-                >
-                  ↓
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => removeStep(index)}
-                  className="px-2 bg-red-500 text-white rounded"
-                >
-                  ✕
+                  + Add
                 </button>
               </div>
-            ))}
-          </div>
 
-          {/* SUBMIT */}
-          <div className="grid grid-cols-5 gap-4 max-w-4xl mx-auto bg-white rounded-xl ">
-            <button
-              type="submit"
-              className="bg-white border-[1px] border-[#FFA02E] p-4 text-black px-6 py-3 rounded-lg col-span-2"
-            >
-              Pending Recipe
-            </button>
-            <button
-              type="submit"
-              className="bg-[#FFA02E] text-black px-6 py-3 rounded-lg col-span-3"
-            >
-              Public Recipe
-            </button>
-          </div>
-         </form>
+              {steps.map((step, index) => (
+                <div
+                  key={index}
+                  className="flex gap-2 mb-3"
+                >
+                  <textarea
+                    className="flex-1 border p-3 rounded-lg outline-none resize-none"
+                    value={step}
+                    onChange={(e) =>
+                      handleStepChange(e.target.value, index)
+                    }
+                    placeholder={`Step ${index + 1}`}
+                    rows="2"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => moveStep(index, -1)}
+                    disabled={index === 0}
+                    className="px-3 bg-gray-200 rounded-lg disabled:opacity-40"
+                  >
+                    ↑
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => moveStep(index, 1)}
+                    disabled={index === steps.length - 1}
+                    className="px-3 bg-gray-200 rounded-lg disabled:opacity-40"
+                  >
+                    ↓
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => removeStep(index)}
+                    className="px-3 bg-red-500 text-white rounded-lg"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {/* SUBMIT */}
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+              <button
+                type="button"
+                onClick={(e) => handleSubmit(e, "pending")}
+                className="border border-[#FFA02E] bg-white text-black px-6 py-3 rounded-lg md:col-span-2"
+              >
+                Pending Recipe
+              </button>
+
+              <button
+                type="button"
+                onClick={(e) => handleSubmit(e, "public")}
+                className="bg-[#FFA02E] text-black px-6 py-3 rounded-lg md:col-span-3"
+              >
+                Public Recipe
+              </button>
+            </div>
+          </form>
         </div>
       </div>
-      
-  </>
+    </>
   );
-} 
+}

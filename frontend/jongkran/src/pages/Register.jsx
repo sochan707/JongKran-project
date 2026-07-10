@@ -52,6 +52,16 @@ export default function Register() {
       return;
     }
 
+    const userProfile = {
+      fullname: form.username,
+      email: form.email,
+    };
+
+    localStorage.setItem(
+      "userProfile",
+      JSON.stringify(userProfile)
+    );
+
     navigate("/login");
   };
 
