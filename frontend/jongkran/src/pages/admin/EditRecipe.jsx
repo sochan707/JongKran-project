@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Header from "../../components/Header";
 import recipeData from "../../data/recipes";
@@ -12,7 +12,7 @@ export default function EditRecipe() {
 
   const [title, setTitle] = useState("");
   const [image, setImage] = useState(null);
-  const [currentImageUrl, setCurrentImageUrl] = useState("");
+  const [imagePreview, setImagePreview] = useState(null);
   const [prepTime, setPrepTime] = useState("");
   const [cookTime, setCookTime] = useState("");
   const [servings, setServings] = useState("");
@@ -20,6 +20,8 @@ export default function EditRecipe() {
 
   const [ingredients, setIngredients] = useState([""]);
   const [steps, setSteps] = useState([""]);
+
+  const fileInputRef = useRef(null);
 
   // ---------------- LOAD EXISTING RECIPE ----------------
   useEffect(() => {
@@ -43,7 +45,7 @@ export default function EditRecipe() {
     }
 
     setTitle(found.title || "");
-    setCurrentImageUrl(found.image || "");
+    setImagePreview(found.image || null);
     setPrepTime(found.prepTime || "");
     setCookTime(found.cookTime || "");
     setServings(found.servings || "");
@@ -55,6 +57,50 @@ export default function EditRecipe() {
 
     setLoading(false);
   }, [id]);
+
+  // ---------------- IMAGE ----------------
+  const handleImageChange = (e) => {
+    const file = e.target.files?.[0];
+
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      alert("Please select a valid image file.");
+      e.target.value = "";
+      return;
+    }
+
+    if (imagePreview && image) {
+      URL.revokeObjectURL(imagePreview);
+    }
+
+    setImage(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const removeImage = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (imagePreview && image) {
+      URL.revokeObjectURL(imagePreview);
+    }
+
+    setImage(null);
+    setImagePreview(null);
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (imagePreview && image) {
+        URL.revokeObjectURL(imagePreview);
+      }
+    };
+  }, [imagePreview, image]);
 
   // ---------------- INGREDIENTS ----------------
   const handleIngredientChange = (value, index) => {
@@ -68,6 +114,11 @@ export default function EditRecipe() {
   };
 
   const removeIngredient = (index) => {
+    if (ingredients.length === 1) {
+      setIngredients([""]);
+      return;
+    }
+
     const updated = ingredients.filter((_, i) => i !== index);
     setIngredients(updated);
   };
@@ -95,6 +146,11 @@ export default function EditRecipe() {
   };
 
   const removeStep = (index) => {
+    if (steps.length === 1) {
+      setSteps([""]);
+      return;
+    }
+
     const updated = steps.filter((_, i) => i !== index);
     setSteps(updated);
   };
@@ -111,21 +167,25 @@ export default function EditRecipe() {
   };
 
   // ---------------- SAVE ----------------
-  const saveChanges = (newStatus) => {
+  const handleSave = (e, selectedStatus) => {
+    e.preventDefault();
+
     const localRecipes = JSON.parse(localStorage.getItem("recipes")) || [];
 
     const updatedRecipe = {
       id: isNaN(Number(id)) ? id : Number(id),
       title,
-      image: image ? URL.createObjectURL(image) : currentImageUrl,
+      image: image ? URL.createObjectURL(image) : imagePreview,
       prepTime,
       cookTime,
       servings,
-      status: newStatus,
-      ingredients,
-      steps,
+      status: selectedStatus,
+      ingredients: ingredients.filter((item) => item.trim() !== ""),
+      steps: steps.filter((step) => step.trim() !== ""),
       createdAt: new Date().toISOString(),
     };
+
+    setStatus(selectedStatus);
 
     const exists = localRecipes.some((r) => String(r.id) === String(id));
 
@@ -136,15 +196,24 @@ export default function EditRecipe() {
       : [...localRecipes, updatedRecipe];
 
     localStorage.setItem("recipes", JSON.stringify(updatedList));
+
+    alert(
+      selectedStatus === "public"
+        ? "Recipe updated and published"
+        : "Recipe updated and saved as pending"
+    );
+
     navigate("/admin");
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    saveChanges(status);
-  };
-
-  if (loading) return <p className="p-8">Loading...</p>;
+  if (loading) {
+    return (
+      <>
+        <Header />
+        <div className="p-8 text-center">Loading...</div>
+      </>
+    );
+  }
 
   if (notFound) {
     return (
@@ -166,102 +235,160 @@ export default function EditRecipe() {
   return (
     <>
       <Header />
-      <div className="min-h-screen bg-gray-100 p-8">
-        <div className="max-w-4xl mx-auto bg-white rounded-xl shadow p-8">
-          <h1 className="text-4xl font-bold mb-6">Edit Recipe</h1>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="mb-6 mt-6 shadow max-w-4xl mx-auto bg-white rounded-xl p-6 border-[1px] border-[#468432]">
+      <div className="min-h-screen bg-gray-100 p-4 md:p-8">
+        <div className="max-w-4xl mx-auto bg-white rounded-xl shadow p-6 md:p-8">
+          <h1 className="text-4xl font-bold mb-6">
+            Edit Recipe
+          </h1>
+
+          <form className="space-y-6">
+            {/* TITLE AND IMAGE */}
+            <div className="shadow bg-white rounded-xl p-6 border border-[#468432]">
               {/* TITLE */}
               <div>
-                <label className="block font-medium mb-1 text-xl">
+                <label className="block font-medium mb-2 text-xl">
                   Recipe Title
                 </label>
+
                 <input
-                  className="w-full border rounded p-3"
+                  type="text"
+                  className="w-full border rounded-lg p-3 outline-none focus:border-[#468432]"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Enter recipe name"
+                  required
                 />
               </div>
 
               {/* IMAGE */}
-              <div>
-                {currentImageUrl && !image && (
-                  <img
-                    src={currentImageUrl}
-                    alt={title}
-                    className="w-32 h-32 object-cover rounded mt-4"
-                  />
-                )}
+              <div className="mt-6">
+                <label
+                  htmlFor="imageUpload"
+                  className="relative h-[300px] rounded-[40px] border-2 border-dashed border-gray-400 bg-[#EAF1E7] flex items-center justify-center cursor-pointer overflow-hidden"
+                >
+                  {imagePreview ? (
+                    <>
+                      <img
+                        src={imagePreview}
+                        alt="Recipe preview"
+                        className="w-full h-full object-cover text-gray-50"
+                      />
 
-                <div className="mb-6 mt-6">
-                  <input
-                    type="file"
-                    className="w-full"
-                    onChange={(e) => setImage(e.target.files[0])}
-                  />
-                </div>
+                      <button
+                        type="button"
+                        onClick={removeImage}
+                        className="absolute top-4 right-4 w-10 h-10 bg-red-500 hover:bg-red-600 text-white text-2xl rounded-full flex items-center justify-center"
+                      >
+                        ×
+                      </button>
+                    </>
+                  ) : (
+                    <div className="text-center">
+                      <div className="text-5xl">📷</div>
+
+                      <p className="text-2xl font-bold mt-3 text-gray-400">
+                        Upload Hero Photo
+                      </p>
+                    </div>
+                  )}
+                </label>
+
+                <input
+                  ref={fileInputRef}
+                  id="imageUpload"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleImageChange}
+                />
+
+                <p className="text-center text-gray-500 mt-3">
+                  {imagePreview
+                    ? "Click the image to change it"
+                    : "Click to upload an image"}
+                </p>
               </div>
             </div>
 
-            {/* PREP + COOK + SERVINGS */}
-            <div>
-              <div className="grid grid-cols-3 gap-4 max-w-4xl mx-auto bg-white rounded-xl">
-                <div className="border-[1px] border-[#468432] p-4 rounded-lg">
-                  <label className="block font-medium mb-1">
-                    Prep Time(min)
-                  </label>
-                  <input
-                    className="w-full border rounded p-3"
-                    value={prepTime}
-                    onChange={(e) => setPrepTime(e.target.value)}
-                    placeholder="Enter prep time"
-                  />
-                </div>
-                <div className="border-[1px] border-[#468432] p-4 rounded-lg">
-                  <label className="block font-medium mb-1">
-                    Cooking Time(min)
-                  </label>
-                  <input
-                    className="w-full border p-3 rounded"
-                    placeholder="Enter cooking time"
-                    value={cookTime}
-                    onChange={(e) => setCookTime(e.target.value)}
-                  />
-                </div>
-                <div className="border-[1px] border-[#468432] p-4 rounded-lg">
-                  <label className="block font-medium mb-1">Servings</label>
-                  <input
-                    className="w-full border p-3 rounded"
-                    placeholder="Enter servings"
-                    value={servings}
-                    onChange={(e) => setServings(e.target.value)}
-                  />
-                </div>
+            {/* TIME AND SERVINGS */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="border border-[#468432] p-4 rounded-lg">
+                <label className="block font-medium mb-2">
+                  Prep Time (min)
+                </label>
+
+                <input
+                  type="number"
+                  min="0"
+                  className="w-full border rounded-lg p-3 outline-none"
+                  value={prepTime}
+                  onChange={(e) => setPrepTime(e.target.value)}
+                  placeholder="Enter prep time"
+                />
+              </div>
+
+              <div className="border border-[#468432] p-4 rounded-lg">
+                <label className="block font-medium mb-2">
+                  Cooking Time (min)
+                </label>
+
+                <input
+                  type="number"
+                  min="0"
+                  className="w-full border rounded-lg p-3 outline-none"
+                  value={cookTime}
+                  onChange={(e) => setCookTime(e.target.value)}
+                  placeholder="Enter cooking time"
+                />
+              </div>
+
+              <div className="border border-[#468432] p-4 rounded-lg">
+                <label className="block font-medium mb-2">
+                  Servings
+                </label>
+
+                <input
+                  type="number"
+                  min="1"
+                  className="w-full border rounded-lg p-3 outline-none"
+                  value={servings}
+                  onChange={(e) => setServings(e.target.value)}
+                  placeholder="Enter servings"
+                />
               </div>
             </div>
 
             {/* INGREDIENTS */}
-            <div className="border-[1px] border-[#468432] p-4 rounded-lg">
-              <div className="flex justify-between items-center mb-2">
-                <h2 className="font-semibold">Ingredients</h2>
+            <div className="border border-[#468432] p-4 rounded-lg">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold">
+                  Ingredients
+                </h2>
+
                 <button
                   type="button"
                   onClick={addIngredient}
-                  className="text-green-600 font-medium"
+                  className="text-[#468432] font-semibold"
                 >
                   + Add
                 </button>
               </div>
 
               {ingredients.map((item, index) => (
-                <div key={index} className="flex gap-2 mb-2">
+                <div
+                  key={index}
+                  className="flex gap-2 mb-3"
+                >
                   <input
-                    className="flex-1 border p-2 rounded"
+                    type="text"
+                    className="flex-1 border p-3 rounded-lg outline-none"
                     value={item}
                     onChange={(e) =>
-                      handleIngredientChange(e.target.value, index)
+                      handleIngredientChange(
+                        e.target.value,
+                        index
+                      )
                     }
                     placeholder={`Ingredient ${index + 1}`}
                   />
@@ -269,7 +396,8 @@ export default function EditRecipe() {
                   <button
                     type="button"
                     onClick={() => moveIngredient(index, -1)}
-                    className="px-2 bg-gray-200 rounded"
+                    disabled={index === 0}
+                    className="px-3 bg-gray-200 rounded-lg disabled:opacity-40"
                   >
                     ↑
                   </button>
@@ -277,7 +405,8 @@ export default function EditRecipe() {
                   <button
                     type="button"
                     onClick={() => moveIngredient(index, 1)}
-                    className="px-2 bg-gray-200 rounded"
+                    disabled={index === ingredients.length - 1}
+                    className="px-3 bg-gray-200 rounded-lg disabled:opacity-40"
                   >
                     ↓
                   </button>
@@ -285,7 +414,7 @@ export default function EditRecipe() {
                   <button
                     type="button"
                     onClick={() => removeIngredient(index)}
-                    className="px-2 bg-red-500 text-white rounded"
+                    className="px-3 bg-red-500 text-white rounded-lg"
                   >
                     ✕
                   </button>
@@ -293,32 +422,42 @@ export default function EditRecipe() {
               ))}
             </div>
 
-            {/* STEPS */}
-            <div className="border-[1px] border-[#468432] p-4 rounded-lg">
-              <div className="flex justify-between items-center mb-2">
-                <h2 className="font-semibold">Cooking Steps</h2>
+            {/* COOKING STEPS */}
+            <div className="border border-[#468432] p-4 rounded-lg">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold">
+                  Cooking Steps
+                </h2>
+
                 <button
                   type="button"
                   onClick={addStep}
-                  className="text-green-600 font-medium"
+                  className="text-[#468432] font-semibold"
                 >
                   + Add
                 </button>
               </div>
 
               {steps.map((step, index) => (
-                <div key={index} className="flex gap-2 mb-2">
-                  <input
-                    className="flex-1 border p-2 rounded"
+                <div
+                  key={index}
+                  className="flex gap-2 mb-3"
+                >
+                  <textarea
+                    className="flex-1 border p-3 rounded-lg outline-none resize-none"
                     value={step}
-                    onChange={(e) => handleStepChange(e.target.value, index)}
+                    onChange={(e) =>
+                      handleStepChange(e.target.value, index)
+                    }
                     placeholder={`Step ${index + 1}`}
+                    rows="2"
                   />
 
                   <button
                     type="button"
                     onClick={() => moveStep(index, -1)}
-                    className="px-2 bg-gray-200 rounded"
+                    disabled={index === 0}
+                    className="px-3 bg-gray-200 rounded-lg disabled:opacity-40"
                   >
                     ↑
                   </button>
@@ -326,7 +465,8 @@ export default function EditRecipe() {
                   <button
                     type="button"
                     onClick={() => moveStep(index, 1)}
-                    className="px-2 bg-gray-200 rounded"
+                    disabled={index === steps.length - 1}
+                    className="px-3 bg-gray-200 rounded-lg disabled:opacity-40"
                   >
                     ↓
                   </button>
@@ -334,7 +474,7 @@ export default function EditRecipe() {
                   <button
                     type="button"
                     onClick={() => removeStep(index)}
-                    className="px-2 bg-red-500 text-white rounded"
+                    className="px-3 bg-red-500 text-white rounded-lg"
                   >
                     ✕
                   </button>
@@ -343,20 +483,21 @@ export default function EditRecipe() {
             </div>
 
             {/* SAVE */}
-            <div className="grid grid-cols-5 gap-4 max-w-4xl mx-auto bg-white rounded-xl">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
               <button
                 type="button"
-                onClick={() => saveChanges("pending")}
-                className="bg-white border-[1px] border-[#FFA02E] p-4 text-black px-6 py-3 rounded-lg col-span-2"
+                onClick={(e) => handleSave(e, "pending")}
+                className="border border-[#FFA02E] bg-white text-black px-6 py-3 rounded-lg md:col-span-2"
               >
                 Save as Pending
               </button>
+
               <button
                 type="button"
-                onClick={() => saveChanges("public")}
-                className="bg-[#FFA02E] text-black px-6 py-3 rounded-lg col-span-3"
+                onClick={(e) => handleSave(e, "public")}
+                className="bg-[#FFA02E] text-black px-6 py-3 rounded-lg md:col-span-3"
               >
-                Save as Public
+                Save & Publish
               </button>
             </div>
           </form>
