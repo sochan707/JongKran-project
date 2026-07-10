@@ -20,7 +20,7 @@ export default function UserProfile() {
     <>
       <Header />
 
-      <main className="mx-[25px] py-12 max-w-2xl md:mx-auto">
+      <main className="mx-[25px] py-6 max-w-2xl md:mx-auto">
         <div className="text-center">
           <img
               src={profile}
