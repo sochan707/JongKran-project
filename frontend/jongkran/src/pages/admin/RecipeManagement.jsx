@@ -76,7 +76,7 @@ export default function RecipeManagement() {
 
       <div className="bg-gray-100 min-h-screen pl-10 pr-10 rounded-xl pt-5 pb-10">
         <main className="mx-[25px] py-2">
-          <h1 className="title-font text-3xl sm:text-xl lg:text-4xl font-bold">
+          <h1 className="title-font text-3xl sm:text-4xl lg:text-5xl font-bold">
             Recipe Management
           </h1>
 
