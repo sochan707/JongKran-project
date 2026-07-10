@@ -484,13 +484,6 @@ export default function EditRecipe() {
 
             {/* SAVE */}
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-              <button
-                type="button"
-                onClick={(e) => handleSave(e, "pending")}
-                className="border border-[#FFA02E] bg-white text-black px-6 py-3 rounded-lg md:col-span-2"
-              >
-                Save as Pending
-              </button>
 
               <button
                 type="button"
