@@ -17,22 +17,29 @@ export default function Register() {
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
 
-    setForm({
-      ...form,
+    setForm((previousForm) => ({
+      ...previousForm,
       [name]: type === "checkbox" ? checked : value,
-    });
+    }));
+
+    setError("");
   };
 
   const handleCreateAccount = (e) => {
     e.preventDefault();
     setError("");
 
-    if (!form.username || !form.email || !form.password || !form.confirmPassword) {
+    if (
+      !form.username.trim() ||
+      !form.email.trim() ||
+      !form.password ||
+      !form.confirmPassword
+    ) {
       setError("Please fill in all fields.");
       return;
     }
 
-    if (!form.email.includes("@gmail.com")) {
+    if (!form.email.toLowerCase().endsWith("@gmail.com")) {
       setError("Please enter a valid Gmail address.");
       return;
     }
@@ -48,31 +55,36 @@ export default function Register() {
     }
 
     if (!form.agree) {
-      setError("Please agree to the terms first.");
+      setError("Please agree to the Terms of Service and Privacy Policy.");
       return;
     }
 
-    const userProfile = {
-      fullname: form.username,
-      email: form.email,
+    const registeredUser = {
+      username: form.username.trim(),
+      email: form.email.trim().toLowerCase(),
+      password: form.password,
     };
 
     localStorage.setItem(
-      "userProfile",
-      JSON.stringify(userProfile)
+      "registeredUser",
+      JSON.stringify(registeredUser)
     );
 
-    navigate("/login");
+    navigate("/login", {
+      state: {
+        message: "Account created successfully. Please log in.",
+      },
+    });
   };
 
   return (
-    <main className="min-h-screen bg-gray-100 flex items-center justify-center p-6">
-      <div className="w-full max-w-5xl rounded-xl overflow-hidden border-[2px] border-[#468432] bg-white shadow-2xl">
-        <div className="grid md:grid-cols-2 min-h-[630px]">
-
+    <main className="min-h-screen bg-gray-100 flex items-center justify-center p-6 overflow-auto">
+      {/* Fixed 1000 x 680 box */}
+      <div className="w-[1000px] h-[680px] shrink-0 rounded-xl overflow-hidden border-2 border-[#468432] bg-white shadow-2xl">
+        <div className="grid grid-cols-2 h-full">
           {/* Left Image */}
           <div
-            className="hidden md:block bg-cover bg-center"
+            className="bg-cover bg-center"
             style={{
               backgroundImage:
                 "url('https://admin.sriboga.com/storage/news/1685519127-chef-preparing-food-ingredients-2021-09-24-03-57-22-utc%20(1).webp')",
@@ -80,10 +92,8 @@ export default function Register() {
           />
 
           {/* Right Side */}
-          <div className="flex items-start justify-center bg-white py-12 px-10">
-            <div className="w-full max-w-md mt-5">
-
-              {/* Heading */}
+          <div className="flex items-center justify-center bg-white px-10">
+            <div className="w-full max-w-md">
               <h1 className="text-4xl font-bold text-center">
                 Create Account
               </h1>
@@ -92,24 +102,28 @@ export default function Register() {
                 Create your account to start cooking with us.
               </p>
 
-              {/* Form */}
               {error && (
-              <p className="mt-5 bg-red-100 text-red-600 px-4 py-3 rounded-md text-sm">
-                {error}
-              </p>
+                <p className="mt-5 bg-red-100 text-red-600 px-4 py-3 rounded-md text-sm">
+                  {error}
+                </p>
               )}
 
-              <form onSubmit={handleCreateAccount} className="mt-5 space-y-4">
+              <form
+                onSubmit={handleCreateAccount}
+                className="mt-5 space-y-4"
+              >
                 <div>
                   <label className="block text-sm font-semibold mb-1">
                     Username
                   </label>
+
                   <input
+                    type="text"
                     name="username"
                     value={form.username}
                     onChange={handleChange}
-                    className="w-full bg-gray-100 rounded-md px-4 py-3 outline-none"
                     placeholder="Username"
+                    className="w-full bg-gray-100 rounded-md px-4 py-3 outline-none focus:ring-2 focus:ring-[#468432]"
                   />
                 </div>
 
@@ -117,13 +131,14 @@ export default function Register() {
                   <label className="block text-sm font-semibold mb-1">
                     Email Address
                   </label>
+
                   <input
+                    type="email"
                     name="email"
                     value={form.email}
                     onChange={handleChange}
-                    className="w-full bg-gray-100 rounded-md px-4 py-3 outline-none"
                     placeholder="Email Address"
-                    type="email"
+                    className="w-full bg-gray-100 rounded-md px-4 py-3 outline-none focus:ring-2 focus:ring-[#468432]"
                   />
                 </div>
 
@@ -133,12 +148,12 @@ export default function Register() {
                   </label>
 
                   <input
+                    type="password"
                     name="password"
                     value={form.password}
                     onChange={handleChange}
-                    type="password"
                     placeholder="Enter your password"
-                    className="w-full bg-gray-100 rounded-md px-4 py-3 outline-none"
+                    className="w-full bg-gray-100 rounded-md px-4 py-3 outline-none focus:ring-2 focus:ring-[#468432]"
                   />
                 </div>
 
@@ -146,31 +161,34 @@ export default function Register() {
                   <label className="block text-sm font-semibold mb-1">
                     Confirm Password
                   </label>
+
                   <input
+                    type="password"
                     name="confirmPassword"
                     value={form.confirmPassword}
                     onChange={handleChange}
-                    className="w-full bg-gray-100 rounded-md px-4 py-3 outline-none"
                     placeholder="Confirm Password"
-                    type="password"
+                    className="w-full bg-gray-100 rounded-md px-4 py-3 outline-none focus:ring-2 focus:ring-[#468432]"
                   />
                 </div>
 
-                <label className="flex gap-2 text-sm items-start">
+                <label className="flex gap-2 text-sm items-start cursor-pointer">
                   <input
+                    type="checkbox"
                     name="agree"
                     checked={form.agree}
                     onChange={handleChange}
-                    type="checkbox"
-                    className="mt-1"
+                    className="mt-1 accent-[#468432]"
                   />
-                  <span>I agree to Terms of Service and Privacy Policy</span>
+
+                  <span>
+                    I agree to Terms of Service and Privacy Policy
+                  </span>
                 </label>
 
                 <button
                   type="submit"
-                  onClick={() => navigate("/login")}
-                  className="w-full bg-[#468432] hover:bg-[#1A5C05] text-white py-3 rounded-md font-semibold"
+                  className="w-full bg-[#468432] hover:bg-[#1A5C05] text-white py-3 rounded-md font-semibold transition"
                 >
                   Create Account
                 </button>
@@ -178,6 +196,7 @@ export default function Register() {
 
               <div className="flex justify-center gap-2 mt-4 text-sm">
                 <span>Already have an account?</span>
+
                 <Link
                   to="/login"
                   className="text-[#468432] font-bold hover:text-[#1A5C05]"
