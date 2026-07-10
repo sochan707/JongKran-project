@@ -22,6 +22,7 @@ import ProfileInformation from "./pages/ProfileInformation";
 import AccountSetting from "./pages/AccountSetting";
 import ChangePassword from "./pages/ChangePassword";
 import Language from "./pages/Language";
+import UserSuggestions from "./pages/admin/UserSuggestions";
 export default function App() {
   return (
     <BrowserRouter>
@@ -55,6 +56,7 @@ export default function App() {
         <Route path="/AccountSetting" element={<AccountSetting />} />
         <Route path="/ChangePassword" element={<ChangePassword />} />
         <Route path="/Language" element={<Language />} />
+        <Route path="/admin/suggestions" element={<UserSuggestions />} />
             </Routes>
 
     </BrowserRouter>

@@ -102,6 +102,10 @@ export default function Instruction() {
       return;
     }
 
+    // Pull the logged-in user's name from their account
+    const currentUser = JSON.parse(localStorage.getItem("user")) || {};
+    const userName = currentUser.name;
+
     const savedSuggestions =
       JSON.parse(localStorage.getItem("suggestions")) || [];
 
@@ -109,6 +113,7 @@ export default function Instruction() {
       id: Date.now(),
       recipeId: recipe.id,
       recipeName: recipe.name,
+      userName: currentUser.name,
       message: cleanSuggestion,
       createdAt: new Date().toISOString(),
     };

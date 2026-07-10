@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import Header from "../../components/Header";
+import AdminHeader from "../../components/AdminHeader";
 import recipeData from "../../data/recipes";
 
 export default function EditRecipe() {
@@ -209,7 +209,7 @@ export default function EditRecipe() {
   if (loading) {
     return (
       <>
-        <Header />
+        <AdminHeader />
         <div className="p-8 text-center">Loading...</div>
       </>
     );
@@ -234,7 +234,7 @@ export default function EditRecipe() {
 
   return (
     <>
-      <Header />
+      <AdminHeader />
 
       <div className="min-h-screen bg-gray-100 p-4 md:p-8">
         <div className="max-w-4xl mx-auto bg-white rounded-xl shadow p-6 md:p-8">

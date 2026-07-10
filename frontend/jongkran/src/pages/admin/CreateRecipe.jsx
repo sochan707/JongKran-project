@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import Header from "../../components/Header";
+import AdminHeader from "../../components/AdminHeader";
 
 export default function CreateRecipe() {
   const [title, setTitle] = useState("");
@@ -158,7 +158,7 @@ export default function CreateRecipe() {
 
   return (
     <>
-      <Header />
+      <AdminHeader />
 
       <div className="min-h-screen bg-gray-100 p-4 md:p-8">
         <div className="max-w-4xl mx-auto bg-white rounded-xl shadow p-6 md:p-8">

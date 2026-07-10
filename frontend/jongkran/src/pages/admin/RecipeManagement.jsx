@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Header from "../../components/Header";
+import AdminHeader from "../../components/AdminHeader";
 import recipeData from "../../data/recipes";
 import { Search } from "lucide-react";
 
@@ -72,7 +72,7 @@ export default function RecipeManagement() {
 
   return (
     <>
-      <Header />
+      <AdminHeader />
 
       <div className="bg-gray-100 min-h-screen pl-10 pr-10 rounded-xl pt-5 pb-10">
         <main className="mx-[25px] py-2">
@@ -121,6 +121,7 @@ export default function RecipeManagement() {
               {ai_generated}
             </h2>
           </div>
+
         </div>
 
         <div className="bg-white rounded-xl shadow mt-5 overflow-x-auto mb-10">
