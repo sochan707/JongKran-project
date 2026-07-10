@@ -21,12 +21,12 @@ export default function ViewMatchRecipe() {
     <>
       <Header />
 
-      <main className="mx-[25px] py-12">
+      <main className="mx-[25px] py-6">
         <span className="inline-block bg-[#DDEED7] text-[#468432] px-5 py-2 rounded-full font-bold">
           Ingredients Matched
         </span>
 
-        <h1 className="title-font text-4xl md:text-6xl font-bold mt-5">
+        <h1 className="title-font text-4xl md:text-4xl font-bold mt-5">
           We found {matchedRecipes.length} recipes for you
         </h1>
 

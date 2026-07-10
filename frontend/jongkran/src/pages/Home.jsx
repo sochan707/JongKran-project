@@ -3,7 +3,7 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import RecipeCart from "../components/RecipeCart";
 import Hero from "../components/ui/homescreen/hero";
-import aboutImage from '../assets/about.png';
+import aboutImage from '../assets/about1.png';
 import recipes from "../data/recipes";
 
 
