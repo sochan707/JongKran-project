@@ -3,10 +3,10 @@ import cookieParser from "cookie-parser";
 import "dotenv/config";
 import recipeRoutes from "./routes/recipe.routes.js";
 import authRoutes from "./routes/auth.routes.js"
-import recommendationRoutes from "./routes/recommendation.routes.js";
 import testRoutes from "./routes/test.routes.js";
 import favoriteRoutes from "./routes/favorite.routes.js";
 import historyRoutes from "./routes/history.routes.js";
+import recommendationRoutes from "./routes/recommendation.routes.js";
 
 const app = express();
 
@@ -19,9 +19,9 @@ app.get("/", (req, res) => {
 
 app.use("/api/recipes", recipeRoutes);
 app.use("/api/auth", authRoutes);
-app.use("/api/recommendations", recommendationRoutes);
 app.use("/api/test", testRoutes);
 app.use("/api/favorites", favoriteRoutes);
 app.use("/api/history", historyRoutes);
+app.use("/api/recommendations", recommendationRoutes);
 
 export default app;
