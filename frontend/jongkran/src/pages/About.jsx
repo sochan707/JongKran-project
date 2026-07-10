@@ -24,9 +24,7 @@ export default function About() {
 
               />
             </div>
-          </div>
 
-      
             <div>
               <h2 className="title-font text-3xl font-bold">
                 What is JongKran?
@@ -36,7 +34,7 @@ export default function About() {
                 JongKran is a smart cooking platform that recommends recipes based on the ingredients you already have. Simply enter your ingredients and discover meals you can prepare instantly.
               </p>
             </div>
-    
+          </div>
         </section>
 
         <section className="bg-black text-white px-[25px] py-12">
@@ -51,7 +49,7 @@ export default function About() {
             <div className="bg-[#242424] rounded-xl p-8">
               <h2 className="title-font text-3xl font-bold">Our Mission</h2>
               <p className="mt-4 leading-8">
-                Many people struggle to decide what to cook or forget important ingredients. JongKran simplifies meal planning by recommending suitable recipes and identifying missing ingredients, helping users save time and reduce food waste.
+                To make home cooking easier, smarter, and more sustainable by helping people turn the ingredients they already have into delicious, low-waste meals, saving time, money, and reducing food waste along the way.
               </p>
             </div>
           </div>

@@ -69,7 +69,7 @@ export default function Header() {
           <Link
             to="/profile"
             onClick={() => setOpen(false)}
-            className="block text-sm text-red-900 font-semibold hover:text-[#468432]"
+            className="block text-sm font-semibold hover:text-[#468432]"
           >
             Account
           </Link>

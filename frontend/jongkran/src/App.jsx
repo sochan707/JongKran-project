@@ -20,6 +20,8 @@ import EditRecipe from "./pages/admin/EditRecipe";
 import NotFound from "./pages/NotFound";
 import ProfileInformation from "./pages/ProfileInformation";
 import AccountSetting from "./pages/AccountSetting";
+import ChangePassword from "./pages/ChangePassword";
+import Language from "./pages/Language";
 export default function App() {
   return (
     <BrowserRouter>
@@ -48,9 +50,10 @@ export default function App() {
         <Route path="/admin" element={<RecipeManagement />} />
         <Route path="/admin/create" element={<CreateRecipe />} />
         <Route path="/admin/edit/:id" element={<EditRecipe />} />
-        <Route path="*" element={<NotFound />} />
-        <Route path="/profileinformation" element={<ProfileInformation />} />
-        <Route path="/accountSetting" element={<AccountSetting />} />
+        <Route path="/ProfileInformation" element={<ProfileInformation />} />
+        <Route path="/AccountSetting" element={<AccountSetting />} />
+        <Route path="/ChangePassword" element={<ChangePassword />} />
+        <Route path="/Language" element={<Language />} />
             </Routes>
 
     </BrowserRouter>
