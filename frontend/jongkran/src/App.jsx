@@ -23,6 +23,8 @@ import AccountSetting from "./pages/AccountSetting";
 import ChangePassword from "./pages/ChangePassword";
 import Language from "./pages/Language";
 import UserSuggestions from "./pages/admin/UserSuggestions";
+import RecipeSuggestionDetail from "./pages/admin/RecipeSuggestionDetail";
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -57,7 +59,8 @@ export default function App() {
         <Route path="/ChangePassword" element={<ChangePassword />} />
         <Route path="/Language" element={<Language />} />
         <Route path="/admin/suggestions" element={<UserSuggestions />} />
-            </Routes>
+        <Route path="/admin/suggestions/:recipeId" element={<RecipeSuggestionDetail />} />
+      </Routes>
 
     </BrowserRouter>
 
