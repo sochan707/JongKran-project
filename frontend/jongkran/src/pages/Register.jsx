@@ -63,6 +63,15 @@ export default function Register() {
       username: form.username.trim(),
       email: form.email.trim().toLowerCase(),
       password: form.password,
+
+      // Profile information starts empty
+      phone: null,
+      dob: null,
+      bio: null,
+      profileImage: null,
+
+      // Save the real registration date
+      memberSince: new Date().toISOString(),
     };
 
     localStorage.setItem(
