@@ -89,7 +89,7 @@ export default function UserProfile() {
     <>
       <Header />
 
-      <main className="mx-[25px] py-12 max-w-2xl md:mx-auto">
+      <main className="mx-[25px] py-6 max-w-2xl md:mx-auto">
         <div className="border-2 border-[#468432] rounded-xl p-6">
           <div className="text-center">
             {/* Show uploaded picture or first username letter */}
@@ -120,7 +120,7 @@ export default function UserProfile() {
             )}
           </div>
 
-          <h2 className="title-font text-2xl font-bold mt-10">
+          <h2 className="title-font text-2xl font-bold mt-5">
             Account Settings
           </h2>
 
