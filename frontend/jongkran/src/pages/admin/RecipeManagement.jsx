@@ -125,27 +125,29 @@ export default function RecipeManagement() {
         </div>
 
         <div className="bg-white rounded-xl shadow mt-5 overflow-x-auto mb-10">
-          <div className="grid lg:grid-cols-2 gap-8 mt-2">
-            <div className="p-4 text-2xl border-b font-semibold pl-10 items-center">
-              Recipe List
-            </div>
-            
-            <div className="flex justify-end items-center pr-10">
-              <div className="relative w-[450px]">
-              <Search className="absolute left-4 top-4 text-black" size={18}/>
-              <input
-                value={input}
-                onChange={(e) => {
-                  setInput(e.target.value);
-                  setCurrentPage(1);
-                }}
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 p-4">
+  <div className="text-2xl font-semibold">
+    Recipe List
+  </div>
+<div className="flex justify-end items-center px-2 lg:px-10 mt-4 lg:mt-0">
+  <div className="relative w-full sm:w-2/3 md:w-2/3 lg:w-[450px]">
+      <Search
+        className="absolute left-4 top-1/2 -translate-y-1/2 text-black"
+        size={18}
+      />
 
-                placeholder="Search recipes name or status..."
-                className="w-full rounded-lg bg-gray-100 border border-gray-300 px-4 py-3 pl-10 focus:outline-none focus:ring-1 focus:ring-[#468432]"
-              />
-              </div>
-            </div>
-        </div>
+      <input
+        value={input}
+        onChange={(e) => {
+          setInput(e.target.value);
+          setCurrentPage(1);
+        }}
+        placeholder="Search recipe name or status..."
+        className="w-full rounded-lg bg-gray-100 border border-gray-300 px-4 py-3 pl-10 focus:outline-none focus:ring-1 focus:ring-[#468432]"
+      />
+    </div>
+  </div>
+</div>
 
           <table className="min-w-[700px] w-full text-left">
             <thead className="bg-[#468432] text-white">

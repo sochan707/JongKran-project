@@ -24,6 +24,7 @@ import ChangePassword from "./pages/ChangePassword";
 import Language from "./pages/Language";
 import UserSuggestions from "./pages/admin/UserSuggestions";
 import RecipeSuggestionDetail from "./pages/admin/RecipeSuggestionDetail";
+import AdminApprove from "./pages/admin/AdminApprove";
 
 export default function App() {
   return (
@@ -60,6 +61,7 @@ export default function App() {
         <Route path="/Language" element={<Language />} />
         <Route path="/admin/suggestions" element={<UserSuggestions />} />
         <Route path="/admin/suggestions/:recipeId" element={<RecipeSuggestionDetail />} />
+        <Route path="/admin/pending-approve" element={<AdminApprove />} />
       </Routes>
 
     </BrowserRouter>

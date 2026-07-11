@@ -146,7 +146,7 @@ export default function RecipeCart({
           src={recipe.image}
           alt={recipe.name}
           loading="lazy"
-          className="w-full h-48 md:h-72 object-cover"
+          className="w-full h-48 md:h-64 object-cover"
         />
 
         <div className="p-4">

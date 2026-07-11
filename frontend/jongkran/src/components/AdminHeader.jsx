@@ -11,6 +11,7 @@ export default function AdminHeader() {
     { name: "Recipe", path: "/admin" },
     { name: "Suggestions", path: "/admin/suggestions" },
     { name: "Add Recipe", path: "/admin/create" },
+    { name: "Pending Approve", path: "/admin/pending-approve" },
   ];
 
   return (
@@ -64,7 +65,8 @@ export default function AdminHeader() {
               {link.name}
             </Link>
           ))}
-
+          
+          
           <Link
             to="/profile"
             onClick={() => setOpen(false)}
