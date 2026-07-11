@@ -50,33 +50,33 @@ model Ingredient {
   ingredient_id     Int                @id @default(autoincrement())
   name              String             @unique @db.VarChar(20)
   calories_per_100g Int?
-  protein_per_100g  Float?
   carbs_per_100g    Float?
   fat_per_100g      Float?
+  protein_per_100g  Float?
   recipeIngredients RecipeIngredient[]
 
   @@map("ingredients")
 }
 
 model Recipe {
-  recipe_id         Int                @id @default(autoincrement())
-  title             String             @db.VarChar(30)
+  recipe_id         Int                    @id @default(autoincrement())
+  title             String                 @db.VarChar(30)
   description       String?
-  image_url         String?
   difficulty        Difficulty
-  prep_time         Int                @default(0)
-  cook_time         Int                @default(0)
-  servings          Int
-  view_count        Int                @default(0)
+  cook_time         Int                    @default(0)
   created_by        Int
-  created_at        DateTime           @default(now())
-  updated_at        DateTime           @default(now()) @updatedAt
+  servings          Int
+  image_url         String?
+  prep_time         Int                    @default(0)
+  view_count        Int                    @default(0)
+  created_at        DateTime               @default(now())
+  updated_at        DateTime               @default(now()) @updatedAt
   favorites         Favorite[]
   histories         History[]
   logs              Logs_audit[]
   recipeIngredients RecipeIngredient[]
   steps             RecipeStep[]
-  creator           User               @relation(fields: [created_by], references: [user_id])
+  creator           User                   @relation(fields: [created_by], references: [user_id])
   suggestions       Suggestion[]
 
   @@map("recipes")
@@ -165,6 +165,33 @@ model RefreshToken {
   @@map("refresh_tokens")
 }
 
+model AIGeneratedRecipe {
+  ai_recipe_id       Int      @id @default(autoincrement())
+  ingredient_key     String   @unique
+  title              String
+  description        String?
+  image_url          String?
+  ingredients        Json
+  steps              Json
+  generated_by       String   @default("OpenAI")
+  status             String   @default("pending")
+  approved_recipe_id  Int?
+  created_at         DateTime @default(now())
+
+  @@map("ai_generated_recipes")
+}
+
+model UserAICooking {
+  id             Int      @id @default(autoincrement())
+  user_id        Int
+  ai_recipe_id   Int
+  ingredient_key String
+  action         AIAction
+  created_at     DateTime @default(now())
+
+  @@map("user_ai_cooking")
+}
+
 enum Difficulty {
   easy
   medium
@@ -183,4 +210,9 @@ enum AdminActionType {
   delete
   approve
   reject
+}
+
+enum AIAction {
+  cook
+  skip
 }
