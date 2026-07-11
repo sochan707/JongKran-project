@@ -8,6 +8,7 @@ import favoriteRoutes from "./routes/favorite.routes.js";
 import historyRoutes from "./routes/history.routes.js";
 import recommendationRoutes from "./routes/recommendation.routes.js";
 import aiRecipeRoutes from "./routes/ai_recipe.routes.js";
+import suggestionRoutes from "./routes/suggestion.routes.js";
 
 const app = express();
 
@@ -25,5 +26,6 @@ app.use("/api/favorites", favoriteRoutes);
 app.use("/api/history", historyRoutes);
 app.use("/api/recommendations", recommendationRoutes);
 app.use("/api/ai-recipes", aiRecipeRoutes);
+app.use("/api/suggestions", suggestionRoutes);
 
 export default app;

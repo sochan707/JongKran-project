@@ -1,0 +1,44 @@
+import prisma from "../prismaClient.js";
+
+export const createSuggestionService = async ({userId, recipeId, suggestionText}) => {
+  const recipe = await prisma.recipe.findUnique({
+    where: {
+      recipe_id: recipeId,
+    },
+    select: {
+      recipe_id: true,
+    },
+  });
+
+  if (!recipe) {
+    const error = new Error("Recipe not found! ˏ(•́∧•̀)ˎ");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const suggestion = await prisma.suggestion.create({
+    data: {
+      user_id: userId,
+      recipe_id: recipeId,
+      suggestion_text: suggestionText.trim(),
+    },
+    include: {
+      user: {
+        select: {
+          user_id: true,
+          user_name: true,
+          user_profile: true,
+        },
+      },
+      recipe: {
+        select: {
+          recipe_id: true,
+          title: true,
+          image_url: true,
+        },
+      },
+    },
+  });
+
+  return suggestion;
+};
