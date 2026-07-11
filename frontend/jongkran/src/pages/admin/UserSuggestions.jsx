@@ -1,66 +1,123 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Search } from "lucide-react";
 import AdminHeader from "../../components/AdminHeader";
-import { Search, User } from "lucide-react";
+import recipeData from "../../data/recipes";
 
 export default function UserSuggestions() {
+  const navigate = useNavigate();
+
+  const [recipes, setRecipes] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [input, setInput] = useState("");
 
-  const suggestionsPerPage = 10;
+  const recipesPerPage = 10;
 
   useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem("suggestions")) || [];
-    // newest first
-    const sorted = [...saved].sort(
-      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-    );
-    setSuggestions(sorted);
+    const localRecipes =
+      JSON.parse(localStorage.getItem("recipes")) || [];
+
+    const savedSuggestions =
+      JSON.parse(localStorage.getItem("suggestions")) || [];
+
+    const normalRecipes = recipeData.map((recipe) => ({
+      ...recipe,
+      title: recipe.title || recipe.name,
+      status: recipe.status || "public",
+      createdAt: recipe.createdAt || "2026-07-06",
+    }));
+
+    const createdRecipes = localRecipes.map((recipe) => ({
+      ...recipe,
+      title: recipe.title || recipe.name || "Untitled Recipe",
+      status: recipe.status || "pending",
+      createdAt:
+        recipe.createdAt ||
+        new Date().toISOString().split("T")[0],
+    }));
+
+    const allRecipes = [
+      ...normalRecipes,
+      ...createdRecipes,
+    ].filter((recipe) => recipe.status !== "deleted");
+
+    setRecipes(allRecipes);
+    setSuggestions(savedSuggestions);
   }, []);
 
-  const filteredSuggestions = suggestions.filter((s) => {
-    const searchText = input.toLowerCase().trim();
-    const name = (s.userName || "").toLowerCase();
-    const recipeName = (s.recipeName || "").toLowerCase();
-    const message = (s.message || "").toLowerCase();
-
-    return (
-      name.includes(searchText) ||
-      recipeName.includes(searchText) ||
-      message.includes(searchText)
+  const recipesWithSuggestionData = recipes.map((recipe) => {
+    const recipeSuggestions = suggestions.filter(
+      (suggestion) =>
+        String(suggestion.recipeId) === String(recipe.id)
     );
+
+    const latestSuggestionDate = recipeSuggestions.reduce(
+      (latestDate, suggestion) => {
+        if (!latestDate) {
+          return suggestion.createdAt;
+        }
+
+        return new Date(suggestion.createdAt) >
+          new Date(latestDate)
+          ? suggestion.createdAt
+          : latestDate;
+      },
+      null
+    );
+
+    return {
+      ...recipe,
+      suggestionCount: recipeSuggestions.length,
+      latestSuggestionDate,
+    };
   });
 
-  const total = suggestions.length;
+  const filteredRecipes = recipesWithSuggestionData.filter(
+    (recipe) => {
+      const searchText = input.toLowerCase().trim();
+      const title = (recipe.title || "").toLowerCase();
+      const status = (recipe.status || "").toLowerCase();
 
-  const totalPages = Math.ceil(filteredSuggestions.length / suggestionsPerPage);
-  const startIndex = (currentPage - 1) * suggestionsPerPage;
-  const currentSuggestions = filteredSuggestions.slice(
-    startIndex,
-    startIndex + suggestionsPerPage
+      return (
+        title.includes(searchText) ||
+        status.includes(searchText)
+      );
+    }
   );
 
-  const goPrevious = () => {
-    if (currentPage > 1) setCurrentPage(currentPage - 1);
-  };
+  const totalRecipes = recipes.length;
+  const totalSuggestions = suggestions.length;
 
-  const goNext = () => {
-    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
-  };
+  const recipesWithSuggestions =
+    recipesWithSuggestionData.filter(
+      (recipe) => recipe.suggestionCount > 0
+    ).length;
 
-  const deleteSuggestion = (id) => {
-    const updated = suggestions.filter((s) => s.id !== id);
-    setSuggestions(updated);
-    localStorage.setItem("suggestions", JSON.stringify(updated));
+  const totalPages = Math.ceil(
+    filteredRecipes.length / recipesPerPage
+  );
 
-    if (currentSuggestions.length === 1 && currentPage > 1) {
-      setCurrentPage(currentPage - 1);
+  const startIndex =
+    (currentPage - 1) * recipesPerPage;
+
+  const currentRecipes = filteredRecipes.slice(
+    startIndex,
+    startIndex + recipesPerPage
+  );
+
+  const formatDate = (dateString) => {
+    if (!dateString) {
+      return "No suggestions yet";
     }
-  };
 
-  const formatDate = (isoString) => {
-    const date = new Date(isoString);
-    return date.toLocaleDateString(undefined, {
+    const date = new Date(dateString);
+
+    if (Number.isNaN(date.getTime())) {
+      return "Unknown date";
+    }
+
+    return date.toLocaleDateString("en-US", {
       year: "numeric",
       month: "short",
       day: "numeric",
@@ -69,113 +126,216 @@ export default function UserSuggestions() {
     });
   };
 
+  const openRecipeSuggestions = (recipeId) => {
+    navigate(`/admin/suggestions/${recipeId}`);
+  };
+
+  const goPrevious = () => {
+    if (currentPage > 1) {
+      setCurrentPage((page) => page - 1);
+    }
+  };
+
+  const goNext = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage((page) => page + 1);
+    }
+  };
+
   return (
     <>
       <AdminHeader />
 
-      <div className="bg-gray-100 min-h-screen pl-10 pr-10 rounded-xl pt-5 pb-10">
+      <div className="bg-gray-100 min-h-screen px-4 sm:px-10 pt-5 pb-10">
         <main className="mx-[25px] py-2">
           <h1 className="title-font text-3xl sm:text-4xl lg:text-5xl font-bold">
             User Suggestions
           </h1>
 
           <p className="mt-3 mb-5 text-gray-600">
-            View feedback and suggestions submitted by users after cooking.
+            Select a recipe to view suggestions submitted by users.
           </p>
         </main>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        {/* Summary cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="bg-white p-6 rounded-xl shadow">
+            <p className="text-gray-600 text-lg sm:text-xl font-semibold">
+              Total Recipes
+            </p>
+
+            <h2 className="text-gray-800 text-3xl sm:text-5xl font-bold ml-3 mt-5">
+              {totalRecipes}
+            </h2>
+          </div>
+
           <div className="bg-white p-6 rounded-xl shadow">
             <p className="text-gray-600 text-lg sm:text-xl font-semibold">
               Total Suggestions
             </p>
+
             <h2 className="text-gray-800 text-3xl sm:text-5xl font-bold ml-3 mt-5">
-              {total}
+              {totalSuggestions}
+            </h2>
+          </div>
+
+          <div className="bg-white p-6 rounded-xl shadow">
+            <p className="text-gray-600 text-lg sm:text-xl font-semibold">
+              Recipes With Suggestions
+            </p>
+
+            <h2 className="text-gray-800 text-3xl sm:text-5xl font-bold ml-3 mt-5">
+              {recipesWithSuggestions}
             </h2>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow mt-5 mb-10">
-          <div className="grid lg:grid-cols-2 gap-8 mt-2">
-            <div className="p-4 text-2xl border-b font-semibold pl-10 items-center">
-              Suggestion List
+        {/* Recipe table */}
+        <div className="bg-white rounded-xl shadow mt-5 mb-10 overflow-hidden">
+          <div className="grid lg:grid-cols-2 gap-4 p-4">
+            <div className="text-2xl font-semibold pl-2 sm:pl-6 flex items-center">
+              Recipe List
             </div>
 
-            <div className="flex justify-end items-center pr-10">
-              <div className="relative w-[450px]">
-                <Search className="absolute left-4 top-4 text-black" size={18} />
+            <div className="flex justify-end items-center">
+              <div className="relative w-full lg:w-[450px]">
+                <Search
+                  className="absolute left-4 top-4 text-black"
+                  size={18}
+                />
+
                 <input
                   value={input}
-                  onChange={(e) => {
-                    setInput(e.target.value);
+                  onChange={(event) => {
+                    setInput(event.target.value);
                     setCurrentPage(1);
                   }}
-                  placeholder="Search by name, recipe, or message..."
+                  placeholder="Search recipe name or status..."
                   className="w-full rounded-lg bg-gray-100 border border-gray-300 px-4 py-3 pl-10 focus:outline-none focus:ring-1 focus:ring-[#468432]"
                 />
               </div>
             </div>
           </div>
 
-          {/* Facebook-style comment list */}
-          <div className="px-6 md:px-10 pb-6 space-y-4">
-            {currentSuggestions.length === 0 ? (
-              <p className="text-gray-500 text-center py-10">
-                No suggestions found.
-              </p>
-            ) : (
-              currentSuggestions.map((s) => (
-                <div
-                  key={s.id}
-                  className="border border-gray-200 rounded-2xl p-4 flex gap-4"
-                >
-                  {/* Avatar */}
-                  {s.userImage ? (
-                    <img
-                      src={s.userImage}
-                      alt={s.userName}
-                      className="w-12 h-12 rounded-full object-cover flex-shrink-0"
-                    />
-                  ) : (
-                    <div className="w-12 h-12 rounded-full bg-[#468432] text-white flex items-center justify-center flex-shrink-0">
-                      <User size={22} />
-                    </div>
-                  )}
+          <div className="overflow-x-auto">
+            <table className="min-w-[850px] w-full text-left">
+              <thead className="bg-[#468432] text-white">
+                <tr>
+                  <th className="p-4 pl-10">
+                    Recipe Name
+                  </th>
 
-                  {/* Comment bubble */}
-                  <div className="flex-1">
-                    <div className="bg-gray-100 rounded-2xl px-4 py-3">
-                      <p className="font-semibold">
-                        {s.userName || "Anonymous"}
-                      </p>
-                      <p className="text-gray-700 mt-1 leading-6">
-                        {s.message}
-                      </p>
-                    </div>
+                  <th className="p-4">
+                    Status
+                  </th>
 
-                    <div className="flex items-center gap-4 mt-2 ml-2 text-xs text-gray-500">
-                      <span>{formatDate(s.createdAt)}</span>
-                      <span>
-                        on{" "}
-                        <span className="font-medium text-[#468432]">
-                          {s.recipeName}
+                  <th className="p-4">
+                    Suggestions
+                  </th>
+
+                  <th className="p-4">
+                    Latest Suggestion
+                  </th>
+
+                  <th className="p-4">
+                    Action
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {currentRecipes.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan="5"
+                      className="text-center py-12 text-gray-500"
+                    >
+                      No recipes found.
+                    </td>
+                  </tr>
+                ) : (
+                  currentRecipes.map((recipe) => (
+                    <tr
+                      key={recipe.id}
+                      onClick={() =>
+                        openRecipeSuggestions(recipe.id)
+                      }
+                      className="border-b hover:bg-gray-50 cursor-pointer"
+                    >
+                      <td className="p-3 pl-10">
+                        <div className="flex items-center gap-3">
+                          {recipe.image ? (
+                            <img
+                              src={recipe.image}
+                              alt={recipe.title}
+                              className="w-12 h-12 rounded-md object-cover flex-shrink-0"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 rounded-md bg-gray-200 flex-shrink-0" />
+                          )}
+
+                          <span className="font-medium">
+                            {recipe.title}
+                          </span>
+                        </div>
+                      </td>
+
+                      <td className="p-3">
+                        <span
+                          className={`px-3 py-1 text-xs rounded-full text-white ${
+                            recipe.status === "public"
+                              ? "bg-[#468432]"
+                              : "bg-[#FFA02E]"
+                          }`}
+                        >
+                          {recipe.status}
                         </span>
-                      </span>
-                      <button
-                        onClick={() => deleteSuggestion(s.id)}
-                        className="text-red-600 font-semibold hover:underline"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
+                      </td>
+
+                      <td className="p-3">
+                        <span
+                          className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                            recipe.suggestionCount > 0
+                              ? "bg-green-100 text-[#468432]"
+                              : "bg-gray-100 text-gray-500"
+                          }`}
+                        >
+                          {recipe.suggestionCount}
+                        </span>
+                      </td>
+
+                      <td className="p-3 text-gray-500 text-sm">
+                        {formatDate(
+                          recipe.latestSuggestionDate
+                        )}
+                      </td>
+
+                      <td className="p-3">
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+
+                            openRecipeSuggestions(
+                              recipe.id
+                            );
+                          }}
+                          className="text-[#468432] font-semibold hover:underline"
+                        >
+                          View Suggestions
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
 
+          {/* Pagination */}
           <div className="flex items-center justify-end gap-4 p-4">
             <button
+              type="button"
               onClick={goPrevious}
               disabled={currentPage === 1}
               className="px-3 py-1 rounded border disabled:opacity-40"
@@ -188,8 +348,12 @@ export default function UserSuggestions() {
             </span>
 
             <button
+              type="button"
               onClick={goNext}
-              disabled={currentPage === totalPages || totalPages === 0}
+              disabled={
+                totalPages === 0 ||
+                currentPage >= totalPages
+              }
               className="px-3 py-1 rounded border disabled:opacity-40"
             >
               →
