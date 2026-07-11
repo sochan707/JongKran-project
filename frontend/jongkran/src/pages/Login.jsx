@@ -54,10 +54,8 @@ export default function Login() {
       return;
     }
 
-    const loggedInUser = {
-      username: savedUser.username,
-      email: savedUser.email,
-    };
+    // Remove the password before storing the logged-in profile
+    const { password, ...loggedInUser } = savedUser;
 
     localStorage.setItem(
       "userProfile",
