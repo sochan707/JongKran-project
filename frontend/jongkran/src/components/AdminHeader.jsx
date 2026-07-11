@@ -8,9 +8,9 @@ export default function AdminHeader() {
   const [open, setOpen] = useState(false);
 
   const links = [
-    { name: "Recipe Management", path: "/admin" },
-    { name: "View Suggestions", path: "/admin/suggestions" },
-    { name: "Add New Recipe", path: "/admin/create" },
+    { name: "Recipe", path: "/admin" },
+    { name: "Suggestions", path: "/admin/suggestions" },
+    { name: "Add Recipe", path: "/admin/create" },
   ];
 
   return (
