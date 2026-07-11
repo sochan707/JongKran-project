@@ -10,8 +10,7 @@ export default function AdminHeader() {
   const links = [
     { name: "Recipe", path: "/admin" },
     { name: "Suggestions", path: "/admin/suggestions" },
-    { name: "Add Recipe", path: "/admin/create" },
-    { name: "Pending Approve", path: "/admin/pending-approve" },
+    { name: "AI Gnerate", path: "/admin/pending-approve" },
   ];
 
   return (
