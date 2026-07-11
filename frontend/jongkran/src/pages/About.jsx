@@ -15,12 +15,12 @@ export default function About() {
             About JongKran
           </h1>
 
-          <div className="grid md:grid-cols-2 gap-10 items-center mt-10">
+          <div className="grid md:grid-cols-2 gap-10 items-center mt-10 ">
             <div className="text-center">
               <img 
                 src={logo} 
                 alt="JongKran Logo" 
-                className="mx-auto h-64 object-contain"
+                className="mx-auto h-64 object-contain w-[400px] md:w-[500px] lg:w-[600px]"
 
               />
             </div>
@@ -31,7 +31,7 @@ export default function About() {
               </h2>
 
               <p className="mt-5 leading-8">
-                JongKran is a smart cooking platform that recommends recipes based on the ingredients you already have. Simply enter your ingredients and discover meals you can prepare instantly.
+                JongKran is a smart cooking recommendation system created to help users discover what they can cook using the ingredients they already have at home. By entering available ingredients, users can quickly find suitable recipes, check which ingredients are missing, follow clear cooking instructions, and save their favorite meals for later. JongKran makes meal planning easier and more convenient, especially for students, busy workers, beginner cooks, and families, while also helping reduce food waste and unnecessary spending.
               </p>
             </div>
           </div>
