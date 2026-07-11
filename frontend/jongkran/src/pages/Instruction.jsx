@@ -102,9 +102,33 @@ export default function Instruction() {
       return;
     }
 
-    // Pull the logged-in user's name from their account
-    const currentUser = JSON.parse(localStorage.getItem("user")) || {};
-    const userName = currentUser.name;
+    // Get the latest profile information
+    const userProfile =
+      JSON.parse(localStorage.getItem("userProfile")) || {};
+
+    // Get the original registered account
+    const registeredUser =
+      JSON.parse(localStorage.getItem("registeredUser")) || {};
+
+    const currentUser =
+      Object.keys(userProfile).length > 0
+        ? {
+            ...registeredUser,
+            ...userProfile,
+          }
+        : registeredUser;
+
+    const userName =
+      currentUser.username ||
+      currentUser.fullname ||
+      currentUser.name ||
+      "Anonymous User";
+
+    const userImage =
+      currentUser.profileImage ||
+      currentUser.image ||
+      currentUser.avatar ||
+      "";
 
     const savedSuggestions =
       JSON.parse(localStorage.getItem("suggestions")) || [];
@@ -113,19 +137,36 @@ export default function Instruction() {
       id: Date.now(),
       recipeId: recipe.id,
       recipeName: recipe.name,
-      userName: currentUser.name,
+      recipeImage: recipe.image,
+
+      // Connect this suggestion to the user account
+      userId:
+        currentUser.id ||
+        currentUser.userId ||
+        currentUser.email ||
+        "anonymous",
+
+      userEmail: currentUser.email || "",
+
+      // Keep these as fallback information
+      userName,
+      userImage,
+
       message: cleanSuggestion,
       createdAt: new Date().toISOString(),
     };
 
+    const updatedSuggestions = [
+      ...savedSuggestions,
+      newSuggestion,
+    ];
+
     localStorage.setItem(
       "suggestions",
-      JSON.stringify([
-        ...savedSuggestions,
-        newSuggestion,
-      ])
+      JSON.stringify(updatedSuggestions)
     );
 
+    setSuggestion("");
     navigate("/");
   };
 
