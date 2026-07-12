@@ -11,49 +11,89 @@ export default function EditRecipe() {
   const [notFound, setNotFound] = useState(false);
 
   const [title, setTitle] = useState("");
-  const [image, setImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [prepTime, setPrepTime] = useState("");
   const [cookTime, setCookTime] = useState("");
   const [servings, setServings] = useState("");
   const [status, setStatus] = useState("pending");
+  const [createdAt, setCreatedAt] = useState("");
 
   const [ingredients, setIngredients] = useState([""]);
   const [steps, setSteps] = useState([""]);
 
   const fileInputRef = useRef(null);
 
-  // ---------------- LOAD EXISTING RECIPE ----------------
-  useEffect(() => {
-    const localRecipes = JSON.parse(localStorage.getItem("recipes")) || [];
+  // ---------------- MERGE RECIPES ----------------
+  const getMergedRecipes = () => {
+    const localRecipes =
+      JSON.parse(localStorage.getItem("recipes")) || [];
 
-    const formattedRecipes = recipeData.map((r) => ({
-      ...r,
-      title: r.name,
-      status: r.status || "public",
-      createdAt: r.createdAt || "2026-07-06",
+    const formattedRecipes = recipeData.map((recipe) => ({
+      ...recipe,
+      title: recipe.title || recipe.name,
+      status: recipe.status || "public",
+      createdAt: recipe.createdAt || "2026-07-06",
     }));
 
-    const allRecipes = [...formattedRecipes, ...localRecipes];
+    const recipeMap = new Map();
 
-    const found = allRecipes.find((r) => String(r.id) === String(id));
+    formattedRecipes.forEach((recipe) => {
+      recipeMap.set(String(recipe.id), recipe);
+    });
 
-    if (!found) {
+    localRecipes.forEach((recipe) => {
+      const originalRecipe = recipeMap.get(
+        String(recipe.id)
+      );
+
+      recipeMap.set(String(recipe.id), {
+        ...originalRecipe,
+        ...recipe,
+      });
+    });
+
+    return Array.from(recipeMap.values());
+  };
+
+  // ---------------- LOAD RECIPE ----------------
+  useEffect(() => {
+    const allRecipes = getMergedRecipes();
+
+    const foundRecipe = allRecipes.find(
+      (recipe) => String(recipe.id) === String(id)
+    );
+
+    if (!foundRecipe) {
       setNotFound(true);
       setLoading(false);
       return;
     }
 
-    setTitle(found.title || "");
-    setImagePreview(found.image || null);
-    setPrepTime(found.prepTime || "");
-    setCookTime(found.cookTime || "");
-    setServings(found.servings || "");
-    setStatus(found.status || "pending");
-    setIngredients(
-      found.ingredients && found.ingredients.length ? found.ingredients : [""]
+    setTitle(
+      foundRecipe.title || foundRecipe.name || ""
     );
-    setSteps(found.steps && found.steps.length ? found.steps : [""]);
+
+    setImagePreview(foundRecipe.image || null);
+    setPrepTime(foundRecipe.prepTime || "");
+    setCookTime(foundRecipe.cookTime || "");
+    setServings(foundRecipe.servings || "");
+    setStatus(foundRecipe.status || "pending");
+
+    setCreatedAt(
+      foundRecipe.createdAt || new Date().toISOString()
+    );
+
+    setIngredients(
+      foundRecipe.ingredients?.length
+        ? foundRecipe.ingredients
+        : [""]
+    );
+
+    setSteps(
+      foundRecipe.steps?.length
+        ? foundRecipe.steps
+        : [""]
+    );
 
     setLoading(false);
   }, [id]);
@@ -70,37 +110,35 @@ export default function EditRecipe() {
       return;
     }
 
-    if (imagePreview && image) {
-      URL.revokeObjectURL(imagePreview);
+    if (file.size > 2 * 1024 * 1024) {
+      alert("Please choose an image smaller than 2MB.");
+      e.target.value = "";
+      return;
     }
 
-    setImage(file);
-    setImagePreview(URL.createObjectURL(file));
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      setImagePreview(reader.result);
+    };
+
+    reader.onerror = () => {
+      alert("Could not read the selected image.");
+    };
+
+    reader.readAsDataURL(file);
   };
 
   const removeImage = (e) => {
     e.preventDefault();
     e.stopPropagation();
 
-    if (imagePreview && image) {
-      URL.revokeObjectURL(imagePreview);
-    }
-
-    setImage(null);
     setImagePreview(null);
 
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
   };
-
-  useEffect(() => {
-    return () => {
-      if (imagePreview && image) {
-        URL.revokeObjectURL(imagePreview);
-      }
-    };
-  }, [imagePreview, image]);
 
   // ---------------- INGREDIENTS ----------------
   const handleIngredientChange = (value, index) => {
@@ -119,8 +157,11 @@ export default function EditRecipe() {
       return;
     }
 
-    const updated = ingredients.filter((_, i) => i !== index);
-    setIngredients(updated);
+    setIngredients(
+      ingredients.filter(
+        (_, currentIndex) => currentIndex !== index
+      )
+    );
   };
 
   const moveIngredient = (index, direction) => {
@@ -129,7 +170,10 @@ export default function EditRecipe() {
 
     if (newIndex < 0 || newIndex >= updated.length) return;
 
-    [updated[index], updated[newIndex]] = [updated[newIndex], updated[index]];
+    [updated[index], updated[newIndex]] = [
+      updated[newIndex],
+      updated[index],
+    ];
 
     setIngredients(updated);
   };
@@ -151,8 +195,11 @@ export default function EditRecipe() {
       return;
     }
 
-    const updated = steps.filter((_, i) => i !== index);
-    setSteps(updated);
+    setSteps(
+      steps.filter(
+        (_, currentIndex) => currentIndex !== index
+      )
+    );
   };
 
   const moveStep = (index, direction) => {
@@ -161,7 +208,10 @@ export default function EditRecipe() {
 
     if (newIndex < 0 || newIndex >= updated.length) return;
 
-    [updated[index], updated[newIndex]] = [updated[newIndex], updated[index]];
+    [updated[index], updated[newIndex]] = [
+      updated[newIndex],
+      updated[index],
+    ];
 
     setSteps(updated);
   };
@@ -170,38 +220,97 @@ export default function EditRecipe() {
   const handleSave = (e, selectedStatus) => {
     e.preventDefault();
 
-    const localRecipes = JSON.parse(localStorage.getItem("recipes")) || [];
+    const cleanIngredients = ingredients.filter(
+      (ingredient) => ingredient.trim() !== ""
+    );
+
+    const cleanSteps = steps.filter(
+      (step) => step.trim() !== ""
+    );
+
+    if (!title.trim()) {
+      alert("Please enter the recipe title.");
+      return;
+    }
+
+    if (!imagePreview) {
+      alert("Please upload a recipe image.");
+      return;
+    }
+
+    if (cleanIngredients.length === 0) {
+      alert("Please add at least one ingredient.");
+      return;
+    }
+
+    if (cleanSteps.length === 0) {
+      alert("Please add at least one cooking step.");
+      return;
+    }
+
+    const localRecipes =
+      JSON.parse(localStorage.getItem("recipes")) || [];
+
+    const allRecipes = getMergedRecipes();
+
+    const existingRecipe = allRecipes.find(
+      (recipe) => String(recipe.id) === String(id)
+    );
+
+    if (!existingRecipe) {
+      alert("Recipe not found.");
+      return;
+    }
 
     const updatedRecipe = {
-      id: isNaN(Number(id)) ? id : Number(id),
-      title,
-      image: image ? URL.createObjectURL(image) : imagePreview,
-      prepTime,
-      cookTime,
-      servings,
+      ...existingRecipe,
+      id: existingRecipe.id,
+      title: title.trim(),
+      name: title.trim(),
+      image: imagePreview,
+      prepTime: Number(prepTime),
+      cookTime: Number(cookTime),
+      servings: Number(servings),
       status: selectedStatus,
-      ingredients: ingredients.filter((item) => item.trim() !== ""),
-      steps: steps.filter((step) => step.trim() !== ""),
-      createdAt: new Date().toISOString(),
+      ingredients: cleanIngredients,
+      steps: cleanSteps,
+      createdAt:
+        createdAt ||
+        existingRecipe.createdAt ||
+        new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
 
-    setStatus(selectedStatus);
+    const existsInLocalStorage = localRecipes.some(
+      (recipe) => String(recipe.id) === String(id)
+    );
 
-    const exists = localRecipes.some((r) => String(r.id) === String(id));
-
-    const updatedList = exists
-      ? localRecipes.map((r) =>
-          String(r.id) === String(id) ? updatedRecipe : r
+    const updatedLocalRecipes = existsInLocalStorage
+      ? localRecipes.map((recipe) =>
+          String(recipe.id) === String(id)
+            ? updatedRecipe
+            : recipe
         )
       : [...localRecipes, updatedRecipe];
 
-    localStorage.setItem("recipes", JSON.stringify(updatedList));
+    try {
+      localStorage.setItem(
+        "recipes",
+        JSON.stringify(updatedLocalRecipes)
+      );
+    } catch (error) {
+      console.error("Unable to save recipe:", error);
 
-    alert(
-      selectedStatus === "public"
-        ? "Recipe updated and published"
-        : "Recipe updated and saved as pending"
-    );
+      alert(
+        "Could not save the recipe. The image may be too large."
+      );
+
+      return;
+    }
+
+    setStatus(selectedStatus);
+
+    alert("Recipe updated successfully.");
 
     navigate("/admin");
   };
@@ -210,7 +319,10 @@ export default function EditRecipe() {
     return (
       <>
         <AdminHeader />
-        <div className="p-8 text-center">Loading...</div>
+
+        <div className="p-8 text-center">
+          Loading...
+        </div>
       </>
     );
   }
@@ -218,10 +330,15 @@ export default function EditRecipe() {
   if (notFound) {
     return (
       <>
-        <Header />
+        <AdminHeader />
+
         <div className="p-8 text-center">
-          <p className="text-lg font-semibold">Recipe not found.</p>
+          <p className="text-lg font-semibold">
+            Recipe not found.
+          </p>
+
           <button
+            type="button"
             onClick={() => navigate("/admin")}
             className="mt-4 text-[#468432] font-medium underline"
           >
@@ -245,7 +362,6 @@ export default function EditRecipe() {
           <form className="space-y-6">
             {/* TITLE AND IMAGE */}
             <div className="shadow bg-white rounded-xl p-6 border border-[#468432]">
-              {/* TITLE */}
               <div>
                 <label className="block font-medium mb-2 text-xl">
                   Recipe Title
@@ -253,11 +369,10 @@ export default function EditRecipe() {
 
                 <input
                   type="text"
-                  className="w-full border rounded-lg p-3 outline-none focus:border-[#468432]"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Enter recipe name"
-                  required
+                  className="w-full border rounded-lg p-3 outline-none focus:border-[#468432]"
                 />
               </div>
 
@@ -272,7 +387,7 @@ export default function EditRecipe() {
                       <img
                         src={imagePreview}
                         alt="Recipe preview"
-                        className="w-full h-full object-cover text-gray-50"
+                        className="w-full h-full object-cover"
                       />
 
                       <button
@@ -299,8 +414,8 @@ export default function EditRecipe() {
                   id="imageUpload"
                   type="file"
                   accept="image/*"
-                  className="hidden"
                   onChange={handleImageChange}
+                  className="hidden"
                 />
 
                 <p className="text-center text-gray-500 mt-3">
@@ -321,10 +436,12 @@ export default function EditRecipe() {
                 <input
                   type="number"
                   min="0"
-                  className="w-full border rounded-lg p-3 outline-none"
                   value={prepTime}
-                  onChange={(e) => setPrepTime(e.target.value)}
+                  onChange={(e) =>
+                    setPrepTime(e.target.value)
+                  }
                   placeholder="Enter prep time"
+                  className="w-full border rounded-lg p-3 outline-none"
                 />
               </div>
 
@@ -336,10 +453,12 @@ export default function EditRecipe() {
                 <input
                   type="number"
                   min="0"
-                  className="w-full border rounded-lg p-3 outline-none"
                   value={cookTime}
-                  onChange={(e) => setCookTime(e.target.value)}
+                  onChange={(e) =>
+                    setCookTime(e.target.value)
+                  }
                   placeholder="Enter cooking time"
+                  className="w-full border rounded-lg p-3 outline-none"
                 />
               </div>
 
@@ -351,10 +470,12 @@ export default function EditRecipe() {
                 <input
                   type="number"
                   min="1"
-                  className="w-full border rounded-lg p-3 outline-none"
                   value={servings}
-                  onChange={(e) => setServings(e.target.value)}
+                  onChange={(e) =>
+                    setServings(e.target.value)
+                  }
                   placeholder="Enter servings"
+                  className="w-full border rounded-lg p-3 outline-none"
                 />
               </div>
             </div>
@@ -375,15 +496,14 @@ export default function EditRecipe() {
                 </button>
               </div>
 
-              {ingredients.map((item, index) => (
+              {ingredients.map((ingredient, index) => (
                 <div
                   key={index}
                   className="flex gap-2 mb-3"
                 >
                   <input
                     type="text"
-                    className="flex-1 border p-3 rounded-lg outline-none"
-                    value={item}
+                    value={ingredient}
                     onChange={(e) =>
                       handleIngredientChange(
                         e.target.value,
@@ -391,6 +511,7 @@ export default function EditRecipe() {
                       )
                     }
                     placeholder={`Ingredient ${index + 1}`}
+                    className="flex-1 border p-3 rounded-lg outline-none"
                   />
 
                   <button
@@ -405,7 +526,9 @@ export default function EditRecipe() {
                   <button
                     type="button"
                     onClick={() => moveIngredient(index, 1)}
-                    disabled={index === ingredients.length - 1}
+                    disabled={
+                      index === ingredients.length - 1
+                    }
                     className="px-3 bg-gray-200 rounded-lg disabled:opacity-40"
                   >
                     ↓
@@ -422,7 +545,7 @@ export default function EditRecipe() {
               ))}
             </div>
 
-            {/* COOKING STEPS */}
+            {/* STEPS */}
             <div className="border border-[#468432] p-4 rounded-lg">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold">
@@ -444,13 +567,16 @@ export default function EditRecipe() {
                   className="flex gap-2 mb-3"
                 >
                   <textarea
-                    className="flex-1 border p-3 rounded-lg outline-none resize-none"
                     value={step}
                     onChange={(e) =>
-                      handleStepChange(e.target.value, index)
+                      handleStepChange(
+                        e.target.value,
+                        index
+                      )
                     }
                     placeholder={`Step ${index + 1}`}
                     rows="2"
+                    className="flex-1 border p-3 rounded-lg outline-none resize-none"
                   />
 
                   <button
@@ -483,16 +609,15 @@ export default function EditRecipe() {
             </div>
 
             {/* SAVE */}
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-
-              <button
-                type="button"
-                onClick={(e) => handleSave(e, "public")}
-                className="bg-[#FFA02E] text-black px-6 py-3 rounded-lg md:col-span-3"
-              >
-                Save & Publish
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={(e) =>
+                handleSave(e, status === "pending" ? "pending" : "public")
+              }
+              className="w-full bg-[#FFA02E] text-black px-6 py-3 rounded-lg"
+            >
+              Save Recipe
+            </button>
           </form>
         </div>
       </div>

@@ -16,8 +16,8 @@ export default function History() {
     <>
       <Header />
 
-      <main className="mx-[25px] py-12">
-        <h1 className="title-font text-4xl md:text-6xl font-bold">
+      <main className="mx-[25px] py-6">
+        <h1 className="title-font text-4xl md:text-4xl font-bold">
           History Recipes
         </h1>
 

@@ -1,14 +1,15 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import AdminHeader from "../../components/AdminHeader";
 
 export default function CreateRecipe() {
+  const navigate = useNavigate();
+
   const [title, setTitle] = useState("");
-  const [image, setImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [prepTime, setPrepTime] = useState("");
   const [cookTime, setCookTime] = useState("");
   const [servings, setServings] = useState("");
-  const [status, setStatus] = useState("pending");
 
   const [ingredients, setIngredients] = useState([""]);
   const [steps, setSteps] = useState([""]);
@@ -27,37 +28,36 @@ export default function CreateRecipe() {
       return;
     }
 
-    if (imagePreview) {
-      URL.revokeObjectURL(imagePreview);
+    // LocalStorage is small, so limit the image size
+    if (file.size > 2 * 1024 * 1024) {
+      alert("Please choose an image smaller than 2MB.");
+      e.target.value = "";
+      return;
     }
 
-    setImage(file);
-    setImagePreview(URL.createObjectURL(file));
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      setImagePreview(reader.result);
+    };
+
+    reader.onerror = () => {
+      alert("Could not read the selected image.");
+    };
+
+    reader.readAsDataURL(file);
   };
 
   const removeImage = (e) => {
     e.preventDefault();
     e.stopPropagation();
 
-    if (imagePreview) {
-      URL.revokeObjectURL(imagePreview);
-    }
-
-    setImage(null);
     setImagePreview(null);
 
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
   };
-
-  useEffect(() => {
-    return () => {
-      if (imagePreview) {
-        URL.revokeObjectURL(imagePreview);
-      }
-    };
-  }, [imagePreview]);
 
   // ---------------- INGREDIENTS ----------------
   const handleIngredientChange = (value, index) => {
@@ -76,8 +76,11 @@ export default function CreateRecipe() {
       return;
     }
 
-    const updated = ingredients.filter((_, i) => i !== index);
-    setIngredients(updated);
+    setIngredients(
+      ingredients.filter(
+        (_, currentIndex) => currentIndex !== index
+      )
+    );
   };
 
   const moveIngredient = (index, direction) => {
@@ -111,8 +114,11 @@ export default function CreateRecipe() {
       return;
     }
 
-    const updated = steps.filter((_, i) => i !== index);
-    setSteps(updated);
+    setSteps(
+      steps.filter(
+        (_, currentIndex) => currentIndex !== index
+      )
+    );
   };
 
   const moveStep = (index, direction) => {
@@ -129,31 +135,95 @@ export default function CreateRecipe() {
     setSteps(updated);
   };
 
-  // ---------------- SUBMIT ----------------
+  // ---------------- CREATE ----------------
   const handleSubmit = (e, selectedStatus) => {
     e.preventDefault();
 
+    const cleanIngredients = ingredients.filter(
+      (ingredient) => ingredient.trim() !== ""
+    );
+
+    const cleanSteps = steps.filter(
+      (step) => step.trim() !== ""
+    );
+
+    if (!title.trim()) {
+      alert("Please enter the recipe title.");
+      return;
+    }
+
+    if (!imagePreview) {
+      alert("Please upload a recipe image.");
+      return;
+    }
+
+    if (!prepTime) {
+      alert("Please enter the prep time.");
+      return;
+    }
+
+    if (!cookTime) {
+      alert("Please enter the cooking time.");
+      return;
+    }
+
+    if (!servings) {
+      alert("Please enter the number of servings.");
+      return;
+    }
+
+    if (cleanIngredients.length === 0) {
+      alert("Please add at least one ingredient.");
+      return;
+    }
+
+    if (cleanSteps.length === 0) {
+      alert("Please add at least one cooking step.");
+      return;
+    }
+
+    const savedRecipes =
+      JSON.parse(localStorage.getItem("recipes")) || [];
+
+    const now = new Date().toISOString();
+
     const newRecipe = {
-      title,
-      image,
-      prepTime,
-      cookTime,
-      servings,
+      id: Date.now(),
+      title: title.trim(),
+      name: title.trim(),
+      image: imagePreview,
+      prepTime: Number(prepTime),
+      cookTime: Number(cookTime),
+      servings: Number(servings),
       status: selectedStatus,
-      ingredients: ingredients.filter((item) => item.trim() !== ""),
-      steps: steps.filter((step) => step.trim() !== ""),
-      createdAt: new Date().toISOString(),
+      ingredients: cleanIngredients,
+      steps: cleanSteps,
+      createdAt: now,
+      updatedAt: now,
     };
 
-    setStatus(selectedStatus);
+    try {
+      localStorage.setItem(
+        "recipes",
+        JSON.stringify([...savedRecipes, newRecipe])
+      );
+    } catch (error) {
+      console.error("Unable to save recipe:", error);
 
-    console.log("Created Recipe:", newRecipe);
+      alert(
+        "Could not save the recipe. The image may be too large."
+      );
+
+      return;
+    }
 
     alert(
       selectedStatus === "public"
-        ? "Recipe published successfully"
-        : "Recipe saved as pending"
+        ? "Recipe published successfully!"
+        : "Recipe saved as pending!"
     );
+
+    navigate("/admin");
   };
 
   return (
@@ -169,7 +239,6 @@ export default function CreateRecipe() {
           <form className="space-y-6">
             {/* TITLE AND IMAGE */}
             <div className="shadow bg-white rounded-xl p-6 border border-[#468432]">
-              {/* TITLE */}
               <div>
                 <label className="block font-medium mb-2 text-xl">
                   Recipe Title
@@ -177,11 +246,10 @@ export default function CreateRecipe() {
 
                 <input
                   type="text"
-                  className="w-full border rounded-lg p-3 outline-none focus:border-[#468432]"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Enter recipe name"
-                  required
+                  className="w-full border rounded-lg p-3 outline-none focus:border-[#468432]"
                 />
               </div>
 
@@ -196,7 +264,7 @@ export default function CreateRecipe() {
                       <img
                         src={imagePreview}
                         alt="Recipe preview"
-                        className="w-full h-full object-cover text-gray-50"
+                        className="w-full h-full object-cover"
                       />
 
                       <button
@@ -223,8 +291,8 @@ export default function CreateRecipe() {
                   id="imageUpload"
                   type="file"
                   accept="image/*"
-                  className="hidden"
                   onChange={handleImageChange}
+                  className="hidden"
                 />
 
                 <p className="text-center text-gray-500 mt-3">
@@ -245,10 +313,10 @@ export default function CreateRecipe() {
                 <input
                   type="number"
                   min="0"
-                  className="w-full border rounded-lg p-3 outline-none"
                   value={prepTime}
                   onChange={(e) => setPrepTime(e.target.value)}
                   placeholder="Enter prep time"
+                  className="w-full border rounded-lg p-3 outline-none"
                 />
               </div>
 
@@ -260,10 +328,10 @@ export default function CreateRecipe() {
                 <input
                   type="number"
                   min="0"
-                  className="w-full border rounded-lg p-3 outline-none"
                   value={cookTime}
                   onChange={(e) => setCookTime(e.target.value)}
                   placeholder="Enter cooking time"
+                  className="w-full border rounded-lg p-3 outline-none"
                 />
               </div>
 
@@ -275,10 +343,10 @@ export default function CreateRecipe() {
                 <input
                   type="number"
                   min="1"
-                  className="w-full border rounded-lg p-3 outline-none"
                   value={servings}
                   onChange={(e) => setServings(e.target.value)}
                   placeholder="Enter servings"
+                  className="w-full border rounded-lg p-3 outline-none"
                 />
               </div>
             </div>
@@ -299,15 +367,14 @@ export default function CreateRecipe() {
                 </button>
               </div>
 
-              {ingredients.map((item, index) => (
+              {ingredients.map((ingredient, index) => (
                 <div
                   key={index}
                   className="flex gap-2 mb-3"
                 >
                   <input
                     type="text"
-                    className="flex-1 border p-3 rounded-lg outline-none"
-                    value={item}
+                    value={ingredient}
                     onChange={(e) =>
                       handleIngredientChange(
                         e.target.value,
@@ -315,6 +382,7 @@ export default function CreateRecipe() {
                       )
                     }
                     placeholder={`Ingredient ${index + 1}`}
+                    className="flex-1 border p-3 rounded-lg outline-none"
                   />
 
                   <button
@@ -329,7 +397,9 @@ export default function CreateRecipe() {
                   <button
                     type="button"
                     onClick={() => moveIngredient(index, 1)}
-                    disabled={index === ingredients.length - 1}
+                    disabled={
+                      index === ingredients.length - 1
+                    }
                     className="px-3 bg-gray-200 rounded-lg disabled:opacity-40"
                   >
                     ↓
@@ -346,7 +416,7 @@ export default function CreateRecipe() {
               ))}
             </div>
 
-            {/* COOKING STEPS */}
+            {/* STEPS */}
             <div className="border border-[#468432] p-4 rounded-lg">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold">
@@ -368,13 +438,16 @@ export default function CreateRecipe() {
                   className="flex gap-2 mb-3"
                 >
                   <textarea
-                    className="flex-1 border p-3 rounded-lg outline-none resize-none"
                     value={step}
                     onChange={(e) =>
-                      handleStepChange(e.target.value, index)
+                      handleStepChange(
+                        e.target.value,
+                        index
+                      )
                     }
                     placeholder={`Step ${index + 1}`}
                     rows="2"
+                    className="flex-1 border p-3 rounded-lg outline-none resize-none"
                   />
 
                   <button
@@ -410,7 +483,9 @@ export default function CreateRecipe() {
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
               <button
                 type="button"
-                onClick={(e) => handleSubmit(e, "pending")}
+                onClick={(e) =>
+                  handleSubmit(e, "pending")
+                }
                 className="border border-[#FFA02E] bg-white text-black px-6 py-3 rounded-lg md:col-span-2"
               >
                 Pending Recipe
@@ -418,7 +493,9 @@ export default function CreateRecipe() {
 
               <button
                 type="button"
-                onClick={(e) => handleSubmit(e, "public")}
+                onClick={(e) =>
+                  handleSubmit(e, "public")
+                }
                 className="bg-[#FFA02E] text-black px-6 py-3 rounded-lg md:col-span-3"
               >
                 Public Recipe
