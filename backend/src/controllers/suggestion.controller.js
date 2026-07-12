@@ -1,4 +1,4 @@
-import { createSuggestionService } from "../services/suggestion.service.js";
+import { createSuggestionService, getAllSuggestionsService } from "../services/suggestion.service.js";
 
 export const createSuggestionController = async (req, res) => {
   try {
@@ -42,6 +42,25 @@ export const createSuggestionController = async (req, res) => {
     return res.status(error.statusCode || 500).json({
       success: false,
       message: error.message || "Failed to submit suggestion! (~T༚T~)",
+    });
+  }
+};
+
+export const getAllSuggestionsController = async (req, res) => {
+  try {
+    const suggestions = await getAllSuggestionsService();
+
+    return res.status(200).json({
+      success: true,
+      count: suggestions.length,
+      data: suggestions,
+    });
+  } catch (error) {
+    console.error("GET ALL SUGGESTIONS ERROR:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to get suggestions! o(╥﹏╥)o",
     });
   }
 };

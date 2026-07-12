@@ -42,3 +42,30 @@ export const createSuggestionService = async ({userId, recipeId, suggestionText}
 
   return suggestion;
 };
+
+export const getAllSuggestionsService = async () => {
+  const suggestions = await prisma.suggestion.findMany({
+    orderBy: {
+      created_at: "desc",
+    },
+    include: {
+      user: {
+        select: {
+          user_id: true,
+          user_name: true,
+          user_profile: true,
+        },
+      },
+      recipe: {
+        select: {
+          recipe_id: true,
+          title: true,
+          image_url: true,
+        },
+      },
+    },
+  });
+
+  return suggestions;
+};
+
