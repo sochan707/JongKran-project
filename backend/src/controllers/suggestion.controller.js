@@ -1,4 +1,4 @@
-import { createSuggestionService, getAllSuggestionsService, getSuggestionByIdService } from "../services/suggestion.service.js";
+import { createSuggestionService, getAllSuggestionsService, getSuggestionByIdService, deleteSuggestionService } from "../services/suggestion.service.js";
 
 export const createSuggestionController = async (req, res) => {
   try {
@@ -88,6 +88,34 @@ export const getSuggestionByIdController = async (req, res) => {
     return res.status(error.statusCode || 500).json({
       success: false,
       message: error.message || "Failed to get suggestion! (; •́ᆺ•̀)",
+    });
+  }
+};
+
+export const deleteSuggestionController = async (req, res) => {
+  try {
+    const suggestionId = Number(req.params.id);
+
+    if (!Number.isInteger(suggestionId) || suggestionId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Suggestion ID must be a valid number! ʕ•̀ᆺ•́ʔ",
+      });
+    }
+
+    const deletedSuggestion = await deleteSuggestionService(suggestionId);
+
+    return res.status(200).json({
+      success: true,
+      message: "Suggestion deleted successfully! ＼( ᵔ ω ᵔ )／",
+      data: deletedSuggestion,
+    });
+  } catch (error) {
+    console.error("DELETE SUGGESTION ERROR:", error);
+
+    return res.status(error.statusCode || 500).json({
+      success: false,
+      message: error.message || "Failed to delete suggestion! o(╥﹏╥)o",
     });
   }
 };

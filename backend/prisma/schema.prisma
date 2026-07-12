@@ -59,24 +59,24 @@ model Ingredient {
 }
 
 model Recipe {
-  recipe_id         Int                    @id @default(autoincrement())
-  title             String                 @db.VarChar(30)
+  recipe_id         Int                @id @default(autoincrement())
+  title             String             @db.VarChar(30)
   description       String?
   difficulty        Difficulty
-  cook_time         Int                    @default(0)
+  cook_time         Int                @default(0)
   created_by        Int
   servings          Int
   image_url         String?
-  prep_time         Int                    @default(0)
-  view_count        Int                    @default(0)
-  created_at        DateTime               @default(now())
-  updated_at        DateTime               @default(now()) @updatedAt
+  prep_time         Int                @default(0)
+  view_count        Int                @default(0)
+  created_at        DateTime           @default(now())
+  updated_at        DateTime           @default(now()) @updatedAt
   favorites         Favorite[]
   histories         History[]
   logs              Logs_audit[]
   recipeIngredients RecipeIngredient[]
   steps             RecipeStep[]
-  creator           User                   @relation(fields: [created_by], references: [user_id])
+  creator           User               @relation(fields: [created_by], references: [user_id])
   suggestions       Suggestion[]
 
   @@map("recipes")
@@ -136,6 +136,7 @@ model Suggestion {
   suggestion_text String
   status          SuggestionStatus @default(pending)
   created_at      DateTime         @default(now())
+  deleted_at      DateTime?
   recipe          Recipe           @relation(fields: [recipe_id], references: [recipe_id], onDelete: Cascade)
   user            User             @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
 
@@ -175,7 +176,7 @@ model AIGeneratedRecipe {
   steps              Json
   generated_by       String   @default("OpenAI")
   status             String   @default("pending")
-  approved_recipe_id  Int?
+  approved_recipe_id Int?
   created_at         DateTime @default(now())
 
   @@map("ai_generated_recipes")
