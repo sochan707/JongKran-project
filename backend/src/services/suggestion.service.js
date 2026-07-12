@@ -69,3 +69,34 @@ export const getAllSuggestionsService = async () => {
   return suggestions;
 };
 
+export const getSuggestionByIdService = async (suggestionId) => {
+  const suggestion = await prisma.suggestion.findUnique({
+    where: {
+      suggestion_id: suggestionId,
+    },
+    include: {
+      user: {
+        select: {
+          user_id: true,
+          user_name: true,
+          user_profile: true,
+        },
+      },
+      recipe: {
+        select: {
+          recipe_id: true,
+          title: true,
+          image_url: true,
+        },
+      },
+    },
+  });
+
+  if (!suggestion) {
+    const error = new Error("Suggestion not found! ˏ(•́∧•̀)ˎ");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  return suggestion;
+};

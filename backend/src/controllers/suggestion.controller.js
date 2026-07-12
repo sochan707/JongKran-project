@@ -1,4 +1,4 @@
-import { createSuggestionService, getAllSuggestionsService } from "../services/suggestion.service.js";
+import { createSuggestionService, getAllSuggestionsService, getSuggestionByIdService } from "../services/suggestion.service.js";
 
 export const createSuggestionController = async (req, res) => {
   try {
@@ -61,6 +61,33 @@ export const getAllSuggestionsController = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: error.message || "Failed to get suggestions! o(╥﹏╥)o",
+    });
+  }
+};
+
+export const getSuggestionByIdController = async (req, res) => {
+  try {
+    const suggestionId = Number(req.params.id);
+
+    if (!Number.isInteger(suggestionId) || suggestionId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Suggestion ID must be a valid number! (; •́ᆺ•̀)",
+      });
+    }
+
+    const suggestion = await getSuggestionByIdService(suggestionId);
+
+    return res.status(200).json({
+      success: true,
+      data: suggestion,
+    });
+  } catch (error) {
+    console.error("GET SUGGESTION BY ID ERROR:", error);
+
+    return res.status(error.statusCode || 500).json({
+      success: false,
+      message: error.message || "Failed to get suggestion! (; •́ᆺ•̀)",
     });
   }
 };
