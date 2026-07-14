@@ -273,7 +273,7 @@ export default function InputIngredients() {
                   <ShoppingBasket size={40} />
 
                   <p className="mt-3 text-center">
-                    Add more to find perfect matches
+                    Add ingredients to find matched Recipe
                   </p>
                 </div>
               ) : (
