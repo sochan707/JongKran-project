@@ -130,3 +130,45 @@ export const deleteSuggestionService = async (suggestionId) => {
 
   return deletedSuggestion;
 };
+
+export const updateSuggestionStatusService = async (suggestionId, status) => {
+  const suggestion = await prisma.suggestion.findFirst({
+    where: {
+      suggestion_id: suggestionId,
+      deleted_at: null,
+    },
+  });
+
+  if (!suggestion) {
+    const error = new Error("Suggestion not found! (; •́ᆺ•̀)");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const updatedSuggestion = await prisma.suggestion.update({
+    where: {
+      suggestion_id: suggestionId,
+    },
+    data: {
+      status,
+    },
+    include: {
+      user: {
+        select: {
+          user_id: true,
+          user_name: true,
+          user_profile: true,
+        },
+      },
+      recipe: {
+        select: {
+          recipe_id: true,
+          title: true,
+          image_url: true,
+        },
+      },
+    },
+  });
+
+  return updatedSuggestion;
+};

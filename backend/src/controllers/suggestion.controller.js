@@ -1,4 +1,4 @@
-import { createSuggestionService, getAllSuggestionsService, getSuggestionByIdService, deleteSuggestionService } from "../services/suggestion.service.js";
+import { createSuggestionService, getAllSuggestionsService, getSuggestionByIdService, deleteSuggestionService, updateSuggestionStatusService } from "../services/suggestion.service.js";
 
 export const createSuggestionController = async (req, res) => {
   try {
@@ -116,6 +116,46 @@ export const deleteSuggestionController = async (req, res) => {
     return res.status(error.statusCode || 500).json({
       success: false,
       message: error.message || "Failed to delete suggestion! o(╥﹏╥)o",
+    });
+  }
+};
+
+export const updateSuggestionStatusController = async (req, res) => {
+  try {
+    const suggestionId = Number(req.params.id);
+    const { status } = req.body;
+
+    if (!Number.isInteger(suggestionId) || suggestionId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Suggestion ID must be a valid number! ʕ•̀ᆺ•́ʔ",
+      });
+    }
+
+    const allowedStatuses = ["pending", "accepted", "rejected"];
+
+    if (!status || !allowedStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message:"Status must be pending, accepted, or rejected! ʕ•̀ᆺ•́ʔ",
+      });
+    }
+
+    const updatedSuggestion = await updateSuggestionStatusService(suggestionId, status);
+
+    return res.status(200).json({
+      success: true,
+      message: "Suggestion status updated successfully! ᕕ( ᐛ )ᕗ",
+      data: updatedSuggestion,
+    });
+  } catch (error) {
+    console.error("UPDATE SUGGESTION STATUS ERROR:", error);
+
+    return res.status(error.statusCode || 500).json({
+      success: false,
+      message:
+        error.message ||
+        "Failed to update suggestion status! o(╥﹏╥)o",
     });
   }
 };
