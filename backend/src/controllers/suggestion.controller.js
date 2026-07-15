@@ -95,6 +95,7 @@ export const getSuggestionByIdController = async (req, res) => {
 export const deleteSuggestionController = async (req, res) => {
   try {
     const suggestionId = Number(req.params.id);
+    const adminId = req.user.userId;
 
     if (!Number.isInteger(suggestionId) || suggestionId <= 0) {
       return res.status(400).json({
@@ -103,7 +104,7 @@ export const deleteSuggestionController = async (req, res) => {
       });
     }
 
-    const deletedSuggestion = await deleteSuggestionService(suggestionId);
+    const deletedSuggestion = await deleteSuggestionService(suggestionId, adminId);
 
     return res.status(200).json({
       success: true,
@@ -122,6 +123,7 @@ export const deleteSuggestionController = async (req, res) => {
 
 export const updateSuggestionStatusController = async (req, res) => {
   try {
+    const adminId = req.user.userId;
     const suggestionId = Number(req.params.id);
     const { status } = req.body;
 
@@ -141,7 +143,7 @@ export const updateSuggestionStatusController = async (req, res) => {
       });
     }
 
-    const updatedSuggestion = await updateSuggestionStatusService(suggestionId, status);
+    const updatedSuggestion = await updateSuggestionStatusService(suggestionId, status, adminId);
 
     return res.status(200).json({
       success: true,

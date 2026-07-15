@@ -139,6 +139,7 @@ model Suggestion {
   deleted_at      DateTime?
   recipe          Recipe           @relation(fields: [recipe_id], references: [recipe_id], onDelete: Cascade)
   user            User             @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+  logs            Logs_audit[]
 
   @@map("suggestions")
 }
@@ -147,11 +148,14 @@ model Logs_audit {
   audit_id         Int             @id @default(autoincrement())
   user_id          Int
   recipe_id        Int?
+  suggestion_id    Int?
   action_type      AdminActionType
   action_timestamp DateTime        @default(now())
   users            User            @relation(fields: [user_id], references: [user_id], map: "logs_audit_admin_id_fkey")
   recipe           Recipe?         @relation(fields: [recipe_id], references: [recipe_id])
+  suggestion       Suggestion?     @relation(fields: [suggestion_id], references: [suggestion_id], onDelete: SetNull)
 
+  @@index([suggestion_id])
   @@map("logs_audit")
 }
 
