@@ -12,3 +12,35 @@ export const createAuditLogService = async ({userId, recipeId = null, suggestion
 
   return auditLog;
 };
+
+export const getAllAuditLogsService = async () => {
+  const auditLogs = await prisma.logs_audit.findMany({
+    orderBy: {
+      action_timestamp: "desc",
+    },
+    include: {
+      users: {
+        select: {
+          user_id: true,
+          user_name: true,
+        },
+      },
+      recipe: {
+        select: {
+          recipe_id: true,
+          title: true,
+        },
+      },
+      suggestion: {
+        select: {
+          suggestion_id: true,
+          suggestion_text: true,
+          status: true,
+          deleted_at: true,
+        },
+      },
+    },
+  });
+
+  return auditLogs;
+};
