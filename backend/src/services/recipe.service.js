@@ -46,6 +46,8 @@ export const findRecipesByIngredients = async (ingredients) => {
 
   const recipes = await prisma.recipe.findMany({
     where: {
+      deleted_at: null,
+
       recipeIngredients: {
         some: {
           ingredient: {
@@ -100,6 +102,9 @@ export const createRecipeService = async (data, userId) => {
 
 export const getAllRecipesService = async () => {
   const recipes = await prisma.recipe.findMany({
+    where: {
+      deleted_at: null,
+    },
     select: {
       recipe_id: true,
       title: true,
@@ -121,9 +126,10 @@ export const getAllRecipesService = async () => {
 }
 
 export const getRecipesByIdService = async (recipeId, isLoggedIn) => {
-  const recipe = await prisma.recipe.findUnique({
+  const recipe = await prisma.recipe.findFirst({
     where: {
       recipe_id: Number(recipeId),
+      deleted_at: null,
     },
     include: isLoggedIn ? {
       recipeIngredients: {
@@ -159,10 +165,48 @@ export const getRecipesByIdService = async (recipeId, isLoggedIn) => {
       cook_time: recipe.cook_time,
       servings: recipe.servings,
       view_count: recipe.view_count,
-      message: "Login to view ingredients and instructions",
+      message: "Login to view ingredients and instructions! ʕ•̀ᆺ•́ʔ",
     };
   }
 
   return recipe;
+};
+
+export const deleteRecipeService = async (recipeId, adminId) => {
+  const recipe = await prisma.recipe.findFirst({
+    where: {
+      recipe_id: recipeId,
+      deleted_at: null,
+    },
+  });
+
+  if (!recipe) {
+    const error = new Error("Recipe not found! ˏ(•́∧•̀)ˎ");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const deletedRecipe = await prisma.$transaction(async (tx) => {
+    const deleted = await tx.recipe.update({
+      where: {
+        recipe_id: recipeId,
+      },
+      data: {
+        deleted_at: new Date(),
+      },
+    });
+
+    await tx.logs_audit.create({
+      data: {
+        user_id: adminId,
+        recipe_id: recipeId,
+        action_type: "delete",
+      },
+    });
+
+    return deleted;
+  });
+
+  return deletedRecipe;
 };
 
