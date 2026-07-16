@@ -274,3 +274,64 @@ export const updateRecipeStepService = async (recipeId, currentStepNumber, data,
     return updatedStep;
   });
 };
+
+export const removeRecipeStepService = async (recipeId, stepNumber, adminId) => {
+  const normalizedRecipeId = Number(recipeId);
+  const normalizedStepNumber = Number(stepNumber);
+
+  return prisma.$transaction(async (tx) => {
+    const recipe = await tx.recipe.findFirst({
+      where: {
+        recipe_id: normalizedRecipeId,
+        deleted_at: null,
+      },
+      select: {
+        recipe_id: true,
+      },
+    });
+
+    if (!recipe) {
+      const error = new Error(
+        "Recipe not found! ˏ(•́∧•̀)ˎ"
+      );
+      error.statusCode = 404;
+      throw error;
+    }
+
+    const recipeStep = await tx.recipeStep.findUnique({
+      where: {
+        recipe_id_step_number: {
+          recipe_id: normalizedRecipeId,
+          step_number: normalizedStepNumber,
+        },
+      },
+    });
+
+    if (!recipeStep) {
+      const error = new Error(
+        "Recipe step not found! ˏ(•́∧•̀)ˎ"
+      );
+      error.statusCode = 404;
+      throw error;
+    }
+
+    await tx.recipeStep.delete({
+      where: {
+        recipe_id_step_number: {
+          recipe_id: normalizedRecipeId,
+          step_number: normalizedStepNumber,
+        },
+      },
+    });
+
+    await tx.logs_audit.create({
+      data: {
+        user_id: adminId,
+        recipe_id: normalizedRecipeId,
+        action_type: "update",
+      },
+    });
+
+    return recipeStep;
+  });
+};
