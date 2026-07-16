@@ -142,3 +142,135 @@ export const bulkAddRecipeStepsService = async (recipeId, steps, adminId) => {
     return addedSteps;
   });
 };
+
+export const updateRecipeStepService = async (recipeId, currentStepNumber, data, adminId) => {
+  const normalizedRecipeId = Number(recipeId);
+  const normalizedCurrentStepNumber = Number(currentStepNumber);
+
+  const hasStepNumber = Object.prototype.hasOwnProperty.call(data, "step_number");
+
+  const hasInstructionText = Object.prototype.hasOwnProperty.call(data, "instruction_text");
+
+  if (!hasStepNumber && !hasInstructionText) {
+    const error = new Error(
+      "Step number or instruction is required! ʕ•̀ᆺ•́ʔ"
+    );
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const updateData = {};
+
+  if (hasStepNumber) {
+    const newStepNumber = Number(data.step_number);
+
+    if (!Number.isInteger(newStepNumber) || newStepNumber <= 0) {
+      const error = new Error(
+        "Step number must be a positive integer! ʕ•̀ᆺ•́ʔ"
+      );
+      error.statusCode = 400;
+      throw error;
+    }
+
+    updateData.step_number = newStepNumber;
+  }
+
+  if (hasInstructionText) {
+    const instructionText =
+      typeof data.instruction_text === "string"
+        ? data.instruction_text.trim()
+        : "";
+
+    if (!instructionText) {
+      const error = new Error(
+        "Instruction cannot be blank! ʕ•̀ᆺ•́ʔ"
+      );
+      error.statusCode = 400;
+      throw error;
+    }
+
+    updateData.instruction_text = instructionText;
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const recipe = await tx.recipe.findFirst({
+      where: {
+        recipe_id: normalizedRecipeId,
+        deleted_at: null,
+      },
+      select: {
+        recipe_id: true,
+      },
+    });
+
+    if (!recipe) {
+      const error = new Error(
+        "Recipe not found! ˏ(•́∧•̀)ˎ"
+      );
+      error.statusCode = 404;
+      throw error;
+    }
+
+    const existingStep = await tx.recipeStep.findUnique({
+      where: {
+        recipe_id_step_number: {
+          recipe_id: normalizedRecipeId,
+          step_number: normalizedCurrentStepNumber,
+        },
+      },
+    });
+
+    if (!existingStep) {
+      const error = new Error(
+        "Recipe step not found! ˏ(•́∧•̀)ˎ"
+      );
+      error.statusCode = 404;
+      throw error;
+    }
+
+    if (
+      hasStepNumber &&
+      updateData.step_number !== normalizedCurrentStepNumber
+    ) {
+      const duplicateStep = await tx.recipeStep.findUnique({
+        where: {
+          recipe_id_step_number: {
+            recipe_id: normalizedRecipeId,
+            step_number: updateData.step_number,
+          },
+        },
+        select: {
+          step_number: true,
+        },
+      });
+
+      if (duplicateStep) {
+        const error = new Error(
+          `Step number ${updateData.step_number} already exists in this recipe! ʕ•̀ᆺ•́ʔ`
+        );
+        error.statusCode = 409;
+        throw error;
+      }
+    }
+
+    const updatedStep = await tx.recipeStep.update({
+      where: {
+        recipe_id_step_number: {
+          recipe_id: normalizedRecipeId,
+          step_number: normalizedCurrentStepNumber,
+        },
+      },
+      data: updateData,
+    });
+
+    await tx.logs_audit.create({
+      data: {
+        user_id: adminId,
+        recipe_id: normalizedRecipeId,
+        action_type: "update",
+      },
+    });
+
+    return updatedStep;
+  });
+};

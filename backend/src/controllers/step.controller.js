@@ -1,4 +1,4 @@
-import { addRecipeStepService, bulkAddRecipeStepsService } from "../services/step.service.js";
+import { addRecipeStepService, bulkAddRecipeStepsService, updateRecipeStepService } from "../services/step.service.js";
 
 export const addRecipeStepController = async (req, res) => {
     try {
@@ -53,6 +53,74 @@ export const bulkAddRecipeStepsController = async (req, res) => {
       message:
         error.message ||
         "Failed to add recipe steps! o(╥﹏╥)o",
+    });
+  }
+};
+
+export const updateRecipeStepController = async (req, res) => {
+  try {
+    const recipeId = Number(req.params.recipeId);
+    const currentStepNumber = Number(req.params.stepNumber);
+    const adminId = req.user.userId;
+
+    if (!Number.isInteger(recipeId) || recipeId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Recipe ID must be a valid number! ʕ•̀ᆺ•́ʔ",
+      });
+    }
+
+    if (
+      !Number.isInteger(currentStepNumber) ||
+      currentStepNumber <= 0
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Current step number must be valid! ʕ•̀ᆺ•́ʔ",
+      });
+    }
+
+    const updateData = {};
+
+    if (
+      Object.prototype.hasOwnProperty.call(
+        req.body,
+        "step_number"
+      )
+    ) {
+      updateData.step_number = req.body.step_number;
+    }
+
+    if (
+      Object.prototype.hasOwnProperty.call(
+        req.body,
+        "instruction_text"
+      )
+    ) {
+      updateData.instruction_text =
+        req.body.instruction_text;
+    }
+
+    const updatedStep = await updateRecipeStepService(
+      recipeId,
+      currentStepNumber,
+      updateData,
+      adminId
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Recipe step updated successfully! ᕕ( ᐛ )ᕗ",
+      data: updatedStep,
+    });
+  } catch (error) {
+    console.error("UPDATE RECIPE STEP ERROR:", error);
+
+    return res.status(error.statusCode || 500).json({
+      success: false,
+      message:
+        error.message ||
+        "Failed to update recipe step! o(╥﹏╥)o",
     });
   }
 };

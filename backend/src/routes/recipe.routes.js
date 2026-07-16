@@ -1,11 +1,10 @@
 import express from "express";
-// import { getRecipes } from "../controllers/recipe.controller.js";
 import { authenticate } from "../middleware/auth.middleware.js";
 import { authorize } from "../middleware/rbac.middleware.js";
 import { createRecipeController, getAllRecipesController, getRecipeByIdController, deleteRecipeController, updateRecipeController } from "../controllers/recipe.controller.js";
 import { optionalAuthenticate } from "../middleware/optionalAuth.middleware.js";
 import { addIngredientToRecipeController, bulkAddIngredientsToRecipeController, updateRecipeIngredientController } from "../controllers/ingredient.controller.js";
-import { addRecipeStepController, bulkAddRecipeStepsController } from "../controllers/step.controller.js";
+import { addRecipeStepController, bulkAddRecipeStepsController, updateRecipeStepController } from "../controllers/step.controller.js";
 
 const router = express.Router();
 
@@ -21,6 +20,7 @@ router.post("/:id/steps", authenticate, authorize(["Admin"]), addRecipeStepContr
 router.post("/:id/steps/bulk", authenticate, authorize(["Admin"]), bulkAddRecipeStepsController);
 router.delete("/:id", authenticate, authorize(["Admin"]), deleteRecipeController);
 router.patch("/:id", authenticate, authorize(["Admin"]), updateRecipeController);
+router.patch("/:recipeId/steps/:stepNumber", authenticate, authorize(["Admin"]), updateRecipeStepController);
 
 
 export default router;
