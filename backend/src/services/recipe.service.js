@@ -210,3 +210,38 @@ export const deleteRecipeService = async (recipeId, adminId) => {
   return deletedRecipe;
 };
 
+export const updateRecipeService = async (recipeId, updateData, adminId) => {
+  const recipe = await prisma.recipe.findFirst({
+    where: {
+      recipe_id: recipeId,
+      deleted_at: null,
+    },
+  });
+
+  if (!recipe) {
+    const error = new Error("Recipe not found! ˏ(•́∧•̀)ˎ");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const updatedRecipe = await prisma.$transaction(async (tx) => {
+    const updated = await tx.recipe.update({
+      where: {
+        recipe_id: recipeId,
+      },
+      data: updateData,
+    });
+
+    await tx.logs_audit.create({
+      data: {
+        user_id: adminId,
+        recipe_id: recipeId,
+        action_type: "update",
+      },
+    });
+
+    return updated;
+  });
+
+  return updatedRecipe;
+};
