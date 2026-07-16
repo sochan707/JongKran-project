@@ -1,31 +1,106 @@
 import prisma from "../prismaClient.js";
 
 export const addIngredientToRecipeService = async (recipeId, data) => {
-  const {ingredient_id, quantity, unit} = data;
+  const normalizedRecipeId = Number(recipeId);
+  const ingredientId = Number(data.ingredient_id);
+  const quantity = Number(data.quantity);
+  const unit = typeof data.unit === "string" ? data.unit.trim() : "";
 
-  if (!ingredient_id || !quantity || !unit) {
-    throw new Error(
-      "Ingredient, quantity, and unit are required"
-    );
+  if (!Number.isInteger(normalizedRecipeId) || normalizedRecipeId <= 0) {
+    const error = new Error("Recipe ID must be a valid number! ʕ•̀ᆺ•́ʔ");
+    error.statusCode = 400;
+    throw error;
   }
 
-  const recipeIngredient = await prisma.recipeIngredient.create({
-    data: {
-      recipe_id: Number(recipeId),
-      ingredient_id: Number(ingredient_id),
-      quantity,
-      unit,
-    },
-    include: {
-      ingredient: {
-        select: {
-          name: true,
+  if (!Number.isInteger(ingredientId) || ingredientId <= 0) {
+    const error = new Error("Ingredient ID must be a valid number! ʕ•̀ᆺ•́ʔ");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (!Number.isFinite(quantity) || quantity <= 0) {
+    const error = new Error("Quantity must be greater than 0! ʕ•̀ᆺ•́ʔ");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (!unit) {
+    const error = new Error("Unit is required! ʕ•̀ᆺ•́ʔ");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (unit.length > 15) {
+    const error = new Error("Unit must not exceed 15 characters! ʕ•̀ᆺ•́ʔ");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const recipe = await tx.recipe.findFirst({
+      where: {
+        recipe_id: normalizedRecipeId,
+        deleted_at: null,
+      },
+      select: {
+        recipe_id: true,
+      },
+    });
+
+    if (!recipe) {
+      const error = new Error("Recipe not found! ˏ(•́∧•̀)ˎ");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    const ingredient = await tx.ingredient.findUnique({
+      where: {
+        ingredient_id: ingredientId,
+      },
+      select: {
+        ingredient_id: true,
+      },
+    });
+
+    if (!ingredient) {
+      const error = new Error("Ingredient not found! ˏ(•́∧•̀)ˎ");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    const existingRelation =
+      await tx.recipeIngredient.findUnique({
+        where: {
+          recipe_id_ingredient_id: {
+            recipe_id: normalizedRecipeId,
+            ingredient_id: ingredientId,
+          },
+        },
+      });
+
+    if (existingRelation) {
+      const error = new Error("Ingredient already exists in this recipe! ʕ•̀ᆺ•́ʔ");
+      error.statusCode = 409;
+      throw error;
+    }
+
+    return tx.recipeIngredient.create({
+      data: {
+        recipe_id: normalizedRecipeId,
+        ingredient_id: ingredientId,
+        quantity,
+        unit,
+      },
+      include: {
+        ingredient: {
+          select: {
+            ingredient_id: true,
+            name: true,
+          },
         },
       },
-    },
+    });
   });
-
-  return recipeIngredient;
 };
 
 export const bulkAddIngredientsToRecipeService = async (recipeId, ingredients, adminId) => {
