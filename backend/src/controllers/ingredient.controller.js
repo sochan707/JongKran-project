@@ -1,4 +1,4 @@
-import { addIngredientToRecipeService, bulkAddIngredientsToRecipeService, updateRecipeIngredientService } from "../services/ingredient.service.js";
+import { addIngredientToRecipeService, bulkAddIngredientsToRecipeService, updateRecipeIngredientService, removeRecipeIngredientService } from "../services/ingredient.service.js";
 
 export const addIngredientToRecipeController = async (req, res) => {
     try {
@@ -113,6 +113,51 @@ export const updateRecipeIngredientController = async (req, res) => {
       message:
         error.message ||
         "Failed to update recipe ingredient! o(╥﹏╥)o",
+    });
+  }
+};
+
+export const removeRecipeIngredientController = async (req, res) => {
+  try {
+    const recipeId = Number(req.params.recipeId);
+    const ingredientId = Number(req.params.ingredientId);
+    const adminId = req.user.userId;
+
+    if (!Number.isInteger(recipeId) || recipeId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Recipe ID must be a valid number! ʕ•̀ᆺ•́ʔ",
+      });
+    }
+
+    if (!Number.isInteger(ingredientId) || ingredientId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Ingredient ID must be a valid number! ʕ•̀ᆺ•́ʔ",
+      });
+    }
+
+    const removedIngredient =
+      await removeRecipeIngredientService(
+        recipeId,
+        ingredientId,
+        adminId
+      );
+
+    return res.status(200).json({
+      success: true,
+      message:
+        "Ingredient removed from recipe successfully! ᕕ( ᐛ )ᕗ",
+      data: removedIngredient,
+    });
+  } catch (error) {
+    console.error("REMOVE RECIPE INGREDIENT ERROR:", error);
+
+    return res.status(error.statusCode || 500).json({
+      success: false,
+      message:
+        error.message ||
+        "Failed to remove recipe ingredient! o(╥﹏╥)o",
     });
   }
 };

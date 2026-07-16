@@ -324,3 +324,73 @@ export const updateRecipeIngredientService = async (recipeId, ingredientId, data
     return updatedRecipeIngredient;
   });
 };
+
+export const removeRecipeIngredientService = async (recipeId, ingredientId, adminId) => {
+  const normalizedRecipeId = Number(recipeId);
+  const normalizedIngredientId = Number(ingredientId);
+
+  return prisma.$transaction(async (tx) => {
+    const recipe = await tx.recipe.findFirst({
+      where: {
+        recipe_id: normalizedRecipeId,
+        deleted_at: null,
+      },
+      select: {
+        recipe_id: true,
+      },
+    });
+
+    if (!recipe) {
+      const error = new Error(
+        "Recipe not found! ˏ(•́∧•̀)ˎ"
+      );
+      error.statusCode = 404;
+      throw error;
+    }
+
+    const recipeIngredient =
+      await tx.recipeIngredient.findUnique({
+        where: {
+          recipe_id_ingredient_id: {
+            recipe_id: normalizedRecipeId,
+            ingredient_id: normalizedIngredientId,
+          },
+        },
+        include: {
+          ingredient: {
+            select: {
+              ingredient_id: true,
+              name: true,
+            },
+          },
+        },
+      });
+
+    if (!recipeIngredient) {
+      const error = new Error(
+        "Ingredient does not belong to this recipe! ˏ(•́∧•̀)ˎ"
+      );
+      error.statusCode = 404;
+      throw error;
+    }
+
+    await tx.recipeIngredient.delete({
+      where: {
+        recipe_id_ingredient_id: {
+          recipe_id: normalizedRecipeId,
+          ingredient_id: normalizedIngredientId,
+        },
+      },
+    });
+
+    await tx.logs_audit.create({
+      data: {
+        user_id: adminId,
+        recipe_id: normalizedRecipeId,
+        action_type: "update",
+      },
+    });
+
+    return recipeIngredient;
+  });
+};
