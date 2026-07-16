@@ -1,4 +1,4 @@
-import { addIngredientToRecipeService, bulkAddIngredientsToRecipeService } from "../services/ingredient.service.js";
+import { addIngredientToRecipeService, bulkAddIngredientsToRecipeService, updateRecipeIngredientService } from "../services/ingredient.service.js";
 
 export const addIngredientToRecipeController = async (req, res) => {
     try {
@@ -53,6 +53,66 @@ export const bulkAddIngredientsToRecipeController = async (req, res) => {
       message:
         error.message ||
         "Failed to add ingredients! o(╥﹏╥)o",
+    });
+  }
+};
+
+export const updateRecipeIngredientController = async (req, res) => {
+  try {
+    const recipeId = Number(req.params.recipeId);
+    const ingredientId = Number(req.params.ingredientId);
+    const adminId = req.user.userId;
+
+    if (!Number.isInteger(recipeId) || recipeId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Recipe ID must be a valid number! ʕ•̀ᆺ•́ʔ",
+      });
+    }
+
+    if (!Number.isInteger(ingredientId) || ingredientId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Ingredient ID must be a valid number! ʕ•̀ᆺ•́ʔ",
+      });
+    }
+
+    const updateData = {};
+
+    if (
+      Object.prototype.hasOwnProperty.call(req.body, "quantity")
+    ) {
+      updateData.quantity = req.body.quantity;
+    }
+
+    if (
+      Object.prototype.hasOwnProperty.call(req.body, "unit")
+    ) {
+      updateData.unit = req.body.unit;
+    }
+
+    const updatedIngredient =
+      await updateRecipeIngredientService(
+        recipeId,
+        ingredientId,
+        updateData,
+        adminId
+      );
+
+    return res.status(200).json({
+      success: true,
+      message:
+        "Recipe ingredient updated successfully! ᕕ( ᐛ )ᕗ",
+      data: updatedIngredient,
+    });
+  } catch (error) {
+    console.error("UPDATE RECIPE INGREDIENT ERROR:", error);
+
+    return res.status(error.statusCode || 500).json({
+      success: false,
+      message:
+        error.message ||
+        "Failed to update recipe ingredient! o(╥﹏╥)o",
     });
   }
 };

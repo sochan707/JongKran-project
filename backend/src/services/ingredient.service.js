@@ -199,3 +199,128 @@ export const bulkAddIngredientsToRecipeService = async (recipeId, ingredients, a
     return addedIngredients;
   });
 };
+
+export const updateRecipeIngredientService = async (recipeId, ingredientId, data, adminId) => {
+  const normalizedRecipeId = Number(recipeId);
+  const normalizedIngredientId = Number(ingredientId);
+
+  const hasQuantity = Object.prototype.hasOwnProperty.call(data, "quantity");
+
+  const hasUnit = Object.prototype.hasOwnProperty.call(data, "unit");
+
+  if (!hasQuantity && !hasUnit) {
+    const error = new Error(
+      "Quantity or unit is required! ʕ•̀ᆺ•́ʔ"
+    );
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const updateData = {};
+
+  if (hasQuantity) {
+    const quantity = Number(data.quantity);
+
+    if (!Number.isFinite(quantity) || quantity <= 0) {
+      const error = new Error(
+        "Quantity must be greater than 0! ʕ•̀ᆺ•́ʔ"
+      );
+      error.statusCode = 400;
+      throw error;
+    }
+
+    updateData.quantity = quantity;
+  }
+
+  if (hasUnit) {
+    const unit =
+      typeof data.unit === "string" ? data.unit.trim() : "";
+
+    if (!unit) {
+      const error = new Error(
+        "Unit cannot be blank! ʕ•̀ᆺ•́ʔ"
+      );
+      error.statusCode = 400;
+      throw error;
+    }
+
+    if (unit.length > 15) {
+      const error = new Error(
+        "Unit must not exceed 15 characters! ʕ•̀ᆺ•́ʔ"
+      );
+      error.statusCode = 400;
+      throw error;
+    }
+
+    updateData.unit = unit;
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const recipe = await tx.recipe.findFirst({
+      where: {
+        recipe_id: normalizedRecipeId,
+        deleted_at: null,
+      },
+      select: {
+        recipe_id: true,
+      },
+    });
+
+    if (!recipe) {
+      const error = new Error("Recipe not found! ˏ(•́∧•̀)ˎ");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    const recipeIngredient =
+      await tx.recipeIngredient.findUnique({
+        where: {
+          recipe_id_ingredient_id: {
+            recipe_id: normalizedRecipeId,
+            ingredient_id: normalizedIngredientId,
+          },
+        },
+        select: {
+          recipe_id: true,
+          ingredient_id: true,
+        },
+      });
+
+    if (!recipeIngredient) {
+      const error = new Error(
+        "Ingredient does not belong to this recipe! ˏ(•́∧•̀)ˎ"
+      );
+      error.statusCode = 404;
+      throw error;
+    }
+
+    const updatedRecipeIngredient =
+      await tx.recipeIngredient.update({
+        where: {
+          recipe_id_ingredient_id: {
+            recipe_id: normalizedRecipeId,
+            ingredient_id: normalizedIngredientId,
+          },
+        },
+        data: updateData,
+        include: {
+          ingredient: {
+            select: {
+              ingredient_id: true,
+              name: true,
+            },
+          },
+        },
+      });
+
+    await tx.logs_audit.create({
+      data: {
+        user_id: adminId,
+        recipe_id: normalizedRecipeId,
+        action_type: "update",
+      },
+    });
+
+    return updatedRecipeIngredient;
+  });
+};
