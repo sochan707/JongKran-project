@@ -113,7 +113,16 @@ export const updateRecipeController = async (req, res) => {
         });
       }
 
-      updateData.title = title.trim();
+      const trimmedTitle = title.trim();
+
+      if (trimmedTitle.length > 30) {
+        return res.status(400).json({
+          success: false,
+          message: "Title must not exceed 30 characters! ʕ•̀ᆺ•́ʔ",
+        });
+      }
+
+      updateData.title = trimmedTitle;
     }
 
     if (description !== undefined) {

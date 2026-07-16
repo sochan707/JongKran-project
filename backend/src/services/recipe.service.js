@@ -84,9 +84,19 @@ export const createRecipeService = async (data, userId) => {
     throw new Error("Title, difficulty, prep_time, cook_time, and servings are required! ʕ•̀ᆺ•́ʔ");
   }
 
+  const trimmedTitle = title.trim();
+
+  if (trimmedTitle.length > 30) {
+    const error = new Error(
+      "Title must not exceed 30 characters! ʕ•̀ᆺ•́ʔ"
+    );
+    error.statusCode = 400;
+    throw error;
+  }
+
   const recipe = await prisma.recipe.create({
     data: {
-      title,
+      title: trimmedTitle,
       description,
       image_url,
       difficulty,
