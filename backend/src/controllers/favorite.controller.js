@@ -1,0 +1,38 @@
+import { toggleFavoriteService, getUserFavoritesService } from "../services/favorite.service.js";
+
+export const toggleFavoriteController = async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const {recipeId} = req.params;
+        const result = await toggleFavoriteService(userId,recipeId);
+
+        return res.status(200).json({
+            success: true,
+            ...result
+        });
+
+    } catch(error) {
+        return res.status(400).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+export const getUserFavoritesController = async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const favorites = await getUserFavoritesService(userId);
+
+        return res.status(200).json({
+            success: true,
+            data: favorites
+        });
+
+    } catch(error) {
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};

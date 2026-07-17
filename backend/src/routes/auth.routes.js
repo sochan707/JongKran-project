@@ -10,16 +10,6 @@ router.post("/login", login)
 router.post("/refresh", refreshTokenController);
 router.post("/logout", authenticate, logoutController);
 
-// router.post("/recipes", authenticate, authorize(["Admin"]), createRecipe);
-// router.post("/recipes", authenticate, authorize(["Admin"]), updateRecipe);
-// router.post("/recipes", authenticate, authorize(["Admin"]), deleteRecipe);
-// router.get("/recipes", authenticate, authorize(["Admin"]), getRecipe);
-
-// router.get("/favorites", authenticate, authorize(["User", "Admin"]), getFavorites);
-// router.post("/favorites", authenticate, authorize(["User", "Admin"]), addFavorites);
-// router.get("/favorites", authenticate, authorize(["User", "Admin"]), removeFavorites);
-
-
 // ========================== TEST ===========================
 router.post(
   "/admin/test",
