@@ -17,23 +17,30 @@ export default function Register() {
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
 
-    setForm({
-      ...form,
+    setForm((previousForm) => ({
+      ...previousForm,
       [name]: type === "checkbox" ? checked : value,
-    });
+    }));
+
+    setError("");
   };
 
   const handleCreateAccount = (e) => {
     e.preventDefault();
     setError("");
 
-    if (!form.username || !form.email || !form.password || !form.confirmPassword) {
+    if (
+      !form.username.trim() ||
+      !form.email.trim() ||
+      !form.password ||
+      !form.confirmPassword
+    ) {
       setError("Please fill in all fields.");
       return;
     }
 
-    if (!form.email.includes("@") || !form.email.includes(".")) {
-      setError("Please enter a valid email.");
+    if (!form.email.toLowerCase().endsWith("@gmail.com")) {
+      setError("Please enter a valid Gmail address.");
       return;
     }
 
@@ -48,117 +55,164 @@ export default function Register() {
     }
 
     if (!form.agree) {
-      setError("Please agree to the terms first.");
+      setError("Please agree to the Terms of Service and Privacy Policy.");
       return;
     }
 
-    navigate("/login");
+    const registeredUser = {
+      username: form.username.trim(),
+      email: form.email.trim().toLowerCase(),
+      password: form.password,
+
+      // Profile information starts empty
+      phone: null,
+      dob: null,
+      bio: null,
+      profileImage: null,
+
+      // Save the real registration date
+      memberSince: new Date().toISOString(),
+    };
+
+    localStorage.setItem(
+      "registeredUser",
+      JSON.stringify(registeredUser)
+    );
+
+    navigate("/login", {
+      state: {
+        message: "Account created successfully. Please log in.",
+      },
+    });
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-white md:bg-gray-100">
-      <div className="grid md:grid-cols-2 w-full max-w-7xl min-h-screen md:min-h-[875px]">
-        <div className="hidden md:block bg-[url('https://images.unsplash.com/photo-1542838132-92c53300491e')] bg-cover bg-center" />
+    <main className="min-h-screen bg-gray-100 flex items-center justify-center p-6 overflow-auto">
+      {/* Fixed 1000 x 680 box */}
+      <div className="w-[1000px] h-[680px] shrink-0 rounded-xl overflow-hidden border-2 border-[#468432] bg-white shadow-2xl">
+        <div className="grid grid-cols-2 h-full">
+          {/* Left Image */}
+          <div
+            className="bg-cover bg-center"
+            style={{
+              backgroundImage:
+                "url('https://admin.sriboga.com/storage/news/1685519127-chef-preparing-food-ingredients-2021-09-24-03-57-22-utc%20(1).webp')",
+            }}
+          />
 
-        <div className="flex items-center justify-center p-[25px]">
-          <div className="w-full md:w-[740px] md:h-[750px] bg-white rounded-xl shadow-lg p-8 flex flex-col justify-center">
-            <h1 className="title-font text-4xl font-bold text-center">
-              Create Account
-            </h1>
-
-            <p className="text-center text-gray-500 mt-2">
-              Create your account to start cooking with us.
-            </p>
-
-            {error && (
-              <p className="mt-5 bg-red-100 text-red-600 px-4 py-3 rounded-md text-sm">
-                {error}
-              </p>
-            )}
-
-            <form onSubmit={handleCreateAccount} className="mt-6 space-y-4">
-              <div>
-                <label className="block text-sm font-semibold mb-1">
-                  Username
-                </label>
-                <input
-                  name="username"
-                  value={form.username}
-                  onChange={handleChange}
-                  className="w-full bg-gray-200 rounded-md px-4 py-3 outline-none"
-                  placeholder="Username"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold mb-1">
-                  Email Address
-                </label>
-                <input
-                  name="email"
-                  value={form.email}
-                  onChange={handleChange}
-                  className="w-full bg-gray-200 rounded-md px-4 py-3 outline-none"
-                  placeholder="Email Address"
-                  type="email"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold mb-1">
-                  Password
-                </label>
-                <input
-                  name="password"
-                  value={form.password}
-                  onChange={handleChange}
-                  className="w-full bg-gray-200 rounded-md px-4 py-3 outline-none"
-                  placeholder="Password"
-                  type="password"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold mb-1">
-                  Confirm Password
-                </label>
-                <input
-                  name="confirmPassword"
-                  value={form.confirmPassword}
-                  onChange={handleChange}
-                  className="w-full bg-gray-200 rounded-md px-4 py-3 outline-none"
-                  placeholder="Confirm Password"
-                  type="password"
-                />
-              </div>
-
-              <label className="flex gap-2 text-sm items-start">
-                <input
-                  name="agree"
-                  checked={form.agree}
-                  onChange={handleChange}
-                  type="checkbox"
-                  className="mt-1"
-                />
-                <span>I agree to Terms of Service and Privacy Policy</span>
-              </label>
-
-              <button
-                type="submit"
-                className="w-full bg-[#468432] hover:bg-[#1A5C05] text-white py-3 rounded-md font-semibold"
-              >
+          {/* Right Side */}
+          <div className="flex items-center justify-center bg-white px-10">
+            <div className="w-full max-w-md">
+              <h1 className="text-4xl font-bold text-center">
                 Create Account
-              </button>
-            </form>
+              </h1>
 
-            <div className="flex justify-center gap-2 mt-6 text-sm">
-              <span>Already have an account?</span>
-              <Link
-                to="/login"
-                className="text-[#468432] font-bold hover:text-[#1A5C05]"
+              <p className="text-center text-gray-500 mt-2">
+                Create your account to start cooking with us.
+              </p>
+
+              {error && (
+                <p className="mt-5 bg-red-100 text-red-600 px-4 py-3 rounded-md text-sm">
+                  {error}
+                </p>
+              )}
+
+              <form
+                onSubmit={handleCreateAccount}
+                className="mt-5 space-y-4"
               >
-                Log In
-              </Link>
+                <div>
+                  <label className="block text-sm font-semibold mb-1">
+                    Username
+                  </label>
+
+                  <input
+                    type="text"
+                    name="username"
+                    value={form.username}
+                    onChange={handleChange}
+                    placeholder="Username"
+                    className="w-full bg-gray-100 rounded-md px-4 py-3 outline-none focus:ring-2 focus:ring-[#468432]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold mb-1">
+                    Email Address
+                  </label>
+
+                  <input
+                    type="email"
+                    name="email"
+                    value={form.email}
+                    onChange={handleChange}
+                    placeholder="Email Address"
+                    className="w-full bg-gray-100 rounded-md px-4 py-3 outline-none focus:ring-2 focus:ring-[#468432]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold mb-1">
+                    Password
+                  </label>
+
+                  <input
+                    type="password"
+                    name="password"
+                    value={form.password}
+                    onChange={handleChange}
+                    placeholder="Enter your password"
+                    className="w-full bg-gray-100 rounded-md px-4 py-3 outline-none focus:ring-2 focus:ring-[#468432]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold mb-1">
+                    Confirm Password
+                  </label>
+
+                  <input
+                    type="password"
+                    name="confirmPassword"
+                    value={form.confirmPassword}
+                    onChange={handleChange}
+                    placeholder="Confirm Password"
+                    className="w-full bg-gray-100 rounded-md px-4 py-3 outline-none focus:ring-2 focus:ring-[#468432]"
+                  />
+                </div>
+
+                <label className="flex gap-2 text-sm items-start cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="agree"
+                    checked={form.agree}
+                    onChange={handleChange}
+                    className="mt-1 accent-[#468432]"
+                  />
+
+                  <span>
+                    I agree to Terms of Service and Privacy Policy
+                  </span>
+                </label>
+
+                <button
+                  type="submit"
+                  className="w-full bg-[#468432] hover:bg-[#1A5C05] text-white py-3 rounded-md font-semibold transition"
+                >
+                  Create Account
+                </button>
+              </form>
+
+              <div className="flex justify-center gap-2 mt-4 text-sm">
+                <span>Already have an account?</span>
+
+                <Link
+                  to="/login"
+                  className="text-[#468432] font-bold hover:text-[#1A5C05]"
+                >
+                  Log In
+                </Link>
+              </div>
             </div>
           </div>
         </div>

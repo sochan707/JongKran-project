@@ -15,8 +15,8 @@ export default function Favorite() {
     <>
       <Header />
 
-      <main className="mx-[25px] py-12 min-h-[60vh]">
-        <h1 className="title-font text-4xl md:text-6xl font-bold">
+      <main className="mx-[25px] py-6 min-h-[60vh]">
+        <h1 className="title-font text-4xl md:text-4xl font-bold">
           Your Favorite Recipes
         </h1>
 
@@ -34,7 +34,7 @@ export default function Favorite() {
             </p>
           </div>
         ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
             {favorites.map((recipe) => (
               <RecipeCart
                 key={recipe.id}

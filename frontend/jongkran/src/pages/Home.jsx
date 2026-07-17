@@ -3,7 +3,7 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import RecipeCart from "../components/RecipeCart";
 import Hero from "../components/ui/homescreen/hero";
-import aboutImage from '../assets/about.png';
+import aboutImage from '../assets/about1.png';
 import recipes from "../data/recipes";
 
 
@@ -61,18 +61,31 @@ export default function Home() {
         </section>
 
         <section className="mx-[25px] py-12">
-          <h2 className="title-font text-3xl font-bold mb-6">About JongKran</h2>
+          <h2 className="title-font text-4xl font-bold mb-6">About JongKran</h2>
 
-            <div className="grid md:grid-cols-2 gap-8 items-center">
-              <img
-                src={aboutImage}
-                alt="About JongKran"
-                className="rounded-xl w-full h-[420px] object-cover"
-              />
-              <p className="text-base md:text-xl leading-8">
-                JongKran was created from a simple idea: everyone should feel confident cooking at home. Our name is inspired by the warmth of the kitchen the place where families gather, stories are shared, and meals bring people together.We make cooking easier for busy home cooks by turning complicated recipes into simple, step-by-step experiences. With clear instructions, helpful visual guides, and a supportive community, JongKran helps you grow from a beginner into someone who truly enjoys cooking and sharing food with others.
+          <div className="grid md:grid-cols-2 gap-10 items-center">
+            <img
+              src={aboutImage}
+              alt="About JongKran"
+              className="rounded-xl w-full h-[500px] object-cover shadow-md"
+            />
+
+            <div className="space-y-5">
+              <p className="text-base md:text-xl leading-8 font-normal text-gray-700">
+                JongKran was created from a simple idea: everyone should feel confident
+                cooking at home. Our name is inspired by the warmth of the kitchen, the
+                place where families gather, stories are shared, and meals bring people
+                together.
+              </p>
+
+              <p className="text-base md:text-xl leading-8 font-normal text-gray-700">
+                We make cooking easier for busy home cooks by turning complicated recipes
+                into simple, step-by-step experiences. With clear instructions, helpful
+                visual guides, and a supportive community, JongKran helps beginners enjoy
+                cooking and share food with others.
               </p>
             </div>
+          </div>
 
         </section>
       </main>

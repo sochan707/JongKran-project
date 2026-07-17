@@ -73,7 +73,7 @@ export default function ViewEachMenu() {
               </span>
             </div>
 
-            <h1 className="title-font text-5xl font-bold">{recipe.name}</h1>
+            <h1 className="title-font text-4xl md:text-5xl font-bold">{recipe.name}</h1>
             <p className="mt-2">
               {recipe.time} min • {recipe.difficulty || "Easy"} •{" "}
               {recipe.servings} servings

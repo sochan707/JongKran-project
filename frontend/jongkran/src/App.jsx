@@ -14,6 +14,17 @@ import History from "./pages/History";
 import About from "./pages/About";
 import UserProfile from "./pages/UserProfile";
 import RecipeMatch from "./pages/RecipeMatch";
+import RecipeManagement from "./pages/admin/RecipeManagement";
+import CreateRecipe from "./pages/admin/CreateRecipe";
+import EditRecipe from "./pages/admin/EditRecipe";
+import NotFound from "./pages/NotFound";
+import ProfileInformation from "./pages/ProfileInformation";
+import AccountSetting from "./pages/AccountSetting";
+import ChangePassword from "./pages/ChangePassword";
+import Language from "./pages/Language";
+import UserSuggestions from "./pages/admin/UserSuggestions";
+import RecipeSuggestionDetail from "./pages/admin/RecipeSuggestionDetail";
+import AdminApprove from "./pages/admin/AdminApprove";
 
 export default function App() {
   return (
@@ -39,7 +50,20 @@ export default function App() {
         <Route path="/profile" element={<UserProfile />} />
 
         <Route path="/recipe-match" element={<RecipeMatch />} />
+        <Route path="*" element={<NotFound />} />
+
+        <Route path="/admin" element={<RecipeManagement />} />
+        <Route path="/admin/create" element={<CreateRecipe />} />
+        <Route path="/admin/edit/:id" element={<EditRecipe />} />
+        <Route path="/ProfileInformation" element={<ProfileInformation />} />
+        <Route path="/AccountSetting" element={<AccountSetting />} />
+        <Route path="/ChangePassword" element={<ChangePassword />} />
+        <Route path="/Language" element={<Language />} />
+        <Route path="/admin/suggestions" element={<UserSuggestions />} />
+        <Route path="/admin/suggestions/:recipeId" element={<RecipeSuggestionDetail />} />
+        <Route path="/admin/pending-approve" element={<AdminApprove />} />
       </Routes>
+
     </BrowserRouter>
 
   );
