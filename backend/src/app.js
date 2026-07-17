@@ -10,6 +10,7 @@ import recommendationRoutes from "./routes/recommendation.routes.js";
 import aiRecipeRoutes from "./routes/ai_recipe.routes.js";
 import suggestionRoutes from "./routes/suggestion.routes.js";
 import auditRoutes from "./routes/audit.routes.js";
+import uploadRoutes from "./routes/upload.route.js"
 
 const app = express();
 
@@ -29,5 +30,6 @@ app.use("/api/recommendations", recommendationRoutes);
 app.use("/api/ai-recipes", aiRecipeRoutes);
 app.use("/api/suggestions", suggestionRoutes);
 app.use("/api/audit-logs", auditRoutes);
+app.use("/api/uploads", uploadRoutes);
 
 export default app;
