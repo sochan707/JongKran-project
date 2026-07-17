@@ -1,6 +1,6 @@
 import prisma from "../prismaClient.js";
 
-export const addIngredientToRecipeService = async (recipeId, data) => {
+export const addIngredientToRecipeService = async (recipeId, data, adminId) => {
   const normalizedRecipeId = Number(recipeId);
   const ingredientId = Number(data.ingredient_id);
   const quantity = Number(data.quantity);
@@ -84,22 +84,33 @@ export const addIngredientToRecipeService = async (recipeId, data) => {
       throw error;
     }
 
-    return tx.recipeIngredient.create({
-      data: {
-        recipe_id: normalizedRecipeId,
-        ingredient_id: ingredientId,
-        quantity,
-        unit,
-      },
-      include: {
-        ingredient: {
-          select: {
-            ingredient_id: true,
-            name: true,
+    const recipeIngredient =
+      await tx.recipeIngredient.create({
+        data: {
+          recipe_id: normalizedRecipeId,
+          ingredient_id: ingredientId,
+          quantity,
+          unit,
+        },
+        include: {
+          ingredient: {
+            select: {
+              ingredient_id: true,
+              name: true,
+            },
           },
         },
+      });
+
+    await tx.logs_audit.create({
+      data: {
+        user_id: adminId,
+        recipe_id: normalizedRecipeId,
+        action_type: "update",
       },
     });
+
+    return recipeIngredient;
   });
 };
 

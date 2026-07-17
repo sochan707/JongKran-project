@@ -1,23 +1,33 @@
 import { addRecipeStepService, bulkAddRecipeStepsService, updateRecipeStepService, removeRecipeStepService } from "../services/step.service.js";
 
 export const addRecipeStepController = async (req, res) => {
-    try {
-        const { id } = req.params;
+  try {
+    const recipeId = Number(req.params.id);
+    const adminId = req.user.userId;
 
-        const step = await addRecipeStepService(id, req.body);
-
-        return res.status(201).json({
-            success: true,
-            message: "Recipe step added successfully! ᕕ( ᐛ )ᕗ",
-            data: step,
-        });
-
-    } catch (err) {
-        return res.status(400).json({
-            success: false,
-            message: err.message,
-        });
+    if (!Number.isInteger(recipeId) || recipeId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Recipe ID must be a valid number! ʕ•̀ᆺ•́ʔ",
+      });
     }
+
+    const step = await addRecipeStepService(recipeId, req.body, adminId);
+
+    return res.status(201).json({
+      success: true,
+      message: "Recipe step added successfully! ᕕ( ᐛ )ᕗ",
+      data: step,
+    });
+
+  } catch (error) {
+    console.error("ADD RECIPE STEP ERROR:", error);
+
+    return res.status(error.statusCode || 500).json({
+      success: false,
+      message: error.message || "Failed to add recipe step! o(╥﹏╥)o",
+    });
+  }
 };
 
 export const bulkAddRecipeStepsController = async (req, res) => {

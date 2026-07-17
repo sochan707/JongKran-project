@@ -1,22 +1,32 @@
 import { addIngredientToRecipeService, bulkAddIngredientsToRecipeService, updateRecipeIngredientService, removeRecipeIngredientService } from "../services/ingredient.service.js";
 
 export const addIngredientToRecipeController = async (req, res) => {
-    try {
-        const {id} = req.params;
-        const recipeIngredient = await addIngredientToRecipeService(id, req.body);
+  try {
+    const recipeId = Number(req.params.id);
+    const adminId = req.user.userId;
 
-        return res.status(201).json({
-            success: true,
-            message: "Ingredient added to recipe successfully",
-            data: recipeIngredient,
-        });
-
-    } catch(err){
-        return res.status(400).json({
-            success: false,
-            message: err.message,
-        });
+    if (!Number.isInteger(recipeId) || recipeId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Recipe ID must be a valid number! ʕ•̀ᆺ•́ʔ",
+      });
     }
+
+    const recipeIngredient = await addIngredientToRecipeService(recipeId, req.body, adminId);
+
+    return res.status(201).json({
+      success: true,
+      message: "Ingredient added to recipe successfully! ᕕ( ᐛ )ᕗ",
+      data: recipeIngredient,
+    });
+  } catch (error) {
+    console.error("ADD RECIPE INGREDIENT ERROR:", error);
+
+    return res.status(error.statusCode || 500).json({
+      success: false,
+      message: error.message || "Failed to add recipe ingredient! o(╥﹏╥)o",
+    });
+  }
 };
 
 export const bulkAddIngredientsToRecipeController = async (req, res) => {

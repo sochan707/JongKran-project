@@ -1,22 +1,85 @@
 import prisma from "../prismaClient.js";
 
-export const addRecipeStepService = async (recipeId, data) => {
+export const addRecipeStepService = async (recipeId, data, adminId) => {
+  const normalizedRecipeId = Number(recipeId);
+  const stepNumber = Number(data.step_number);
 
-    const {step_number, instruction_text } = data;
+  const instructionText =
+    typeof data.instruction_text === "string"
+      ? data.instruction_text.trim()
+      : "";
 
-    if (!step_number || !instruction_text) {
-        throw new Error("Step number and instruction are required");
+  if (!Number.isInteger(normalizedRecipeId) || normalizedRecipeId <= 0) {
+    const error = new Error("Recipe ID must be a valid number! ʕ•̀ᆺ•́ʔ");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (!Number.isInteger(stepNumber) || stepNumber <= 0) {
+    const error = new Error("Step number must be a positive integer! ʕ•̀ᆺ•́ʔ");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (!instructionText) {
+    const error = new Error("Instruction is required! ʕ•̀ᆺ•́ʔ");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const recipe = await tx.recipe.findFirst({
+      where: {
+        recipe_id: normalizedRecipeId,
+        deleted_at: null,
+      },
+      select: {
+        recipe_id: true,
+      },
+    });
+
+    if (!recipe) {
+      const error = new Error("Recipe not found! ˏ(•́∧•̀)ˎ");
+      error.statusCode = 404;
+      throw error;
     }
 
-    const step = await prisma.recipeStep.create({
-        data: {
-            recipe_id: Number(recipeId),
-            step_number,
-            instruction_text
-        }
+    const existingStep = await tx.recipeStep.findUnique({
+      where: {
+        recipe_id_step_number: {
+          recipe_id: normalizedRecipeId,
+          step_number: stepNumber,
+        },
+      },
+      select: {
+        step_number: true,
+      },
+    });
+
+    if (existingStep) {
+      const error = new Error(`Step number ${stepNumber} already exists in this recipe! ʕ•̀ᆺ•́ʔ`);
+      error.statusCode = 409;
+      throw error;
+    }
+
+    const step = await tx.recipeStep.create({
+      data: {
+        recipe_id: normalizedRecipeId,
+        step_number: stepNumber,
+        instruction_text: instructionText,
+      },
+    });
+
+    await tx.logs_audit.create({
+      data: {
+        user_id: adminId,
+        recipe_id: normalizedRecipeId,
+        action_type: "update",
+      },
     });
 
     return step;
+  });
 };
 
 export const bulkAddRecipeStepsService = async (recipeId, steps, adminId) => {
