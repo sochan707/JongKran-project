@@ -3,9 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider          = "postgresql"
-  url               = env("DATABASE_URL")
-  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model Role {
@@ -17,23 +16,23 @@ model Role {
 }
 
 model User {
-  user_id        Int             @id @default(autoincrement())
-  user_name      String          @db.VarChar(25)
-  user_profile   String?
-  role_id        Int
-  bio            String?         @db.VarChar(100)
-  gender         String?         @db.VarChar(10)
-  dob            DateTime?       @db.Date
-  status         String?         @default("active") @db.VarChar(10)
-  favorites      Favorite[]
-  histories      History[]
-  logs_audit     Logs_audit[]
-  createdRecipes Recipe[]
-  refreshTokens  RefreshToken[]
-  suggestions    Suggestion[]
-  aiCookings     UserAICooking[]
-  auth           UserAuth?
-  role           Role            @relation(fields: [role_id], references: [role_id])
+  user_id         Int             @id @default(autoincrement())
+  user_name       String          @db.VarChar(25)
+  user_profile    String?
+  role_id         Int
+  bio             String?         @db.VarChar(100)
+  gender          String?         @db.VarChar(10)
+  dob             DateTime?       @db.Date
+  status          String?         @default("active") @db.VarChar(10)
+  favorites       Favorite[]
+  histories       History[]
+  logs_audit      Logs_audit[]
+  createdRecipes  Recipe[]
+  refreshTokens   RefreshToken[]
+  suggestions     Suggestion[]
+  user_ai_cooking UserAICooking[]
+  auth            UserAuth?
+  role            Role            @relation(fields: [role_id], references: [role_id])
 
   @@map("users")
 }
@@ -61,27 +60,27 @@ model Ingredient {
 }
 
 model Recipe {
-  recipe_id         Int                 @id @default(autoincrement())
-  title             String              @db.VarChar(30)
-  description       String?
-  difficulty        Difficulty
-  cook_time         Int                 @default(0)
-  created_by        Int
-  servings          Int
-  image_url         String?
-  prep_time         Int                 @default(0)
-  view_count        Int                 @default(0)
-  created_at        DateTime            @default(now())
-  updated_at        DateTime            @default(now()) @updatedAt
-  deleted_at        DateTime?
-  favorites         Favorite[]
-  histories         History[]
-  logs              Logs_audit[]
-  recipeIngredients RecipeIngredient[]
-  steps             RecipeStep[]
-  suggestions       Suggestion[]
-  approvedAIRecipes AIGeneratedRecipe[]
-  creator           User                @relation(fields: [created_by], references: [user_id])
+  recipe_id            Int                 @id @default(autoincrement())
+  title                String              @db.VarChar(30)
+  description          String?
+  difficulty           Difficulty
+  cook_time            Int                 @default(0)
+  created_by           Int
+  servings             Int
+  image_url            String?
+  prep_time            Int                 @default(0)
+  view_count           Int                 @default(0)
+  created_at           DateTime            @default(now())
+  updated_at           DateTime            @default(now()) @updatedAt
+  deleted_at           DateTime?
+  ai_generated_recipes AIGeneratedRecipe[]
+  favorites            Favorite[]
+  histories            History[]
+  logs                 Logs_audit[]
+  recipeIngredients    RecipeIngredient[]
+  steps                RecipeStep[]
+  creator              User                @relation(fields: [created_by], references: [user_id])
+  suggestions          Suggestion[]
 
   @@map("recipes")
 }
@@ -141,9 +140,9 @@ model Suggestion {
   status          SuggestionStatus @default(pending)
   created_at      DateTime         @default(now())
   deleted_at      DateTime?
+  logs            Logs_audit[]
   recipe          Recipe           @relation(fields: [recipe_id], references: [recipe_id], onDelete: Cascade)
   user            User             @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
-  logs            Logs_audit[]
 
   @@map("suggestions")
 }
@@ -152,12 +151,12 @@ model Logs_audit {
   audit_id         Int             @id @default(autoincrement())
   user_id          Int
   recipe_id        Int?
-  suggestion_id    Int?
   action_type      AdminActionType
   action_timestamp DateTime        @default(now())
+  suggestion_id    Int?
   users            User            @relation(fields: [user_id], references: [user_id], map: "logs_audit_admin_id_fkey")
   recipe           Recipe?         @relation(fields: [recipe_id], references: [recipe_id])
-  suggestion       Suggestion?     @relation(fields: [suggestion_id], references: [suggestion_id], onDelete: SetNull)
+  suggestion       Suggestion?     @relation(fields: [suggestion_id], references: [suggestion_id])
 
   @@index([suggestion_id])
   @@map("logs_audit")
@@ -175,34 +174,31 @@ model RefreshToken {
 }
 
 model AIGeneratedRecipe {
-  ai_recipe_id       Int      @id @default(autoincrement())
-  ingredient_key     String   @unique
-  title              String   @db.VarChar(255)
+  ai_recipe_id       Int             @id @default(autoincrement())
+  title              String          @db.VarChar(255)
   description        String?
   image_url          String?
   ingredients        Json
   steps              Json
-  generated_by       String   @default("OpenAI") @db.VarChar(50)
-  status             String   @default("pending") @db.VarChar(20)
+  generated_by       String?         @default("OpenAI") @db.VarChar(50)
+  status             String?         @default("pending") @db.VarChar(20)
   approved_recipe_id Int?
-  created_at         DateTime @default(now()) @db.Timestamp(6)
-
-  approvedRecipe Recipe?         @relation(fields: [approved_recipe_id], references: [recipe_id], onUpdate: NoAction, map: "fk_approved_recipe")
-  userCookings   UserAICooking[]
+  created_at         DateTime?       @default(now()) @db.Timestamp(6)
+  recipes            Recipe?         @relation(fields: [approved_recipe_id], references: [recipe_id], onUpdate: NoAction, map: "fk_approved_recipe")
+  user_ai_cooking    UserAICooking[]
 
   @@map("ai_generated_recipes")
 }
 
 model UserAICooking {
-  id             Int      @id @default(autoincrement())
-  user_id        Int
-  ai_recipe_id   Int
-  ingredient_key String
-  action         AIAction
-  created_at     DateTime @default(now()) @db.Timestamp(6)
-
-  aiRecipe AIGeneratedRecipe @relation(fields: [ai_recipe_id], references: [ai_recipe_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_ai_recipe")
-  user     User              @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_user")
+  id                   Int               @id @default(autoincrement())
+  user_id              Int
+  ai_recipe_id         Int
+  ingredient_key       String
+  action               ai_action
+  created_at           DateTime?         @default(now()) @db.Timestamp(6)
+  ai_generated_recipes AIGeneratedRecipe @relation(fields: [ai_recipe_id], references: [ai_recipe_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_ai_recipe")
+  users                User              @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_user")
 
   @@index([ingredient_key], map: "idx_user_ai_cooking_ingredient_key")
   @@index([user_id, ingredient_key], map: "idx_user_ai_cooking_user_ingredient")
@@ -229,9 +225,9 @@ enum AdminActionType {
   reject
 }
 
-enum AIAction {
+enum ai_action {
   cook
   skip
-
-  @@map("ai_action")
 }
+
+
