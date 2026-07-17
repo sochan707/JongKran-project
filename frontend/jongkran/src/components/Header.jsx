@@ -53,9 +53,11 @@ export default function Header() {
 
     // Update header when localStorage changes from another tab
     window.addEventListener("storage", loadUser);
+    window.addEventListener("auth-change", loadUser);
 
     return () => {
       window.removeEventListener("storage", loadUser);
+      window.removeEventListener("auth-change", loadUser);
     };
   }, []);
 

@@ -2,16 +2,25 @@ import { useNavigate, useParams } from "react-router-dom";
 import Header from "../components/Header";
 import { Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import recipes from "../data/recipes";
+import { recipeApi } from "../lib/api";
 
 export default function ViewEachMenu() {
   const navigate = useNavigate();
   const { id } = useParams();
 
-  const recipe = recipes.find((item) => item.id === Number(id));
+  const [recipe, setRecipe] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const [yourIngredients, setYourIngredients] = useState([]);
   const [missingIngredients, setMissingIngredients] = useState([]);
+
+  useEffect(() => {
+    recipeApi.get(id)
+      .then(setRecipe)
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, [id]);
 
   useEffect(() => {
     if (!recipe) return;
@@ -38,8 +47,9 @@ export default function ViewEachMenu() {
     setMissingIngredients(missing);
   }, [recipe]);
 
-  if (!recipe) {
-    return <h1 className="p-10 text-3xl font-bold">Recipe not found</h1>;
+  if (loading) return <h1 className="p-10 text-2xl">Loading recipe...</h1>;
+  if (error || !recipe) {
+    return <h1 className="p-10 text-3xl font-bold">{error || "Recipe not found"}</h1>;
   }
 
   const addMissing = (item) => {

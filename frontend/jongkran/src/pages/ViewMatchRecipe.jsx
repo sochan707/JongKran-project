@@ -1,15 +1,16 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Sparkles, Utensils } from "lucide-react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import RecipeCart from "../components/RecipeCart";
-import recipes from "../data/recipes";
+import { apiRequest, normalizeRecipe } from "../lib/api";
 
 export default function ViewMatchRecipe() {
   const navigate = useNavigate();
 
   const [aiRecipes, setAiRecipes] = useState([]);
+  const [matchedRecipes, setMatchedRecipes] = useState([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [sortByMatch, setSortByMatch] = useState(false);
   const [error, setError] = useState("");
@@ -77,15 +78,21 @@ export default function ViewMatchRecipe() {
     );
   };
 
-  // Find recipes that match at least one ingredient
-  const matchedRecipes = recipes.filter(
-    (recipe) =>
-      recipe.ingredients?.some((ingredient) =>
-        selectedIngredients.some((selected) =>
-          ingredientsMatch(ingredient, selected)
-        )
-      )
-  );
+  useEffect(() => {
+    if (selectedIngredients.length === 0) return;
+    apiRequest("/recommendations", {
+      method: "POST",
+      body: JSON.stringify({ ingredients: selectedIngredients }),
+    })
+      .then((result) => {
+        const items = result.recipes || [];
+        setMatchedRecipes(items.map((item) => normalizeRecipe({
+          ...item,
+          ingredients: [...(item.matchedIngredients || []), ...(item.missingIngredients || [])],
+        })));
+      })
+      .catch((err) => setError(err.message));
+  }, []);
 
   // Combine normal recipes and AI recipes
   const displayedRecipes = [
@@ -114,43 +121,15 @@ export default function ViewMatchRecipe() {
       setIsGenerating(true);
       setError("");
 
-      const response = await fetch(
-        "http://localhost:5000/api/recommendations",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            ingredients: selectedIngredients,
-          }),
-        }
-      );
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          result.message ||
-            "Unable to generate a recipe."
-        );
-      }
-
-      const generatedRecipes = Array.isArray(
-        result.data
-      )
-        ? result.data
-        : [result.data];
-
-      const validRecipes =
-        generatedRecipes.filter(Boolean);
-
+      const result = await apiRequest("/ai-recipes", {
+        method: "POST",
+        body: JSON.stringify({ ingredients: selectedIngredients }),
+      });
+      const generated = result.data?.recipes || result.data || [];
+      const validRecipes = (Array.isArray(generated) ? generated : [generated])
+        .filter(Boolean)
+        .map(normalizeRecipe);
       setAiRecipes(validRecipes);
-
-      localStorage.setItem(
-        "aiGeneratedRecipes",
-        JSON.stringify(validRecipes)
-      );
     } catch (error) {
       console.error(
         "AI recipe generation error:",

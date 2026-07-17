@@ -1,6 +1,7 @@
 import { Heart } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { isAuthenticated, recipeApi } from "../lib/api";
 
 export default function RecipeCart({
   recipe,
@@ -12,14 +13,10 @@ export default function RecipeCart({
   const [favorite, setFavorite] = useState(false);
 
   useEffect(() => {
-    const savedFavorites =
-      JSON.parse(localStorage.getItem("favorites")) || [];
-
-    const isFavorite = savedFavorites.some(
-      (item) => item.id === recipe.id
-    );
-
-    setFavorite(isFavorite);
+    if (!isAuthenticated()) return;
+    recipeApi.favorites()
+      .then((items) => setFavorite(items.some((item) => item.id === recipe.id)))
+      .catch(() => {});
   }, [recipe.id]);
 
   // Get only the ingredient name
@@ -79,34 +76,21 @@ export default function RecipeCart({
         )
       : 0;
 
-  const toggleFavorite = (event) => {
+  const toggleFavorite = async (event) => {
     event.stopPropagation();
-
-    let savedFavorites =
-      JSON.parse(localStorage.getItem("favorites")) || [];
-
-    if (favorite) {
-      savedFavorites = savedFavorites.filter(
-        (item) => item.id !== recipe.id
-      );
-
-      setFavorite(false);
-    } else {
-      savedFavorites.push({
-        ...recipe,
-        favorite: true,
-      });
-
-      setFavorite(true);
+    if (!isAuthenticated()) {
+      navigate("/login");
+      return;
     }
-
-    localStorage.setItem(
-      "favorites",
-      JSON.stringify(savedFavorites)
-    );
-
-    if (onFavoriteChange) {
-      onFavoriteChange(savedFavorites);
+    try {
+      const result = await recipeApi.toggleFavorite(recipe.id);
+      const nextFavorite = result.action === "added";
+      setFavorite(nextFavorite);
+      if (onFavoriteChange && !nextFavorite) {
+        onFavoriteChange((items) => items.filter((item) => item.id !== recipe.id));
+      }
+    } catch (err) {
+      console.error(err);
     }
   };
 

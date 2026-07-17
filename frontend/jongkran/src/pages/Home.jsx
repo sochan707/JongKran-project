@@ -4,11 +4,12 @@ import Footer from "../components/Footer";
 import RecipeCart from "../components/RecipeCart";
 import Hero from "../components/ui/homescreen/hero";
 import aboutImage from '../assets/about1.png';
-import recipes from "../data/recipes";
+import useRecipes from "../hooks/useRecipes";
 
 
 
 export default function Home() {
+  const { recipes } = useRecipes();
   return (
     <>
       <Header />

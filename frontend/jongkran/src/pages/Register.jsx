@@ -1,5 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { apiRequest } from "../lib/api";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -25,7 +26,9 @@ export default function Register() {
     setError("");
   };
 
-  const handleCreateAccount = (e) => {
+  const [loading, setLoading] = useState(false);
+
+  const handleCreateAccount = async (e) => {
     e.preventDefault();
     setError("");
 
@@ -59,31 +62,22 @@ export default function Register() {
       return;
     }
 
-    const registeredUser = {
-      username: form.username.trim(),
-      email: form.email.trim().toLowerCase(),
-      password: form.password,
-
-      // Profile information starts empty
-      phone: null,
-      dob: null,
-      bio: null,
-      profileImage: null,
-
-      // Save the real registration date
-      memberSince: new Date().toISOString(),
-    };
-
-    localStorage.setItem(
-      "registeredUser",
-      JSON.stringify(registeredUser)
-    );
-
-    navigate("/login", {
-      state: {
-        message: "Account created successfully. Please log in.",
-      },
-    });
+    try {
+      setLoading(true);
+      await apiRequest("/auth/register", {
+        method: "POST",
+        body: JSON.stringify({
+          user_name: form.username.trim(),
+          email: form.email.trim().toLowerCase(),
+          password: form.password,
+        }),
+      });
+      navigate("/login", { state: { message: "Account created successfully. Please log in." } });
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

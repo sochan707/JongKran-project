@@ -2,14 +2,15 @@ import { useEffect, useState } from "react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import RecipeCart from "../components/RecipeCart";
+import { isAuthenticated, recipeApi } from "../lib/api";
 
 
 export default function History() {
   const [history, setHistory] = useState([]);
 
   useEffect(() => {
-    const saveHistory = JSON.parse(localStorage.getItem("history")) || [];
-    setHistory([...saveHistory].reverse());
+    if (!isAuthenticated()) return;
+    recipeApi.history().then(setHistory).catch(() => setHistory([]));
   }, []);
 
   return (
@@ -25,6 +26,7 @@ export default function History() {
           Based on the recipes you recently explored and enjoyed.
         </p>
 
+        {!isAuthenticated() && <p className="mt-8">Please log in to see your cooking history.</p>}
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
           {history.map((recipe) => (
             <RecipeCart key={recipe.id} recipe={recipe} />

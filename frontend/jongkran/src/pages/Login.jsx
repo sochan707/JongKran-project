@@ -1,5 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { apiRequest, saveSession } from "../lib/api";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -25,7 +26,9 @@ export default function Login() {
     setError("");
   };
 
-  const handleLogin = (e) => {
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
 
@@ -34,37 +37,19 @@ export default function Login() {
       return;
     }
 
-    const savedUser = JSON.parse(
-      localStorage.getItem("registeredUser")
-    );
-
-    if (!savedUser) {
-      setError("Account not found. Please create an account first.");
-      return;
+    try {
+      setLoading(true);
+      const result = await apiRequest("/auth/login", {
+        method: "POST",
+        body: JSON.stringify({ email: form.email.trim().toLowerCase(), password: form.password }),
+      });
+      saveSession(result.data);
+      navigate(result.data.user?.role === "Admin" ? "/admin" : "/");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
-
-    const emailMatches =
-      form.email.trim().toLowerCase() === savedUser.email.toLowerCase();
-
-    const passwordMatches =
-      form.password === savedUser.password;
-
-    if (!emailMatches || !passwordMatches) {
-      setError("Email or password is incorrect.");
-      return;
-    }
-
-    // Remove the password before storing the logged-in profile
-    const { password, ...loggedInUser } = savedUser;
-
-    localStorage.setItem(
-      "userProfile",
-      JSON.stringify(loggedInUser)
-    );
-
-    localStorage.setItem("isLoggedIn", "true");
-
-    navigate("/");
   };
 
   return (
@@ -137,9 +122,10 @@ export default function Login() {
 
                 <button
                   type="submit"
+                  disabled={loading}
                   className="w-full bg-[#468432] hover:bg-[#1A5C05] text-white py-3 rounded-lg font-semibold transition"
                 >
-                  Log In
+                  {loading ? "Logging in..." : "Log In"}
                 </button>
               </form>
 

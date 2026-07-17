@@ -11,9 +11,14 @@ import aiRecipeRoutes from "./routes/ai_recipe.routes.js";
 import suggestionRoutes from "./routes/suggestion.routes.js";
 import auditRoutes from "./routes/audit.routes.js";
 import uploadRoutes from "./routes/upload.route.js"
+import cors from "cors";
 
 const app = express();
 
+app.use(cors({
+  origin: process.env.FRONTEND_URL || "http://localhost:5173",
+  credentials: true,
+}));
 app.use(express.json());
 app.use(cookieParser());
 

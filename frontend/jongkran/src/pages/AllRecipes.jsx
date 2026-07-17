@@ -1,12 +1,13 @@
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import RecipeCart from "../components/RecipeCart";
-import recipes from "../data/recipes";
 import { Search } from "lucide-react";
 import {useState} from "react";
+import useRecipes from "../hooks/useRecipes";
 
 export default function AllRecipes() {
   const [input, setInput] = useState("");
+  const { recipes, loading, error } = useRecipes();
 
   const filteredRecipes = recipes.filter((r) => {
     const searchText = input.toLowerCase().trim();
@@ -45,6 +46,8 @@ export default function AllRecipes() {
           </div>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-8">
+          {loading && <p>Loading recipes...</p>}
+          {error && <p className="text-red-600">{error}</p>}
           {filteredRecipes.map((recipe) => (
             <RecipeCart key={recipe.id} recipe={recipe} />
           ))}

@@ -2,13 +2,14 @@ import { useEffect, useState } from "react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import RecipeCart from "../components/RecipeCart";
+import { isAuthenticated, recipeApi } from "../lib/api";
 
 export default function Favorite() {
   const [favorites, setFavorites] = useState([]);
 
   useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem("favorites")) || [];
-    setFavorites(saved);
+    if (!isAuthenticated()) return;
+    recipeApi.favorites().then(setFavorites).catch(() => setFavorites([]));
   }, []);
 
   return (
@@ -24,7 +25,9 @@ export default function Favorite() {
           All the recipes you have saved are in one place.
         </p>
 
-        {favorites.length === 0 ? (
+        {!isAuthenticated() ? (
+          <div className="mt-12 text-center bg-gray-100 rounded-xl p-10">Please log in to see your favorite recipes.</div>
+        ) : favorites.length === 0 ? (
           <div className="mt-12 text-center bg-gray-100 rounded-xl p-10">
             <h2 className="title-font text-2xl font-bold">
               No favorite recipes yet

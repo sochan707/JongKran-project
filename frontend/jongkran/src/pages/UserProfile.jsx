@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { clearSession } from "../lib/api";
 
 export default function UserProfile() {
   const navigate = useNavigate();
@@ -78,10 +79,7 @@ export default function UserProfile() {
   ];
 
   const handleLogout = () => {
-    localStorage.removeItem("isLoggedIn");
-    localStorage.removeItem("userProfile");
-
-    // Keep registeredUser so the user can log in again
+    clearSession();
     navigate("/login", { replace: true });
   };
 

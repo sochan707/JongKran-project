@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { CheckCircle } from "lucide-react";
 import Header from "../components/Header";
-import recipes from "../data/recipes";
+import { recipeApi } from "../lib/api";
 
 export default function Instruction() {
   const navigate = useNavigate();
@@ -18,10 +18,16 @@ export default function Instruction() {
 
   const [suggestion, setSuggestion] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [recipe, setRecipe] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
-  const recipe = recipes.find(
-    (item) => String(item.id) === String(id)
-  );
+  useEffect(() => {
+    recipeApi.get(id)
+      .then(setRecipe)
+      .catch((err) => setLoadError(err.message))
+      .finally(() => setLoading(false));
+  }, [id]);
 
   // ---------------- READ LOCAL STORAGE ----------------
   const getLocalStorageData = (key, fallbackValue) => {
@@ -41,14 +47,18 @@ export default function Instruction() {
     }
   };
 
-  if (!recipe) {
+  if (loading) {
+    return <div className="p-10 text-2xl">Loading instructions...</div>;
+  }
+
+  if (loadError || !recipe) {
     return (
       <>
         <Header />
 
         <div className="min-h-[500px] flex flex-col items-center justify-center">
           <h1 className="text-3xl font-bold">
-            Recipe not found
+            {loadError || "Recipe not found"}
           </h1>
 
           <button
@@ -69,7 +79,12 @@ export default function Instruction() {
       : ["No cooking steps available."];
 
   // ---------------- COMPLETE COOKING ----------------
-  const completeCooking = () => {
+  const completeCooking = async () => {
+    try {
+      await recipeApi.addHistory(recipe.id);
+    } catch (error) {
+      console.error("Failed to save server history:", error);
+    }
     const savedHistory = getLocalStorageData(
       "history",
       []
