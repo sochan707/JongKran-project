@@ -22,6 +22,7 @@ const formatRecipe = (recipe, requestedIngredients) => {
     id: recipe.recipe_id,
     title: recipe.title,
     description: recipe.description,
+    imageUrl: recipe.image_url,
     difficulty: recipe.difficulty,
     cookTime: recipe.cook_time,
     createdBy: recipe.created_by,
