@@ -398,3 +398,128 @@ export const removeRecipeStepService = async (recipeId, stepNumber, adminId) => 
     return recipeStep;
   });
 };
+
+export const reorderRecipeStepsService = async (recipeId, stepIds, adminId) => {
+  const normalizedRecipeId = Number(recipeId);
+
+  if (!Number.isInteger(normalizedRecipeId) || normalizedRecipeId <= 0) {
+    const error = new Error("Recipe ID must be a valid number! ʕ•̀ᆺ•́ʔ");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (!Array.isArray(stepIds) || stepIds.length === 0) {
+    const error = new Error("Step IDs must be a non-empty array! ʕ•̀ᆺ•́ʔ");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const normalizedStepIds = stepIds.map((stepId, index) => {
+    const normalizedStepId = Number(stepId);
+
+    if (!Number.isInteger(normalizedStepId) || normalizedStepId <= 0) {
+      const error = new Error(`Step ID at position ${index + 1} is invalid! ʕ•̀ᆺ•́ʔ`);
+      error.statusCode = 400;
+      throw error;
+    }
+
+    return normalizedStepId;
+  });
+
+  const uniqueStepIds = new Set(normalizedStepIds);
+
+  if (uniqueStepIds.size !== normalizedStepIds.length) {
+    const error = new Error("The request contains duplicate step IDs! ʕ•̀ᆺ•́ʔ");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const recipe = await tx.recipe.findFirst({
+      where: {
+        recipe_id: normalizedRecipeId,
+        deleted_at: null,
+      },
+      select: {
+        recipe_id: true,
+      },
+    });
+
+    if (!recipe) {
+      const error = new Error("Recipe not found! ˏ(•́∧•̀)ˎ");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    const existingSteps = await tx.recipeStep.findMany({
+      where: {
+        recipe_id: normalizedRecipeId,
+      },
+      select: {
+        step_id: true,
+        step_number: true,
+      },
+    });
+
+    if (existingSteps.length !== normalizedStepIds.length) {
+      const error = new Error("You must provide every step in the recipe exactly once! ʕ•̀ᆺ•́ʔ");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const existingStepIds = new Set(existingSteps.map((step) => step.step_id));
+
+    const invalidStepIds = normalizedStepIds.filter((stepId) => !existingStepIds.has(stepId));
+
+    if (invalidStepIds.length > 0) {
+      const error = new Error(`Steps do not belong to this recipe: ${invalidStepIds.join(", ")}`);
+      error.statusCode = 404;
+      throw error;
+    }
+
+    const highestStepNumber = Math.max(...existingSteps.map((step) => step.step_number));
+
+    const temporaryOffset = highestStepNumber + existingSteps.length + 1000;
+
+    await tx.recipeStep.updateMany({
+      where: {
+        recipe_id: normalizedRecipeId,
+      },
+      data: {
+        step_number: {
+          increment: temporaryOffset,
+        },
+      },
+    });
+
+    for (let index = 0; index < normalizedStepIds.length; index++) {
+      await tx.recipeStep.update({
+        where: {
+          step_id: normalizedStepIds[index],
+        },
+        data: {
+          step_number: index + 1,
+        },
+      });
+    }
+
+    await tx.logs_audit.create({
+      data: {
+        user_id: adminId,
+        recipe_id: normalizedRecipeId,
+        action_type: "update",
+      },
+    });
+
+    const reorderedSteps = await tx.recipeStep.findMany({
+      where: {
+        recipe_id: normalizedRecipeId,
+      },
+      orderBy: {
+        step_number: "asc",
+      },
+    });
+
+    return reorderedSteps;
+  });
+};

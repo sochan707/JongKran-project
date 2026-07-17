@@ -4,7 +4,7 @@ import { authorize } from "../middleware/rbac.middleware.js";
 import { createRecipeController, getAllRecipesController, getRecipeByIdController, deleteRecipeController, updateRecipeController } from "../controllers/recipe.controller.js";
 import { optionalAuthenticate } from "../middleware/optionalAuth.middleware.js";
 import { addIngredientToRecipeController, bulkAddIngredientsToRecipeController, updateRecipeIngredientController, removeRecipeIngredientController } from "../controllers/ingredient.controller.js";
-import { addRecipeStepController, bulkAddRecipeStepsController, updateRecipeStepController, removeRecipeStepController } from "../controllers/step.controller.js";
+import { addRecipeStepController, bulkAddRecipeStepsController, updateRecipeStepController, removeRecipeStepController, reorderRecipeStepsController } from "../controllers/step.controller.js";
 
 const router = express.Router();
 
@@ -19,6 +19,7 @@ router.delete("/:recipeId/ingredients/:ingredientId", authenticate, authorize(["
 
 router.post("/:id/steps", authenticate, authorize(["Admin"]), addRecipeStepController);
 router.post("/:id/steps/bulk", authenticate, authorize(["Admin"]), bulkAddRecipeStepsController);
+router.patch("/:recipeId/steps/reorder", authenticate, authorize(["Admin"]), reorderRecipeStepsController);
 router.patch("/:recipeId/steps/:stepNumber", authenticate, authorize(["Admin"]), updateRecipeStepController);
 router.delete("/:recipeId/steps/:stepNumber", authenticate, authorize(["Admin"]),removeRecipeStepController);
 

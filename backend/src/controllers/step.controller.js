@@ -1,4 +1,4 @@
-import { addRecipeStepService, bulkAddRecipeStepsService, updateRecipeStepService, removeRecipeStepService } from "../services/step.service.js";
+import { addRecipeStepService, bulkAddRecipeStepsService, updateRecipeStepService, removeRecipeStepService, reorderRecipeStepsService } from "../services/step.service.js";
 
 export const addRecipeStepController = async (req, res) => {
   try {
@@ -174,6 +174,37 @@ export const removeRecipeStepController = async (req, res) => {
       message:
         error.message ||
         "Failed to remove recipe step! o(╥﹏╥)o",
+    });
+  }
+};
+
+export const reorderRecipeStepsController = async (req, res) => {
+  try {
+    const recipeId = Number(req.params.recipeId);
+    const adminId = req.user.userId;
+    const { step_ids } = req.body;
+
+    if (!Number.isInteger(recipeId) || recipeId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Recipe ID must be a valid number! ʕ•̀ᆺ•́ʔ",
+      });
+    }
+
+    const reorderedSteps = await reorderRecipeStepsService(recipeId, step_ids, adminId);
+
+    return res.status(200).json({
+      success: true,
+      message: "Recipe steps reordered successfully! ᕕ( ᐛ )ᕗ",
+      data: reorderedSteps,
+    });
+
+  } catch (error) {
+    console.error("REORDER RECIPE STEPS ERROR:", error);
+
+    return res.status(error.statusCode || 500).json({
+      success: false,
+      message: error.message || "Failed to reorder recipe steps! o(╥﹏╥)o",
     });
   }
 };
