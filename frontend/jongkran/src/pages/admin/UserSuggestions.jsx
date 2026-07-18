@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search } from "lucide-react";
 import AdminHeader from "../../components/AdminHeader";
-import recipeData from "../../data/recipes";
+import { apiRequest, normalizeRecipe } from "../../lib/api";
 
 export default function UserSuggestions() {
   const navigate = useNavigate();
@@ -15,35 +15,17 @@ export default function UserSuggestions() {
   const recipesPerPage = 10;
 
   useEffect(() => {
-    const localRecipes =
-      JSON.parse(localStorage.getItem("recipes")) || [];
-
-    const savedSuggestions =
-      JSON.parse(localStorage.getItem("suggestions")) || [];
-
-    const normalRecipes = recipeData.map((recipe) => ({
-      ...recipe,
-      title: recipe.title || recipe.name,
-      status: recipe.status || "public",
-      createdAt: recipe.createdAt || "2026-07-06",
-    }));
-
-    const createdRecipes = localRecipes.map((recipe) => ({
-      ...recipe,
-      title: recipe.title || recipe.name || "Untitled Recipe",
-      status: recipe.status || "pending",
-      createdAt:
-        recipe.createdAt ||
-        new Date().toISOString().split("T")[0],
-    }));
-
-    const allRecipes = [
-      ...normalRecipes,
-      ...createdRecipes,
-    ].filter((recipe) => recipe.status !== "deleted");
-
-    setRecipes(allRecipes);
-    setSuggestions(savedSuggestions);
+    Promise.all([apiRequest("/recipes"), apiRequest("/suggestions")])
+      .then(([recipeResult, suggestionResult]) => {
+        setRecipes(recipeResult.data.map((recipe) => ({ ...normalizeRecipe(recipe), status: "public", createdAt: recipe.created_at })));
+        setSuggestions(suggestionResult.data.map((suggestion) => ({
+          ...suggestion,
+          id: suggestion.suggestion_id,
+          recipeId: suggestion.recipe_id,
+          createdAt: suggestion.created_at,
+        })));
+      })
+      .catch((error) => console.error("Failed to load database suggestions:", error));
   }, []);
 
   const recipesWithSuggestionData = recipes.map((recipe) => {

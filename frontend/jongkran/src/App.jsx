@@ -1,5 +1,6 @@
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import AdminRoute from "./components/AdminRoute";
 
 const Home = lazy(() => import("./pages/Home"));
 const Login = lazy(() => import("./pages/Login"));
@@ -50,18 +51,20 @@ export default function App() {
         <Route path="/profile" element={<UserProfile />} />
 
         <Route path="/recipe-match" element={<ViewMatchRecipe />} />
-        <Route path="*" element={<NotFound />} />
+        <Route element={<AdminRoute />}>
+          <Route path="/admin" element={<RecipeManagement />} />
+          <Route path="/admin/create" element={<CreateRecipe />} />
+          <Route path="/admin/edit/:id" element={<EditRecipe />} />
+          <Route path="/admin/suggestions" element={<UserSuggestions />} />
+          <Route path="/admin/suggestions/:recipeId" element={<RecipeSuggestionDetail />} />
+          <Route path="/admin/pending-approve" element={<AdminApprove />} />
+        </Route>
 
-        <Route path="/admin" element={<RecipeManagement />} />
-        <Route path="/admin/create" element={<CreateRecipe />} />
-        <Route path="/admin/edit/:id" element={<EditRecipe />} />
         <Route path="/ProfileInformation" element={<ProfileInformation />} />
         <Route path="/AccountSetting" element={<AccountSetting />} />
         <Route path="/ChangePassword" element={<ChangePassword />} />
         <Route path="/Language" element={<Language />} />
-        <Route path="/admin/suggestions" element={<UserSuggestions />} />
-        <Route path="/admin/suggestions/:recipeId" element={<RecipeSuggestionDetail />} />
-        <Route path="/admin/pending-approve" element={<AdminApprove />} />
+        <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
     </BrowserRouter>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Search } from "lucide-react";
 import AdminHeader from "../../components/AdminHeader";
+import { apiRequest } from "../../lib/api";
 
 export default function AdminApprove() {
   const [recipes, setRecipes] = useState([]);
@@ -10,10 +11,9 @@ export default function AdminApprove() {
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
-    const pending =
-      JSON.parse(localStorage.getItem("pendingRecipes")) || [];
-
-    setRecipes(pending);
+    apiRequest("/ai-recipes/pending")
+      .then((result) => setRecipes(result.data.map((recipe) => ({ ...recipe, id: recipe.ai_recipe_id, image: recipe.image_url, createdAt: recipe.created_at }))))
+      .catch((error) => console.error("Failed to load pending AI recipes:", error));
   }, []);
 
   const filteredRecipes = recipes.filter((recipe) =>
@@ -31,42 +31,14 @@ export default function AdminApprove() {
     start + recipesPerPage
   );
 
-  const approveRecipe = (id) => {
-    const pending =
-      JSON.parse(localStorage.getItem("pendingRecipes")) || [];
-
-    const approved =
-      JSON.parse(localStorage.getItem("recipes")) || [];
-
-    const recipe = pending.find((r) => r.id === id);
-
-    if (!recipe) return;
-
-    recipe.status = "public";
-
-    approved.push(recipe);
-
-    localStorage.setItem("recipes", JSON.stringify(approved));
-
-    const updatedPending = pending.filter((r) => r.id !== id);
-
-    localStorage.setItem(
-      "pendingRecipes",
-      JSON.stringify(updatedPending)
-    );
-
-    setRecipes(updatedPending);
+  const approveRecipe = async (id) => {
+    await apiRequest(`/ai-recipes/${id}/review`, { method: "PATCH", body: JSON.stringify({ status: "approved" }) });
+    setRecipes((current) => current.filter((recipe) => recipe.id !== id));
   };
 
-  const rejectRecipe = (id) => {
-    const updated = recipes.filter((r) => r.id !== id);
-
-    localStorage.setItem(
-      "pendingRecipes",
-      JSON.stringify(updated)
-    );
-
-    setRecipes(updated);
+  const rejectRecipe = async (id) => {
+    await apiRequest(`/ai-recipes/${id}/review`, { method: "PATCH", body: JSON.stringify({ status: "rejected" }) });
+    setRecipes((current) => current.filter((recipe) => recipe.id !== id));
   };
 
   return (

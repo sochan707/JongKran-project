@@ -24,7 +24,6 @@ router.patch("/:recipeId/steps/:stepNumber", authenticate, authorize(["Admin"]),
 router.delete("/:recipeId/steps/:stepNumber", authenticate, authorize(["Admin"]),removeRecipeStepController);
 
 router.patch("/:id", authenticate, authorize(["Admin"]), updateRecipeController);
-router.patch("/:id", authenticate, authorize(["Admin"]), updateRecipeController);
 router.delete("/:id", authenticate, authorize(["Admin"]), deleteRecipeController);
 
 export default router;

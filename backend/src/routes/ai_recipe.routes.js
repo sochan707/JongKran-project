@@ -1,10 +1,13 @@
 import express from "express";
-import { generateAIRecipesController, aiRecipeActionController } from "../controllers/ai_recipe.controller.js";
+import { generateAIRecipesController, aiRecipeActionController, getPendingAIRecipesController, reviewAIRecipeController } from "../controllers/ai_recipe.controller.js";
 import { authenticate } from "../middleware/auth.middleware.js";
+import { authorize } from "../middleware/rbac.middleware.js";
 
 const router = express.Router();
 
 router.post("/", authenticate, generateAIRecipesController);
+router.get("/pending", authenticate, authorize(["Admin"]), getPendingAIRecipesController);
+router.patch("/:id/review", authenticate, authorize(["Admin"]), reviewAIRecipeController);
 router.post("/:id/action", authenticate, aiRecipeActionController);
 
 export default router;

@@ -1,12 +1,14 @@
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AdminHeader from "../../components/AdminHeader";
+import { apiRequest } from "../../lib/api";
 
 export default function CreateRecipe() {
   const navigate = useNavigate();
 
   const [title, setTitle] = useState("");
   const [imagePreview, setImagePreview] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
   const [prepTime, setPrepTime] = useState("");
   const [cookTime, setCookTime] = useState("");
   const [servings, setServings] = useState("");
@@ -21,6 +23,7 @@ export default function CreateRecipe() {
     const file = e.target.files?.[0];
 
     if (!file) return;
+    setImageFile(file);
 
     if (!file.type.startsWith("image/")) {
       alert("Please select a valid image file.");
@@ -53,6 +56,7 @@ export default function CreateRecipe() {
     e.stopPropagation();
 
     setImagePreview(null);
+    setImageFile(null);
 
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -136,7 +140,7 @@ export default function CreateRecipe() {
   };
 
   // ---------------- CREATE ----------------
-  const handleSubmit = (e, selectedStatus) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     const cleanIngredients = ingredients.filter(
@@ -182,46 +186,28 @@ export default function CreateRecipe() {
       return;
     }
 
-    const savedRecipes =
-      JSON.parse(localStorage.getItem("recipes")) || [];
+    try {
+      const imageBody = new FormData();
+      imageBody.append("image", imageFile);
+      const upload = await apiRequest("/uploads/recipe-image", { method: "POST", body: imageBody });
+      const imageUrl = upload.data?.image_url;
 
-    const now = new Date().toISOString();
-
-    const newRecipe = {
-      id: Date.now(),
+      await apiRequest("/recipes", { method: "POST", body: JSON.stringify({
       title: title.trim(),
-      name: title.trim(),
-      image: imagePreview,
-      prepTime: Number(prepTime),
-      cookTime: Number(cookTime),
+      image_url: imageUrl,
+      difficulty: "easy",
+      prep_time: Number(prepTime),
+      cook_time: Number(cookTime),
       servings: Number(servings),
-      status: selectedStatus,
       ingredients: cleanIngredients,
       steps: cleanSteps,
-      createdAt: now,
-      updatedAt: now,
-    };
-
-    try {
-      localStorage.setItem(
-        "recipes",
-        JSON.stringify([...savedRecipes, newRecipe])
-      );
+      }) });
     } catch (error) {
-      console.error("Unable to save recipe:", error);
-
-      alert(
-        "Could not save the recipe. The image may be too large."
-      );
-
+      alert(error.message);
       return;
     }
 
-    alert(
-      selectedStatus === "public"
-        ? "Recipe published successfully!"
-        : "Recipe saved as pending!"
-    );
+    alert("Recipe saved to the database successfully!");
 
     navigate("/admin");
   };
@@ -480,25 +466,13 @@ export default function CreateRecipe() {
             </div>
 
             {/* SUBMIT */}
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               <button
                 type="button"
-                onClick={(e) =>
-                  handleSubmit(e, "pending")
-                }
-                className="border border-[#FFA02E] bg-white text-black px-6 py-3 rounded-lg md:col-span-2"
+                onClick={handleSubmit}
+                className="bg-[#FFA02E] text-black px-6 py-3 rounded-lg"
               >
-                Pending Recipe
-              </button>
-
-              <button
-                type="button"
-                onClick={(e) =>
-                  handleSubmit(e, "public")
-                }
-                className="bg-[#FFA02E] text-black px-6 py-3 rounded-lg md:col-span-3"
-              >
-                Public Recipe
+                Save Recipe
               </button>
             </div>
           </form>

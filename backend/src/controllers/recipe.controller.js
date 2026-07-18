@@ -101,7 +101,7 @@ export const updateRecipeController = async (req, res) => {
       });
     }
 
-    const {title, description, image_url, difficulty, prep_time, cook_time, servings} = req.body;
+    const {title, description, image_url, difficulty, prep_time, cook_time, servings, ingredients, steps} = req.body;
 
     const updateData = {};
 
@@ -186,6 +186,9 @@ export const updateRecipeController = async (req, res) => {
 
       updateData.servings = servingCount;
     }
+
+    if (ingredients !== undefined) updateData.ingredients = ingredients;
+    if (steps !== undefined) updateData.steps = steps;
 
     if (Object.keys(updateData).length === 0) {
       return res.status(400).json({
