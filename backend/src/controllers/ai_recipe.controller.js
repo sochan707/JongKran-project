@@ -1,4 +1,4 @@
-import { getAIRecipesService } from "../services/ai_recipe.service.js";
+import { getAIRecipesService, reviewAIRecipeService } from "../services/ai_recipe.service.js";
 import prisma from "../prismaClient.js";
 
 export const getPendingAIRecipesController = async (_req, res) => {
@@ -10,15 +10,26 @@ export const getPendingAIRecipesController = async (_req, res) => {
 };
 
 export const reviewAIRecipeController = async (req, res) => {
-  const status = req.body.status;
-  if (!["approved", "rejected"].includes(status)) {
-    return res.status(400).json({ success: false, message: "Status must be approved or rejected" });
+  try {
+    const recipe = await reviewAIRecipeService(
+      Number(req.params.id),
+      req.body.status,
+      req.user.userId,
+    );
+
+    return res.json({
+      success: true,
+      message: req.body.status === "approved"
+        ? "AI recipe approved and added to recipes"
+        : "AI recipe rejected",
+      data: recipe,
+    });
+  } catch (error) {
+    return res.status(error.statusCode || 500).json({
+      success: false,
+      message: error.message || "Failed to review AI recipe",
+    });
   }
-  const recipe = await prisma.aiGeneratedRecipe.update({
-    where: { ai_recipe_id: Number(req.params.id) },
-    data: { status },
-  });
-  return res.json({ success: true, data: recipe });
 };
 
 export const aiRecipeActionController = async (req, res) => {

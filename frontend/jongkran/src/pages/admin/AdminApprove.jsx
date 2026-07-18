@@ -6,6 +6,9 @@ import { apiRequest } from "../../lib/api";
 export default function AdminApprove() {
   const [recipes, setRecipes] = useState([]);
   const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [processingId, setProcessingId] = useState(null);
+  const [message, setMessage] = useState(null);
 
   const recipesPerPage = 10;
   const [currentPage, setCurrentPage] = useState(1);
@@ -13,7 +16,8 @@ export default function AdminApprove() {
   useEffect(() => {
     apiRequest("/ai-recipes/pending")
       .then((result) => setRecipes(result.data.map((recipe) => ({ ...recipe, id: recipe.ai_recipe_id, image: recipe.image_url, createdAt: recipe.created_at }))))
-      .catch((error) => console.error("Failed to load pending AI recipes:", error));
+      .catch((error) => setMessage({ type: "error", text: error.message }))
+      .finally(() => setLoading(false));
   }, []);
 
   const filteredRecipes = recipes.filter((recipe) =>
@@ -32,13 +36,45 @@ export default function AdminApprove() {
   );
 
   const approveRecipe = async (id) => {
-    await apiRequest(`/ai-recipes/${id}/review`, { method: "PATCH", body: JSON.stringify({ status: "approved" }) });
-    setRecipes((current) => current.filter((recipe) => recipe.id !== id));
+    setProcessingId(id);
+    setMessage(null);
+
+    try {
+      const result = await apiRequest(`/ai-recipes/${id}/review`, {
+        method: "PATCH",
+        body: JSON.stringify({ status: "approved" }),
+      });
+      setRecipes((current) => current.filter((recipe) => recipe.id !== id));
+      setMessage({
+        type: "success",
+        text: result.message || "Recipe approved and published successfully.",
+      });
+    } catch (error) {
+      setMessage({ type: "error", text: error.message });
+    } finally {
+      setProcessingId(null);
+    }
   };
 
   const rejectRecipe = async (id) => {
-    await apiRequest(`/ai-recipes/${id}/review`, { method: "PATCH", body: JSON.stringify({ status: "rejected" }) });
-    setRecipes((current) => current.filter((recipe) => recipe.id !== id));
+    setProcessingId(id);
+    setMessage(null);
+
+    try {
+      const result = await apiRequest(`/ai-recipes/${id}/review`, {
+        method: "PATCH",
+        body: JSON.stringify({ status: "rejected" }),
+      });
+      setRecipes((current) => current.filter((recipe) => recipe.id !== id));
+      setMessage({
+        type: "success",
+        text: result.message || "AI recipe rejected.",
+      });
+    } catch (error) {
+      setMessage({ type: "error", text: error.message });
+    } finally {
+      setProcessingId(null);
+    }
   };
 
   return (
@@ -52,8 +88,21 @@ export default function AdminApprove() {
           </h1>
 
           <p className="mt-3 mb-5 text-gray-600">
-            Review AI-generated recipes submitted by users.
+            Review AI-generated recipes. Approved recipes are published to the regular recipe list.
           </p>
+
+          {message && (
+            <div
+              role="status"
+              className={`mb-5 rounded-lg border px-4 py-3 ${
+                message.type === "success"
+                  ? "border-green-200 bg-green-50 text-green-800"
+                  : "border-red-200 bg-red-50 text-red-800"
+              }`}
+            >
+              {message.text}
+            </div>
+          )}
         </main>
 
         <div className="bg-white rounded-xl shadow overflow-x-auto">
@@ -95,6 +144,22 @@ export default function AdminApprove() {
             </thead>
 
             <tbody>
+              {!loading && currentRecipes.length === 0 && (
+                <tr>
+                  <td colSpan="4" className="p-8 text-center text-gray-500">
+                    No pending AI recipes found.
+                  </td>
+                </tr>
+              )}
+
+              {loading && (
+                <tr>
+                  <td colSpan="4" className="p-8 text-center text-gray-500">
+                    Loading pending recipes...
+                  </td>
+                </tr>
+              )}
+
               {currentRecipes.map((recipe) => (
                 <tr
                   key={recipe.id}
@@ -122,16 +187,18 @@ export default function AdminApprove() {
                     <div className="flex gap-3">
                       <button
                         onClick={() => approveRecipe(recipe.id)}
-                        className="text-[#468432] font-semibold"
+                        disabled={processingId !== null}
+                        className="text-[#468432] font-semibold disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        Approve
+                        {processingId === recipe.id ? "Processing..." : "Approve & Publish"}
                       </button>
 
                       <button
                         onClick={() => rejectRecipe(recipe.id)}
-                        className="text-red-600 font-semibold"
+                        disabled={processingId !== null}
+                        className="text-red-600 font-semibold disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        Reject
+                        {processingId === recipe.id ? "Processing..." : "Reject"}
                       </button>
                     </div>
                   </td>
