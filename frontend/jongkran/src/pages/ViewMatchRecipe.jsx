@@ -5,6 +5,7 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import RecipeCart from "../components/RecipeCart";
 import { apiRequest, normalizeRecipe } from "../lib/api";
+import { getRecipeMatchPercentage } from "../lib/recipeMatching";
 
 export default function ViewMatchRecipe() {
   const navigate = useNavigate();
@@ -19,64 +20,6 @@ export default function ViewMatchRecipe() {
     JSON.parse(
       localStorage.getItem("selectedIngredients")
     ) || [];
-
-  // Get ingredient name in lowercase
-  const getIngredientName = (ingredient) => {
-    if (typeof ingredient === "string") {
-      return ingredient.toLowerCase().trim();
-    }
-
-    return (
-      ingredient?.name ||
-      ingredient?.ingredientName ||
-      ""
-    )
-      .toLowerCase()
-      .trim();
-  };
-
-  // Check whether two ingredients match
-  const ingredientsMatch = (
-    recipeIngredient,
-    selectedIngredient
-  ) => {
-    const recipeName =
-      getIngredientName(recipeIngredient);
-
-    const selectedName =
-      getIngredientName(selectedIngredient);
-
-    if (!recipeName || !selectedName) {
-      return false;
-    }
-
-    return (
-      recipeName.includes(selectedName) ||
-      selectedName.includes(recipeName)
-    );
-  };
-
-  // Calculate match percentage
-  const getMatchPercentage = (recipe) => {
-    const recipeIngredients =
-      recipe.ingredients || [];
-
-    if (recipeIngredients.length === 0) {
-      return 0;
-    }
-
-    const matchedCount =
-      recipeIngredients.filter((ingredient) =>
-        selectedIngredients.some((selected) =>
-          ingredientsMatch(ingredient, selected)
-        )
-      ).length;
-
-    return Math.round(
-      (matchedCount / recipeIngredients.length) *
-        100
-    );
-  };
 
   useEffect(() => {
     if (selectedIngredients.length === 0) return;
@@ -104,8 +47,8 @@ export default function ViewMatchRecipe() {
   const sortedRecipes = sortByMatch
     ? [...displayedRecipes].sort(
         (firstRecipe, secondRecipe) =>
-          getMatchPercentage(secondRecipe) -
-          getMatchPercentage(firstRecipe)
+          getRecipeMatchPercentage(secondRecipe, selectedIngredients) -
+          getRecipeMatchPercentage(firstRecipe, selectedIngredients)
       )
     : displayedRecipes;
 

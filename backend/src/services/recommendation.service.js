@@ -1,15 +1,27 @@
 import prisma from "../prismaClient.js";
 
 export const findMatchingRecipesService = async (ingredients) => {
-    const normalizedIngredients = ingredients.map((item) =>
-        item.trim().toLowerCase()
+    const normalizedIngredients = new Set(
+        ingredients.map((item) => item.trim().toLowerCase()).filter(Boolean)
     );
 
     const recipes = await prisma.recipe.findMany({
-        include: {
+        where: {
+            deleted_at: null
+        },
+        select: {
+            recipe_id: true,
+            title: true,
+            description: true,
+            image_url: true,
+            difficulty: true,
             recipeIngredients: {
-                include: {
-                    ingredient: true
+                select: {
+                    ingredient: {
+                        select: {
+                            name: true
+                        }
+                    }
                 }
             }
         }
@@ -21,14 +33,16 @@ export const findMatchingRecipesService = async (ingredients) => {
         );
 
         const matchedIngredients = recipeIngredients.filter(
-            (ingredient) => normalizedIngredients.includes(ingredient)
+            (ingredient) => normalizedIngredients.has(ingredient)
         );
 
         const missingIngredients = recipeIngredients.filter(
-            (ingredient) => !normalizedIngredients.includes(ingredient)
+            (ingredient) => !normalizedIngredients.has(ingredient)
         );
 
-        const matchPercentage = (matchedIngredients.length / recipeIngredients.length) * 100;
+        const matchPercentage = recipeIngredients.length === 0
+            ? 0
+            : (matchedIngredients.length / recipeIngredients.length) * 100;
 
         return {
             recipe_id: recipe.recipe_id,

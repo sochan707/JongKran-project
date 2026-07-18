@@ -2,6 +2,7 @@ import { Heart } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { isAuthenticated, recipeApi } from "../lib/api";
+import { getRecipeMatchPercentage } from "../lib/recipeMatching";
 
 export default function RecipeCart({
   recipe,
@@ -19,21 +20,6 @@ export default function RecipeCart({
       .catch(() => {});
   }, [recipe.id]);
 
-  // Get only the ingredient name
-  const getIngredientName = (ingredient) => {
-    if (typeof ingredient === "string") {
-      return ingredient.toLowerCase().trim();
-    }
-
-    return (
-      ingredient?.name ||
-      ingredient?.ingredientName ||
-      ""
-    )
-      .toLowerCase()
-      .trim();
-  };
-
   // Use ingredients passed from the matching page.
   // If none are passed, get them from localStorage.
   const userIngredients =
@@ -43,38 +29,7 @@ export default function RecipeCart({
           localStorage.getItem("selectedIngredients")
         ) || [];
 
-  const recipeIngredients = recipe.ingredients || [];
-
-  // Count how many recipe ingredients match
-  const matchedIngredientCount =
-    recipeIngredients.filter((recipeIngredient) => {
-      const recipeIngredientName =
-        getIngredientName(recipeIngredient);
-
-      return userIngredients.some((userIngredient) => {
-        const userIngredientName =
-          getIngredientName(userIngredient);
-
-        return (
-          recipeIngredientName.includes(
-            userIngredientName
-          ) ||
-          userIngredientName.includes(
-            recipeIngredientName
-          )
-        );
-      });
-    }).length;
-
-  // Calculate match percentage
-  const matchPercentage =
-    recipeIngredients.length > 0
-      ? Math.round(
-          (matchedIngredientCount /
-            recipeIngredients.length) *
-            100
-        )
-      : 0;
+  const matchPercentage = getRecipeMatchPercentage(recipe, userIngredients);
 
   const toggleFavorite = async (event) => {
     event.stopPropagation();
