@@ -1,35 +1,35 @@
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
-import Home from "./pages/Home";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import InputIngredients from "./pages/InputIngredients";
-import ViewMatchRecipe from "./pages/ViewMatchRecipe";
-import ViewEachMenu from "./pages/ViewEachMenu";
-import Instruction from "./pages/Instruction";
-import InstructionOfMenu from "./pages/InstructionOfMenu";
-import AllRecipes from "./pages/AllRecipes";
-import Favorite from "./pages/Favorite";
-import History from "./pages/History";
-import About from "./pages/About";
-import UserProfile from "./pages/UserProfile";
-import RecipeMatch from "./pages/RecipeMatch";
-import RecipeManagement from "./pages/admin/RecipeManagement";
-import CreateRecipe from "./pages/admin/CreateRecipe";
-import EditRecipe from "./pages/admin/EditRecipe";
-import NotFound from "./pages/NotFound";
-import ProfileInformation from "./pages/ProfileInformation";
-import AccountSetting from "./pages/AccountSetting";
-import ChangePassword from "./pages/ChangePassword";
-import Language from "./pages/Language";
-import UserSuggestions from "./pages/admin/UserSuggestions";
-import RecipeSuggestionDetail from "./pages/admin/RecipeSuggestionDetail";
-import AdminApprove from "./pages/admin/AdminApprove";
+const Home = lazy(() => import("./pages/Home"));
+const Login = lazy(() => import("./pages/Login"));
+const Register = lazy(() => import("./pages/Register"));
+const InputIngredients = lazy(() => import("./pages/InputIngredients"));
+const ViewMatchRecipe = lazy(() => import("./pages/ViewMatchRecipe"));
+const ViewEachMenu = lazy(() => import("./pages/ViewEachMenu"));
+const Instruction = lazy(() => import("./pages/Instruction"));
+const AllRecipes = lazy(() => import("./pages/AllRecipes"));
+const Favorite = lazy(() => import("./pages/Favorite"));
+const History = lazy(() => import("./pages/History"));
+const About = lazy(() => import("./pages/About"));
+const UserProfile = lazy(() => import("./pages/UserProfile"));
+const RecipeManagement = lazy(() => import("./pages/admin/RecipeManagement"));
+const CreateRecipe = lazy(() => import("./pages/admin/CreateRecipe"));
+const EditRecipe = lazy(() => import("./pages/admin/EditRecipe"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const ProfileInformation = lazy(() => import("./pages/ProfileInformation"));
+const AccountSetting = lazy(() => import("./pages/AccountSetting"));
+const ChangePassword = lazy(() => import("./pages/ChangePassword"));
+const Language = lazy(() => import("./pages/Language"));
+const UserSuggestions = lazy(() => import("./pages/admin/UserSuggestions"));
+const RecipeSuggestionDetail = lazy(() => import("./pages/admin/RecipeSuggestionDetail"));
+const AdminApprove = lazy(() => import("./pages/admin/AdminApprove"));
 
 export default function App() {
   return (
     <BrowserRouter>
-      <Routes>
+      <Suspense fallback={<main className="min-h-screen" aria-busy="true" />}>
+        <Routes>
         <Route path="/" element={<Home />} />
 
         <Route path="/login" element={<Login />} />
@@ -42,14 +42,14 @@ export default function App() {
         <Route path="/recipe/:id" element={<ViewEachMenu />} />
 
         <Route path="/instruction/:id" element={<Instruction />} />
-        <Route path="/menu-instruction/:id" element={<InstructionOfMenu />} />
+        <Route path="/menu-instruction/:id" element={<Instruction />} />
 
         <Route path="/favorite" element={<Favorite />} />
         <Route path="/history" element={<History />} />
         <Route path="/about" element={<About />} />
         <Route path="/profile" element={<UserProfile />} />
 
-        <Route path="/recipe-match" element={<RecipeMatch />} />
+        <Route path="/recipe-match" element={<ViewMatchRecipe />} />
         <Route path="*" element={<NotFound />} />
 
         <Route path="/admin" element={<RecipeManagement />} />
@@ -62,8 +62,8 @@ export default function App() {
         <Route path="/admin/suggestions" element={<UserSuggestions />} />
         <Route path="/admin/suggestions/:recipeId" element={<RecipeSuggestionDetail />} />
         <Route path="/admin/pending-approve" element={<AdminApprove />} />
-      </Routes>
-
+        </Routes>
+      </Suspense>
     </BrowserRouter>
 
   );
