@@ -17,6 +17,7 @@ export default function RecipeManagement() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [deletedCount, setDeletedCount] = useState(0);
 
   const recipesPerPage = 10;
 
@@ -84,7 +85,10 @@ export default function RecipeManagement() {
       setLoading(true);
       setError("");
 
-      const result = await apiRequest("/recipes");
+      const [result, deletedCountResult] = await Promise.all([
+        apiRequest("/recipes"),
+        apiRequest("/recipes/admin/deleted-count"),
+      ]);
 
       const recipeList = Array.isArray(result)
         ? result
@@ -119,6 +123,7 @@ export default function RecipeManagement() {
       );
 
       setRecipes(sortRecipes(formattedRecipes));
+      setDeletedCount(Number(deletedCountResult.data?.count) || 0);
     } catch (err) {
       console.error("Failed to load recipes:", err);
 
@@ -169,10 +174,6 @@ export default function RecipeManagement() {
     (recipe) => recipe.status === "ai_generated"
   ).length;
 
-  const deleted = recipes.filter(
-    (recipe) => recipe.status === "deleted"
-  ).length;
-
   const summaryCards = [
     {
       label: "Total Recipes",
@@ -192,7 +193,7 @@ export default function RecipeManagement() {
     },
     {
       label: "Deleted Recipes",
-      value: deleted,
+      value: deletedCount,
     },
   ];
 
@@ -235,6 +236,7 @@ export default function RecipeManagement() {
             String(recipe.id) !== String(id)
         )
       );
+      setDeletedCount((count) => count + 1);
 
       const remainingItems =
         filteredRecipes.length - 1;

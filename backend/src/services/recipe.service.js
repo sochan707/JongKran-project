@@ -227,6 +227,16 @@ export const getAllRecipesService = async () => {
   return recipes;
 }
 
+export const getDeletedRecipeCountService = async () => {
+  return prisma.recipe.count({
+    where: {
+      deleted_at: {
+        not: null,
+      },
+    },
+  });
+};
+
 export const getRecipesByIdService = async (recipeId, includeCookingDetails = false) => {
   const recipe = await prisma.recipe.findFirst({
     where: {

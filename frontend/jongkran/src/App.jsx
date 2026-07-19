@@ -2,6 +2,7 @@ import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import AdminRoute from "./components/AdminRoute";
 import ProtectedRoute from "./components/ProtectedRoute";
+import UserRoute from "./components/UserRoute";
 
 const Home = lazy(() => import("./pages/Home"));
 const Login = lazy(() => import("./pages/Login"));
@@ -33,41 +34,44 @@ export default function App() {
     <BrowserRouter>
       <Suspense fallback={<main className="min-h-screen" aria-busy="true" />}>
         <Routes>
-        <Route path="/" element={<Home />} />
+        <Route element={<UserRoute />}>
+          <Route path="/" element={<Home />} />
 
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
 
-        <Route path="/input-ingredients" element={<InputIngredients />} />
-        <Route path="/recipe/:id" element={<RecipeOverview />} />
-        <Route path="/recipe/:id/ingredients" element={<ProtectedRoute><ViewEachMenu /></ProtectedRoute>} />
+          <Route path="/input-ingredients" element={<InputIngredients />} />
+          <Route path="/recipe/:id" element={<RecipeOverview />} />
+          <Route path="/recipe/:id/ingredients" element={<ProtectedRoute><ViewEachMenu /></ProtectedRoute>} />
 
-        <Route path="/recipes" element={<AllRecipes />} />
+          <Route path="/recipes" element={<AllRecipes />} />
 
-        <Route path="/instruction/:id" element={<ProtectedRoute><Instruction /></ProtectedRoute>} />
-        <Route path="/menu-instruction/:id" element={<ProtectedRoute><Instruction /></ProtectedRoute>} />
+          <Route path="/instruction/:id" element={<ProtectedRoute><Instruction /></ProtectedRoute>} />
+          <Route path="/menu-instruction/:id" element={<ProtectedRoute><Instruction /></ProtectedRoute>} />
 
-        <Route path="/favorite" element={<ProtectedRoute><Favorite /></ProtectedRoute>} />
-        <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
-        <Route path="/about" element={<About />} />
-        <Route path="/profile" element={<UserProfile />} />
+          <Route path="/favorite" element={<ProtectedRoute><Favorite /></ProtectedRoute>} />
+          <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
+          <Route path="/about" element={<About />} />
+          <Route path="/profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
 
-        <Route path="/matched-recipes" element={<ViewMatchRecipe />} />
-        <Route path="/recipe-match" element={<ViewMatchRecipe />} />
-        <Route element={<AdminRoute />}>
-          <Route path="/admin" element={<RecipeManagement />} />
-          <Route path="/admin/create" element={<CreateRecipe />} />
-          <Route path="/admin/edit/:id" element={<EditRecipe />} />
-          <Route path="/admin/suggestions" element={<UserSuggestions />} />
-          <Route path="/admin/suggestions/:recipeId" element={<RecipeSuggestionDetail />} />
-          <Route path="/admin/pending-approve" element={<AdminApprove />} />
+          <Route path="/matched-recipes" element={<ViewMatchRecipe />} />
+          <Route path="/recipe-match" element={<ViewMatchRecipe />} />
+
+          <Route path="/ProfileInformation" element={<ProtectedRoute><ProfileInformation /></ProtectedRoute>} />
+          <Route path="/AccountSetting" element={<ProtectedRoute><AccountSetting /></ProtectedRoute>} />
+          <Route path="/ChangePassword" element={<ProtectedRoute><ChangePassword /></ProtectedRoute>} />
+          <Route path="/Language" element={<ProtectedRoute><Language /></ProtectedRoute>} />
+          <Route path="*" element={<NotFound />} />
         </Route>
 
-        <Route path="/ProfileInformation" element={<ProfileInformation />} />
-        <Route path="/AccountSetting" element={<AccountSetting />} />
-        <Route path="/ChangePassword" element={<ChangePassword />} />
-        <Route path="/Language" element={<Language />} />
-        <Route path="*" element={<NotFound />} />
+        <Route path="/admin" element={<AdminRoute />}>
+          <Route index element={<RecipeManagement />} />
+          <Route path="create" element={<CreateRecipe />} />
+          <Route path="edit/:id" element={<EditRecipe />} />
+          <Route path="suggestions" element={<UserSuggestions />} />
+          <Route path="suggestions/:recipeId" element={<RecipeSuggestionDetail />} />
+          <Route path="pending-approve" element={<AdminApprove />} />
+        </Route>
         </Routes>
       </Suspense>
     </BrowserRouter>

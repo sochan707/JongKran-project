@@ -1,4 +1,4 @@
-import {createRecipeService, getAllRecipesService, getRecipesByIdService, deleteRecipeService, updateRecipeService} from "../services/recipe.service.js"
+import {createRecipeService, getAllRecipesService, getDeletedRecipeCountService, getRecipesByIdService, deleteRecipeService, updateRecipeService} from "../services/recipe.service.js"
 
 export const createRecipeController = async (req, res) => {
   try {
@@ -33,6 +33,22 @@ export const getAllRecipesController = async (req, res) => {
       success: false,
       message: err.message,
     })
+  }
+};
+
+export const getDeletedRecipeCountController = async (req, res) => {
+  try {
+    const count = await getDeletedRecipeCountService();
+
+    return res.status(200).json({
+      success: true,
+      data: { count },
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 };
 

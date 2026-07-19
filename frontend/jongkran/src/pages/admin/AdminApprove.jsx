@@ -192,7 +192,7 @@ export default function AdminApprove() {
                         disabled={processingId !== null}
                         className="text-[#468432] font-semibold disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        {processingId === recipe.id ? "Processing..." : "Approve & Publish"}
+                        {processingId === recipe.id ? "Processing..." : "Publish"}
                       </button>
 
                       <button
