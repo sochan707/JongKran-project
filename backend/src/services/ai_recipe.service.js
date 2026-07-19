@@ -50,7 +50,7 @@ export const reviewAIRecipeService = async (aiRecipeId, status, adminId) => {
   }
 
   return prisma.$transaction(async (tx) => {
-    const aiRecipe = await tx.aiGeneratedRecipe.findUnique({
+    const aiRecipe = await tx.aIGeneratedRecipe.findUnique({
       where: { ai_recipe_id: aiRecipeId },
     });
 
@@ -61,14 +61,14 @@ export const reviewAIRecipeService = async (aiRecipeId, status, adminId) => {
         throw serviceError("An approved AI recipe cannot be rejected", 409);
       }
 
-      return tx.aiGeneratedRecipe.update({
+      return tx.aIGeneratedRecipe.update({
         where: { ai_recipe_id: aiRecipeId },
         data: { status: "rejected" },
       });
     }
 
     if (aiRecipe.approved_recipe_id) {
-      return tx.aiGeneratedRecipe.findUnique({
+      return tx.aIGeneratedRecipe.findUnique({
         where: { ai_recipe_id: aiRecipeId },
         include: { approvedRecipe: true },
       });
@@ -139,7 +139,7 @@ export const reviewAIRecipeService = async (aiRecipeId, status, adminId) => {
       },
     });
 
-    return tx.aiGeneratedRecipe.update({
+    return tx.aIGeneratedRecipe.update({
       where: { ai_recipe_id: aiRecipeId },
       data: {
         status: "approved",
@@ -151,38 +151,64 @@ export const reviewAIRecipeService = async (aiRecipeId, status, adminId) => {
 };
 
 export const getAIRecipesService = async (ingredients, userId) => {
-  const MAX_SKIP = 5;
+  const MAX_GENERATIONS = 5;
+  const GENERATION_WINDOW_MS = 3 * 60 * 60 * 1000;
+  const RECIPES_PER_BATCH = 4;
 
   const normalizedKey = ingredients
-    .map(i => i.trim().toLowerCase())
+    .map((ingredient) => String(ingredient).trim().toLowerCase())
+    .filter(Boolean)
     .sort()
     .join(",");
 
-  let existingRecipes = await prisma.aiGeneratedRecipe.findMany({
+  const windowStart = new Date(Date.now() - GENERATION_WINDOW_MS);
+  const recentRequestCount = await prisma.aIGenerationRequest.count({
+    where: {
+      user_id: userId,
+      ingredient_key: normalizedKey,
+      created_at: { gte: windowStart },
+    },
+  });
+
+  if (recentRequestCount >= MAX_GENERATIONS) {
+    const oldestRequest = await prisma.aIGenerationRequest.findFirst({
+      where: {
+        user_id: userId,
+        ingredient_key: normalizedKey,
+        created_at: { gte: windowStart },
+      },
+      orderBy: { created_at: "asc" },
+    });
+    const resetsAt = new Date(oldestRequest.created_at.getTime() + GENERATION_WINDOW_MS);
+    throw serviceError(
+      `You have reached the AI generation limit (${MAX_GENERATIONS} requests every 3 hours). Try again after ${resetsAt.toISOString()}.`,
+      429,
+    );
+  }
+
+  const previousRequests = await prisma.aIGenerationRequest.findMany({
+    where: { user_id: userId, ingredient_key: normalizedKey },
+    select: { recipe_ids: true },
+  });
+  const previouslyShownIds = new Set(previousRequests.flatMap((request) => request.recipe_ids));
+
+  const existingRecipes = await prisma.aIGeneratedRecipe.findMany({
     where: { ingredient_key: normalizedKey },
     orderBy: { created_at: "asc" }
   });
+  const availableRecipes = existingRecipes
+    .filter((recipe) => !previouslyShownIds.has(recipe.ai_recipe_id))
+    .slice(0, RECIPES_PER_BATCH);
 
-  const userSkipped = await prisma.userAICooking.findMany({
-    where: { user_id: userId, ingredient_key: normalizedKey, action: "skip" },
-    select: { ai_recipe_id: true }
-  });
-  const skippedIds = userSkipped.map(s => s.ai_recipe_id);
-
-  let availableRecipes = existingRecipes.filter(r => !skippedIds.includes(r.ai_recipe_id));
-
-  if (userSkipped.length >= MAX_SKIP && availableRecipes.length === 0) {
-    return { success: true, message: `You have reached the skip limit (${MAX_SKIP}) for these ingredients.`, recipes: [] };
-  }
-
-  if (availableRecipes.length === 0) {
+  const recipesNeeded = RECIPES_PER_BATCH - availableRecipes.length;
+  if (recipesNeeded > 0) {
     const existingTitles = existingRecipes.map(r => r.title).join(", ");
 
     const prompt = `
       You are a chef specialized in Khmer (Cambodian) cuisine. 
-      Generate 4 different Khmer recipes using the following ingredients: ${ingredients.join(", ")}.
+      Generate ${recipesNeeded} different Khmer recipes using the following ingredients: ${ingredients.join(", ")}.
       Do NOT repeat the following recipes: ${existingTitles || "none"}.
-      Return JSON ONLY as an array of 4 objects, each with keys:
+      Return JSON ONLY as an array of ${recipesNeeded} objects, each with keys:
       {
         "title": "recipe title",
         "description": "short description",
@@ -207,11 +233,13 @@ export const getAIRecipesService = async (ingredients, userId) => {
     try { aiRecipes = JSON.parse(jsonMatch[0]); }
     catch { throw new Error("OpenAI returned invalid JSON"); }
 
-    const newRecipes = aiRecipes.filter(r => !existingRecipes.find(er => er.title === r.title));
+    const existingTitleSet = new Set(existingRecipes.map((recipe) => recipe.title.trim().toLowerCase()));
+    const newRecipes = aiRecipes
+      .filter((recipe) => recipe?.title && !existingTitleSet.has(recipe.title.trim().toLowerCase()))
+      .slice(0, recipesNeeded);
 
-    const savedRecipes = [];
     for (const recipe of newRecipes) {
-      const saved = await prisma.aiGeneratedRecipe.create({
+      const saved = await prisma.aIGeneratedRecipe.create({
         data: {
           title: recipe.title,
           description: recipe.description || null,
@@ -222,13 +250,26 @@ export const getAIRecipesService = async (ingredients, userId) => {
           ingredient_key: normalizedKey
         }
       });
-      savedRecipes.push(saved);
+      availableRecipes.push(saved);
     }
-
-    availableRecipes = savedRecipes;
   }
 
-  const recipesToReturn = availableRecipes.slice(0, 4);
+  const recipesToReturn = availableRecipes.slice(0, RECIPES_PER_BATCH);
+  if (recipesToReturn.length === 0) {
+    throw serviceError("No new AI recipes could be generated", 502);
+  }
 
-  return { success: true, recipes: recipesToReturn };
+  await prisma.aIGenerationRequest.create({
+    data: {
+      user_id: userId,
+      ingredient_key: normalizedKey,
+      recipe_ids: recipesToReturn.map((recipe) => recipe.ai_recipe_id),
+    },
+  });
+
+  return {
+    success: true,
+    recipes: recipesToReturn,
+    generationsRemaining: MAX_GENERATIONS - recentRequestCount - 1,
+  };
 };
