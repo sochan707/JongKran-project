@@ -61,10 +61,7 @@ export const saveSession = (data) => {
   };
   localStorage.setItem("authSession", JSON.stringify(session));
   localStorage.setItem("isLoggedIn", "true");
-  localStorage.setItem("userProfile", JSON.stringify({
-    username: data.user?.user_name || data.user?.email?.split("@")[0] || "User",
-    email: data.user?.email,
-  }));
+  localStorage.removeItem("userProfile");
   window.dispatchEvent(new Event("auth-change"));
 };
 
@@ -73,6 +70,25 @@ export const clearSession = () => {
   localStorage.removeItem("isLoggedIn");
   localStorage.removeItem("userProfile");
   window.dispatchEvent(new Event("auth-change"));
+};
+
+export const getUserProfile = async () => {
+  const response = await apiRequest("/auth/profile");
+  return response.data;
+};
+
+export const updateUserProfile = async (profile, imageFile, removeImage = false) => {
+  const body = new FormData();
+  body.append("username", profile.username);
+  body.append("email", profile.email);
+  body.append("gender", profile.gender || "");
+  body.append("dob", profile.dob || "");
+  body.append("bio", profile.bio || "");
+  body.append("removeImage", String(removeImage));
+  if (imageFile) body.append("image", imageFile);
+
+  const response = await apiRequest("/auth/profile", { method: "PATCH", body });
+  return response.data;
 };
 
 export const normalizeRecipe = (recipe) => {

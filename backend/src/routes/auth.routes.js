@@ -1,7 +1,8 @@
 import express from "express";
-import { register, login , refreshTokenController, logoutController} from "../controllers/auth.controller.js";
+import { register, login, refreshTokenController, logoutController, getProfile, updateProfile } from "../controllers/auth.controller.js";
 import { authenticate } from "../middleware/auth.middleware.js";
 import { authorize } from "../middleware/rbac.middleware.js";
+import { uploadRecipeImage } from "../middleware/upload.middleware.js";
 
 const router = express.Router();
 
@@ -9,6 +10,8 @@ router.post("/register", register);
 router.post("/login", login)
 router.post("/refresh", refreshTokenController);
 router.post("/logout", authenticate, logoutController);
+router.get("/profile", authenticate, getProfile);
+router.patch("/profile", authenticate, uploadRecipeImage, updateProfile);
 
 // ========================== TEST ===========================
 router.post(

@@ -8,77 +8,21 @@ import {
   LogOut,
   User,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { clearSession } from "../lib/api";
-
-const DEFAULT_PROFILE = {
-  username: "User",
-  email: "",
-  bio: null,
-  profileImage: null,
-};
+import useUserProfile from "../hooks/useUserProfile";
 
 export default function UserProfile() {
   const navigate = useNavigate();
 
-  const [userProfile, setUserProfile] =
-    useState(DEFAULT_PROFILE);
+  const { profile: userProfile, isLoggedIn } = useUserProfile();
 
   useEffect(() => {
-    const loadProfile = (event) => {
-      try {
-        // Use event data immediately when ProfileInformation saves.
-        if (event?.detail) {
-          setUserProfile({
-            ...DEFAULT_PROFILE,
-            ...event.detail,
-          });
-          return;
-        }
-
-        const savedProfile =
-          localStorage.getItem("userProfile");
-
-        if (!savedProfile) {
-          setUserProfile(DEFAULT_PROFILE);
-          return;
-        }
-
-        setUserProfile({
-          ...DEFAULT_PROFILE,
-          ...JSON.parse(savedProfile),
-        });
-      } catch (error) {
-        console.error("Could not load user profile:", error);
-        setUserProfile(DEFAULT_PROFILE);
-      }
-    };
-
-    const loggedIn =
-      localStorage.getItem("isLoggedIn") === "true";
-
-    if (!loggedIn) {
+    if (!isLoggedIn) {
       navigate("/login", { replace: true });
-      return;
     }
-
-    loadProfile();
-
-    window.addEventListener("storage", loadProfile);
-    window.addEventListener(
-      "profile-updated",
-      loadProfile
-    );
-
-    return () => {
-      window.removeEventListener("storage", loadProfile);
-      window.removeEventListener(
-        "profile-updated",
-        loadProfile
-      );
-    };
-  }, [navigate]);
+  }, [isLoggedIn, navigate]);
 
   const username =
     userProfile?.username?.trim() || "User";

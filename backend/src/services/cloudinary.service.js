@@ -1,6 +1,6 @@
 import cloudinary from "../config/cloudinary.js";
 
-export const uploadImageToCloudinaryService = async (imageBuffer) => {
+export const uploadImageToCloudinaryService = async (imageBuffer, assetFolder = "jongkran/recipes") => {
   if (!imageBuffer) {
     const error = new Error("Image file is required! ʕ•̀ᆺ•́ʔ");
     error.statusCode = 400;
@@ -11,7 +11,7 @@ export const uploadImageToCloudinaryService = async (imageBuffer) => {
     const uploadStream = cloudinary.uploader.upload_stream(
       {
         resource_type: "image",
-        asset_folder: "jongkran/recipes",
+        asset_folder: assetFolder,
       },
       (error, result) => {
         if (error) {

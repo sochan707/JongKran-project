@@ -1,68 +1,18 @@
 import { Link, NavLink } from "react-router-dom";
 import { Menu, UserCircle } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import logo from "../assets/logo.png";
-
-const DEFAULT_PROFILE = {
-  username: "User",
-  profileImage: null,
-};
+import useUserProfile from "../hooks/useUserProfile";
 
 export default function AdminHeader() {
   const [open, setOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userProfile, setUserProfile] = useState(DEFAULT_PROFILE);
+  const { profile: userProfile, isLoggedIn } = useUserProfile();
 
   const links = [
     { name: "Recipes", path: "/admin" },
     { name: "Suggestions", path: "/admin/suggestions" },
     { name: "AI Approvals", path: "/admin/pending-approve" },
   ];
-
-  useEffect(() => {
-    const loadProfile = (event) => {
-      try {
-        setIsLoggedIn(
-          localStorage.getItem("isLoggedIn") === "true"
-        );
-
-        if (event?.detail) {
-          setUserProfile({
-            ...DEFAULT_PROFILE,
-            ...event.detail,
-          });
-          return;
-        }
-
-        const savedProfile =
-          localStorage.getItem("userProfile");
-
-        setUserProfile(
-          savedProfile
-            ? {
-                ...DEFAULT_PROFILE,
-                ...JSON.parse(savedProfile),
-              }
-            : DEFAULT_PROFILE
-        );
-      } catch (error) {
-        console.error("Failed to load admin profile:", error);
-        setUserProfile(DEFAULT_PROFILE);
-      }
-    };
-
-    loadProfile();
-
-    window.addEventListener("storage", loadProfile);
-    window.addEventListener("auth-change", loadProfile);
-    window.addEventListener("profile-updated", loadProfile);
-
-    return () => {
-      window.removeEventListener("storage", loadProfile);
-      window.removeEventListener("auth-change", loadProfile);
-      window.removeEventListener("profile-updated", loadProfile);
-    };
-  }, []);
 
   const userName =
     userProfile?.username?.trim() || "User";

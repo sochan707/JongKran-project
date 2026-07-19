@@ -74,14 +74,14 @@ model Recipe {
   created_at        DateTime            @default(now())
   updated_at        DateTime            @default(now()) @updatedAt
   deleted_at        DateTime?
+  approvedAIRecipes AIGeneratedRecipe[]
   favorites         Favorite[]
   histories         History[]
   logs              Logs_audit[]
   recipeIngredients RecipeIngredient[]
   steps             RecipeStep[]
-  suggestions       Suggestion[]
-  approvedAIRecipes AIGeneratedRecipe[]
   creator           User                @relation(fields: [created_by], references: [user_id])
+  suggestions       Suggestion[]
 
   @@index([deleted_at, created_at])
   @@map("recipes")
@@ -145,9 +145,9 @@ model Suggestion {
   status          SuggestionStatus @default(pending)
   created_at      DateTime         @default(now())
   deleted_at      DateTime?
+  logs            Logs_audit[]
   recipe          Recipe           @relation(fields: [recipe_id], references: [recipe_id], onDelete: Cascade)
   user            User             @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
-  logs            Logs_audit[]
 
   @@map("suggestions")
 }
@@ -156,12 +156,12 @@ model Logs_audit {
   audit_id         Int             @id @default(autoincrement())
   user_id          Int
   recipe_id        Int?
-  suggestion_id    Int?
   action_type      AdminActionType
   action_timestamp DateTime        @default(now())
+  suggestion_id    Int?
   users            User            @relation(fields: [user_id], references: [user_id], map: "logs_audit_admin_id_fkey")
   recipe           Recipe?         @relation(fields: [recipe_id], references: [recipe_id])
-  suggestion       Suggestion?     @relation(fields: [suggestion_id], references: [suggestion_id], onDelete: SetNull)
+  suggestion       Suggestion?     @relation(fields: [suggestion_id], references: [suggestion_id])
 
   @@index([suggestion_id])
   @@map("logs_audit")
@@ -179,34 +179,32 @@ model RefreshToken {
 }
 
 model AIGeneratedRecipe {
-  ai_recipe_id       Int      @id @default(autoincrement())
-  ingredient_key     String   @unique
-  title              String   @db.VarChar(255)
+  ai_recipe_id       Int             @id @default(autoincrement())
+  title              String          @db.VarChar(255)
   description        String?
   image_url          String?
   ingredients        Json
   steps              Json
-  generated_by       String   @default("OpenAI") @db.VarChar(50)
-  status             String   @default("pending") @db.VarChar(20)
+  generated_by       String          @default("OpenAI") @db.VarChar(50)
+  status             String          @default("pending") @db.VarChar(20)
   approved_recipe_id Int?
-  created_at         DateTime @default(now()) @db.Timestamp(6)
-
-  approvedRecipe Recipe?         @relation(fields: [approved_recipe_id], references: [recipe_id], onUpdate: NoAction, map: "fk_approved_recipe")
-  userCookings   UserAICooking[]
+  created_at         DateTime        @default(now()) @db.Timestamp(6)
+  ingredient_key     String          @unique
+  approvedRecipe     Recipe?         @relation(fields: [approved_recipe_id], references: [recipe_id], onUpdate: NoAction, map: "fk_approved_recipe")
+  userCookings       UserAICooking[]
 
   @@map("ai_generated_recipes")
 }
 
 model UserAICooking {
-  id             Int      @id @default(autoincrement())
+  id             Int               @id @default(autoincrement())
   user_id        Int
   ai_recipe_id   Int
   ingredient_key String
   action         AIAction
-  created_at     DateTime @default(now()) @db.Timestamp(6)
-
-  aiRecipe AIGeneratedRecipe @relation(fields: [ai_recipe_id], references: [ai_recipe_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_ai_recipe")
-  user     User              @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_user")
+  created_at     DateTime          @default(now()) @db.Timestamp(6)
+  aiRecipe       AIGeneratedRecipe @relation(fields: [ai_recipe_id], references: [ai_recipe_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_ai_recipe")
+  user           User              @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_user")
 
   @@index([ingredient_key], map: "idx_user_ai_cooking_ingredient_key")
   @@index([user_id, ingredient_key], map: "idx_user_ai_cooking_user_ingredient")

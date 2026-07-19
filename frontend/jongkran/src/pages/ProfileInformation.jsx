@@ -3,6 +3,7 @@ import Footer from "../components/Footer";
 import { Camera, Save } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { getSession, getUserProfile, updateUserProfile } from "../lib/api";
 
 const DEFAULT_PROFILE = {
   username: "User",
@@ -20,58 +21,11 @@ export default function ProfileInformation() {
 
   const getSavedProfile = () => {
     try {
-      const savedProfile =
-        JSON.parse(localStorage.getItem("userProfile")) || {};
-
-      const registeredUser =
-        JSON.parse(localStorage.getItem("registeredUser")) || {};
-
-      /*
-       * userProfile is the main source.
-       * registeredUser is used only when profile data has not been saved yet.
-       */
+      const sessionUser = getSession()?.user || {};
       return {
         ...DEFAULT_PROFILE,
-
-        username:
-          savedProfile.username ??
-          registeredUser.username ??
-          DEFAULT_PROFILE.username,
-
-        email:
-          savedProfile.email ??
-          registeredUser.email ??
-          "",
-
-        gender:
-          savedProfile.gender ??
-          registeredUser.gender ??
-          "",
-
-        dob:
-          savedProfile.dob ??
-          registeredUser.dob ??
-          "",
-
-        age:
-          savedProfile.age ??
-          registeredUser.age ??
-          null,
-
-        bio:
-          savedProfile.bio ??
-          registeredUser.bio ??
-          "",
-
-        profileImage:
-          savedProfile.profileImage ??
-          registeredUser.profileImage ??
-          null,
-
-        memberSince:
-          savedProfile.memberSince ??
-          registeredUser.memberSince ??
-          DEFAULT_PROFILE.memberSince,
+        username: sessionUser.user_name ?? DEFAULT_PROFILE.username,
+        email: sessionUser.email ?? "",
       };
     } catch (error) {
       console.error("Could not load profile:", error);
@@ -82,6 +36,9 @@ export default function ProfileInformation() {
   const [form, setForm] = useState(getSavedProfile);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [imageFile, setImageFile] = useState(null);
+  const [removeImage, setRemoveImage] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     const isLoggedIn =
@@ -92,10 +49,20 @@ export default function ProfileInformation() {
     }
   }, [navigate]);
 
-  /*
-   * Keep this page synchronized if userProfile changes
-   * in another tab or from another mounted component.
-   */
+  useEffect(() => {
+    let active = true;
+    getUserProfile()
+      .then((profile) => {
+        if (active) setForm({ ...DEFAULT_PROFILE, ...profile });
+      })
+      .catch((error) => {
+        console.error("Could not load profile:", error);
+        if (active) setError(error.message);
+      });
+    return () => { active = false; };
+  }, []);
+
+  // Keep this page synchronized with updates from other mounted components.
   useEffect(() => {
     const reloadProfile = (event) => {
       if (event?.detail) {
@@ -106,14 +73,14 @@ export default function ProfileInformation() {
         return;
       }
 
-      setForm(getSavedProfile());
+      getUserProfile()
+        .then((profile) => setForm({ ...DEFAULT_PROFILE, ...profile }))
+        .catch((error) => console.error("Could not reload profile:", error));
     };
 
-    window.addEventListener("storage", reloadProfile);
     window.addEventListener("profile-updated", reloadProfile);
 
     return () => {
-      window.removeEventListener("storage", reloadProfile);
       window.removeEventListener(
         "profile-updated",
         reloadProfile
@@ -189,8 +156,8 @@ export default function ProfileInformation() {
 
     if (!file) return;
 
-    if (!file.type.startsWith("image/")) {
-      setError("Please select a valid image.");
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      setError("Please select a JPG, PNG, or WEBP image.");
       return;
     }
 
@@ -206,6 +173,8 @@ export default function ProfileInformation() {
         ...previousForm,
         profileImage: reader.result,
       }));
+      setImageFile(file);
+      setRemoveImage(false);
 
       setError("");
       setSuccess("");
@@ -223,12 +192,14 @@ export default function ProfileInformation() {
       ...previousForm,
       profileImage: null,
     }));
+    setImageFile(null);
+    setRemoveImage(true);
 
     setError("");
     setSuccess("");
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setError("");
     setSuccess("");
 
@@ -261,59 +232,28 @@ export default function ProfileInformation() {
       email: cleanEmail,
       gender: form.gender || null,
       dob: form.dob || null,
-      age: age === "" ? null : age,
       bio: cleanBio || null,
-      profileImage: form.profileImage || null,
-      memberSince:
-        form.memberSince || new Date().toISOString(),
     };
 
     try {
-      /*
-       * Save the shared profile object used by:
-       * - Header
-       * - AdminHeader
-       * - UserProfile
-       * - ProfileInformation
-       */
-      localStorage.setItem(
-        "userProfile",
-        JSON.stringify(updatedProfile)
-      );
-
-      /*
-       * Keep registeredUser synchronized so the edited
-       * information remains after logout and login.
-       */
-      const registeredUser =
-        JSON.parse(localStorage.getItem("registeredUser")) || {};
-
-      localStorage.setItem(
-        "registeredUser",
-        JSON.stringify({
-          ...registeredUser,
-          ...updatedProfile,
-          password: registeredUser.password,
-        })
-      );
-
-      setForm(updatedProfile);
+      setSaving(true);
+      const savedProfile = await updateUserProfile(updatedProfile, imageFile, removeImage);
+      setForm({ ...DEFAULT_PROFILE, ...savedProfile });
+      setImageFile(null);
+      setRemoveImage(false);
       setSuccess("Profile updated successfully.");
-
-      /*
-       * Immediately update every profile location
-       * in the same browser tab.
-       */
       window.dispatchEvent(
         new CustomEvent("profile-updated", {
-          detail: updatedProfile,
+          detail: savedProfile,
         })
       );
 
       navigate("/profile");
     } catch (error) {
       console.error("Could not save profile:", error);
-      setError("Could not save your profile. Please try again.");
+      setError(error.message || "Could not save your profile. Please try again.");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -357,7 +297,7 @@ export default function ProfileInformation() {
 
             <input
               type="file"
-              accept="image/*"
+              accept="image/jpeg,image/png,image/webp"
               id="photoUpload"
               className="hidden"
               onChange={handlePhotoChange}
@@ -443,7 +383,7 @@ export default function ProfileInformation() {
                 <option value="Male">Male</option>
                 <option value="Female">Female</option>
                 <option value="Other">Other</option>
-                <option value="Prefer not to say">
+                <option value="Private">
                   Prefer not to say
                 </option>
               </select>
@@ -490,13 +430,13 @@ export default function ProfileInformation() {
                 name="bio"
                 value={form.bio || ""}
                 onChange={handleChange}
-                maxLength={250}
+                maxLength={100}
                 placeholder="Tell us something about yourself"
                 className="w-full border rounded-xl px-4 py-3 resize-none outline-none focus:ring-2 focus:ring-[#468432]"
               />
 
               <p className="text-sm text-gray-400 text-right mt-1">
-                {(form.bio || "").length}/250
+                {(form.bio || "").length}/100
               </p>
             </div>
 
@@ -516,10 +456,11 @@ export default function ProfileInformation() {
             <button
               type="button"
               onClick={handleSave}
-              className="w-full bg-[#468432] hover:bg-[#3b6d2b] text-white rounded-xl py-3 font-semibold flex justify-center items-center gap-2"
+              disabled={saving}
+              className="w-full bg-[#468432] hover:bg-[#3b6d2b] disabled:opacity-60 text-white rounded-xl py-3 font-semibold flex justify-center items-center gap-2"
             >
               <Save size={18} />
-              Save Changes
+              {saving ? "Saving..." : "Save Changes"}
             </button>
           </div>
         </div>
