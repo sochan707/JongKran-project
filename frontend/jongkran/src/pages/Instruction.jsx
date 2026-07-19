@@ -294,7 +294,10 @@ export default function Instruction() {
         <section
           className="relative h-[300px] md:h-[360px] bg-cover bg-center"
           style={{
-            backgroundImage: `url(${recipe.image})`,
+            backgroundImage: `url(${
+              recipe.image ||
+              "https://madeinindiarestaurant.com/img/placeholders/comfort_food_placeholder.png"
+            })`,       
           }}
         >
           <div className="absolute inset-0 bg-black/35" />

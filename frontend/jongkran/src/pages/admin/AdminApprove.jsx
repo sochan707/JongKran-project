@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Search } from "lucide-react";
 import AdminHeader from "../../components/AdminHeader";
+import { RECIPE_PLACEHOLDER, handleRecipeImageError, } from "../../lib/recipeImage";
 
 export default function AdminApprove() {
   const [recipes, setRecipes] = useState([]);
@@ -130,8 +131,9 @@ export default function AdminApprove() {
                 >
                   <td className="p-3 pl-10 flex items-center gap-3">
                     <img
-                      src={recipe.image}
-                      alt={recipe.title}
+                      src={recipe.image || RECIPE_PLACEHOLDER}
+                      alt={recipe.title || "Recipe"}
+                      onError={handleRecipeImageError}
                       className="w-12 h-12 rounded object-cover"
                     />
 

@@ -1,12 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import {
-  ArrowLeft,
-  MessageCircle,
-  Trash2,
-} from "lucide-react";
+import { ArrowLeft, MessageCircle, Trash2, } from "lucide-react";
 import AdminHeader from "../../components/AdminHeader";
 import recipeData from "../../data/recipes";
+import { RECIPE_PLACEHOLDER, handleRecipeImageError, } from "../../lib/recipeImage";
+
 
 // Get a stable value that identifies a user
 const getUserKey = (user) => {
@@ -306,17 +304,12 @@ export default function RecipeSuggestionDetail() {
           {/* Recipe information */}
           <section className="bg-white rounded-xl shadow p-5 sm:p-6">
             <div className="flex flex-col sm:flex-row sm:items-center gap-5">
-              {recipe.image ? (
-                <img
-                  src={recipe.image}
-                  alt={recipe.title}
-                  className="w-full sm:w-28 h-44 sm:h-28 rounded-xl object-cover"
-                />
-              ) : (
-                <div className="w-full sm:w-28 h-44 sm:h-28 rounded-xl bg-gray-200 flex items-center justify-center text-gray-400">
-                  No image
-                </div>
-              )}
+              <img
+                src={recipe.image || RECIPE_PLACEHOLDER}
+                alt={recipe.title || "Recipe"}
+                onError={handleRecipeImageError}
+                className="w-full sm:w-28 h-44 sm:h-28 rounded-xl object-cover"
+              />
 
               <div className="flex-1">
                 <h1 className="title-font text-3xl sm:text-4xl font-bold">

@@ -10,6 +10,8 @@ export default function RecipeCart({
   selectedIngredients = [],
   onFavoriteChange,
 }) {
+  const recipePlaceholder =
+  "https://madeinindiarestaurant.com/img/placeholders/comfort_food_placeholder.png";
   const navigate = useNavigate();
   const [favorite, setFavorite] = useState(false);
 
@@ -82,9 +84,13 @@ export default function RecipeCart({
         className="cursor-pointer"
       >
         <img
-          src={recipe.image}
-          alt={recipe.name}
+          src={recipe.image || recipePlaceholder}
+          alt={recipe.name || "Recipe"}
           loading="lazy"
+          onError={(event) => {
+            event.currentTarget.onerror = null;
+            event.currentTarget.src = recipePlaceholder;
+          }}
           className="w-full h-48 md:h-64 object-cover"
         />
 
