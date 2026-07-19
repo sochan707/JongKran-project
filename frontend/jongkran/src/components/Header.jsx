@@ -3,9 +3,15 @@ import { Menu, UserCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import logo from "../assets/logo.png";
 
+const DEFAULT_PROFILE = {
+  username: "User",
+  profileImage: null,
+};
+
 export default function Header() {
   const [open, setOpen] = useState(false);
-  const [user, setUser] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userProfile, setUserProfile] = useState(DEFAULT_PROFILE);
 
   const links = [
     { name: "Home", path: "/" },
@@ -14,74 +20,63 @@ export default function Header() {
     { name: "Favorite", path: "/favorite" },
   ];
 
-  // ---------------- GET CURRENT USER ----------------
   useEffect(() => {
-    const loadUser = () => {
+    const loadProfile = (event) => {
       try {
-        const registeredUser =
-          JSON.parse(localStorage.getItem("registeredUser")) || {};
+        setIsLoggedIn(
+          localStorage.getItem("isLoggedIn") === "true"
+        );
 
-        const userProfile =
-          JSON.parse(localStorage.getItem("userProfile")) || {};
-
-        const loggedInUser =
-          JSON.parse(localStorage.getItem("currentUser")) || {};
-
-        const currentUser = {
-          ...registeredUser,
-          ...loggedInUser,
-          ...userProfile,
-        };
-
-        // Check whether the user is logged in
-        if (
-          currentUser.email ||
-          currentUser.username ||
-          currentUser.id
-        ) {
-          setUser(currentUser);
-        } else {
-          setUser(null);
+        if (event?.detail) {
+          setUserProfile({
+            ...DEFAULT_PROFILE,
+            ...event.detail,
+          });
+          return;
         }
+
+        const savedProfile =
+          localStorage.getItem("userProfile");
+
+        setUserProfile(
+          savedProfile
+            ? {
+                ...DEFAULT_PROFILE,
+                ...JSON.parse(savedProfile),
+              }
+            : DEFAULT_PROFILE
+        );
       } catch (error) {
-        console.error("Failed to load user:", error);
-        setUser(null);
+        console.error("Failed to load user profile:", error);
+        setUserProfile(DEFAULT_PROFILE);
       }
     };
 
-    loadUser();
+    loadProfile();
 
-    // Update header when localStorage changes from another tab
-    window.addEventListener("storage", loadUser);
-    window.addEventListener("auth-change", loadUser);
+    window.addEventListener("storage", loadProfile);
+    window.addEventListener("auth-change", loadProfile);
+    window.addEventListener("profile-updated", loadProfile);
 
     return () => {
-      window.removeEventListener("storage", loadUser);
-      window.removeEventListener("auth-change", loadUser);
+      window.removeEventListener("storage", loadProfile);
+      window.removeEventListener("auth-change", loadProfile);
+      window.removeEventListener("profile-updated", loadProfile);
     };
   }, []);
 
   const userName =
-    user?.username ||
-    user?.fullname ||
-    user?.fullName ||
-    user?.name ||
-    "User";
+    userProfile?.username?.trim() || "User";
 
   const userImage =
-    user?.profileImage ||
-    user?.image ||
-    user?.avatar ||
-    "";
+    userProfile?.profileImage || "";
 
-  const firstLetter = userName
-    .charAt(0)
-    .toUpperCase();
+  const firstLetter =
+    userName.charAt(0).toUpperCase();
 
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-gray-200">
       <div className="mx-[25px] flex h-16 items-center justify-between">
-        {/* LOGO */}
         <Link to="/" className="flex items-center gap-2">
           <img
             src={logo}
@@ -94,7 +89,6 @@ export default function Header() {
           </span>
         </Link>
 
-        {/* DESKTOP NAVIGATION */}
         <nav className="hidden md:flex items-center gap-8 text-sm font-semibold">
           {links.map((link) => (
             <NavLink
@@ -110,12 +104,11 @@ export default function Header() {
             </NavLink>
           ))}
 
-          {/* PROFILE */}
           <Link
-            to={user ? "/profile" : "/login"}
+            to={isLoggedIn ? "/profile" : "/login"}
             className="flex items-center"
           >
-            {user ? (
+            {isLoggedIn ? (
               userImage ? (
                 <img
                   src={userImage}
@@ -136,38 +129,40 @@ export default function Header() {
           </Link>
         </nav>
 
-        {/* MOBILE MENU BUTTON */}
         <button
           type="button"
           onClick={() => setOpen((current) => !current)}
           className="md:hidden"
           aria-label="Open navigation menu"
+          aria-expanded={open}
         >
           <Menu size={28} />
         </button>
       </div>
 
-      {/* MOBILE NAVIGATION */}
       {open && (
         <div className="md:hidden bg-white border-t border-gray-200 px-[25px] py-4 space-y-3">
           {links.map((link) => (
-            <Link
+            <NavLink
               key={link.name}
               to={link.path}
               onClick={() => setOpen(false)}
-              className="block text-sm font-semibold hover:text-[#468432]"
+              className={({ isActive }) =>
+                isActive
+                  ? "block text-sm font-semibold text-[#468432]"
+                  : "block text-sm font-semibold hover:text-[#468432]"
+              }
             >
               {link.name}
-            </Link>
+            </NavLink>
           ))}
 
-          {/* MOBILE PROFILE */}
           <Link
-            to={user ? "/profile" : "/login"}
+            to={isLoggedIn ? "/profile" : "/login"}
             onClick={() => setOpen(false)}
             className="flex items-center gap-3 text-sm font-semibold hover:text-[#468432]"
           >
-            {user ? (
+            {isLoggedIn ? (
               userImage ? (
                 <img
                   src={userImage}
@@ -183,9 +178,7 @@ export default function Header() {
               <UserCircle size={24} />
             )}
 
-            <span>
-              {user ? userName : "Log In"}
-            </span>
+            <span>{isLoggedIn ? userName : "Log In"}</span>
           </Link>
         </div>
       )}

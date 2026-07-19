@@ -3,9 +3,15 @@ import { Menu, UserCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import logo from "../assets/logo.png";
 
+const DEFAULT_PROFILE = {
+  username: "User",
+  profileImage: null,
+};
+
 export default function AdminHeader() {
   const [open, setOpen] = useState(false);
-  const [user, setUser] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userProfile, setUserProfile] = useState(DEFAULT_PROFILE);
 
   const links = [
     { name: "Recipes", path: "/admin" },
@@ -14,68 +20,62 @@ export default function AdminHeader() {
   ];
 
   useEffect(() => {
-    const loadUser = () => {
+    const loadProfile = (event) => {
       try {
-        const registeredUser =
-          JSON.parse(localStorage.getItem("registeredUser")) || {};
+        setIsLoggedIn(
+          localStorage.getItem("isLoggedIn") === "true"
+        );
 
-        const userProfile =
-          JSON.parse(localStorage.getItem("userProfile")) || {};
-
-        const loggedInUser =
-          JSON.parse(localStorage.getItem("currentUser")) || {};
-
-        const currentUser = {
-          ...registeredUser,
-          ...loggedInUser,
-          ...userProfile,
-        };
-
-        if (
-          currentUser.email ||
-          currentUser.username ||
-          currentUser.id
-        ) {
-          setUser(currentUser);
-        } else {
-          setUser(null);
+        if (event?.detail) {
+          setUserProfile({
+            ...DEFAULT_PROFILE,
+            ...event.detail,
+          });
+          return;
         }
+
+        const savedProfile =
+          localStorage.getItem("userProfile");
+
+        setUserProfile(
+          savedProfile
+            ? {
+                ...DEFAULT_PROFILE,
+                ...JSON.parse(savedProfile),
+              }
+            : DEFAULT_PROFILE
+        );
       } catch (error) {
-        console.error("Failed to load admin user:", error);
-        setUser(null);
+        console.error("Failed to load admin profile:", error);
+        setUserProfile(DEFAULT_PROFILE);
       }
     };
 
-    loadUser();
+    loadProfile();
 
-    window.addEventListener("storage", loadUser);
-    window.addEventListener("auth-change", loadUser);
+    window.addEventListener("storage", loadProfile);
+    window.addEventListener("auth-change", loadProfile);
+    window.addEventListener("profile-updated", loadProfile);
 
     return () => {
-      window.removeEventListener("storage", loadUser);
-      window.removeEventListener("auth-change", loadUser);
+      window.removeEventListener("storage", loadProfile);
+      window.removeEventListener("auth-change", loadProfile);
+      window.removeEventListener("profile-updated", loadProfile);
     };
   }, []);
 
   const userName =
-    user?.username ||
-    user?.fullname ||
-    user?.fullName ||
-    user?.name ||
-    "Admin";
+    userProfile?.username?.trim() || "User";
 
   const userImage =
-    user?.profileImage ||
-    user?.image ||
-    user?.avatar ||
-    "";
+    userProfile?.profileImage || "";
 
-  const firstLetter = userName.charAt(0).toUpperCase();
+  const firstLetter =
+    userName.charAt(0).toUpperCase();
 
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-gray-200">
       <div className="mx-[25px] flex h-16 items-center justify-between">
-        {/* LOGO */}
         <Link to="/admin" className="flex items-center gap-2">
           <img
             src={logo}
@@ -88,7 +88,6 @@ export default function AdminHeader() {
           </span>
         </Link>
 
-        {/* DESKTOP NAVIGATION */}
         <nav className="hidden md:flex items-center gap-8 text-sm font-semibold">
           {links.map((link) => (
             <NavLink
@@ -105,9 +104,11 @@ export default function AdminHeader() {
             </NavLink>
           ))}
 
-          {/* ADMIN PROFILE */}
-          <Link to="/profile" className="flex items-center">
-            {user ? (
+          <Link
+            to={isLoggedIn ? "/profile" : "/login"}
+            className="flex items-center"
+          >
+            {isLoggedIn ? (
               userImage ? (
                 <img
                   src={userImage}
@@ -128,19 +129,17 @@ export default function AdminHeader() {
           </Link>
         </nav>
 
-        {/* MOBILE MENU BUTTON */}
         <button
           type="button"
           onClick={() => setOpen((current) => !current)}
           className="md:hidden"
-          aria-label="Open admin navigation menu"
+          aria-label="Open navigation menu"
           aria-expanded={open}
         >
           <Menu size={28} />
         </button>
       </div>
 
-      {/* MOBILE NAVIGATION */}
       {open && (
         <div className="md:hidden bg-white border-t border-gray-200 px-[25px] py-4 space-y-3">
           {links.map((link) => (
@@ -159,13 +158,12 @@ export default function AdminHeader() {
             </NavLink>
           ))}
 
-          {/* MOBILE ADMIN PROFILE */}
           <Link
-            to="/profile"
+            to={isLoggedIn ? "/profile" : "/login"}
             onClick={() => setOpen(false)}
             className="flex items-center gap-3 text-sm font-semibold hover:text-[#468432]"
           >
-            {user ? (
+            {isLoggedIn ? (
               userImage ? (
                 <img
                   src={userImage}
@@ -181,7 +179,7 @@ export default function AdminHeader() {
               <UserCircle size={24} />
             )}
 
-            <span>{user ? userName : "Profile"}</span>
+            <span>{isLoggedIn ? userName : "Log In"}</span>
           </Link>
         </div>
       )}
