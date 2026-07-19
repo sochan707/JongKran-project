@@ -205,6 +205,16 @@ export const normalizeRecipe = (recipe) => {
       })
       .filter(Boolean),
 
+    ingredientDetails: ingredientRows
+      .filter((row) => typeof row !== "string")
+      .map((row) => ({
+        id: row.ingredient_id ?? row.ingredient?.ingredient_id ?? row.id,
+        name: row.ingredient?.name || row.name || row.ingredientName,
+        quantity: getValidNumber(row.quantity),
+        unit: row.unit || "",
+      }))
+      .filter((row) => row.name),
+
     steps: recipeSteps
       .map((step) => {
         if (typeof step === "string") {
@@ -242,6 +252,11 @@ export const normalizeRecipe = (recipe) => {
         nutritionData.protein_g,
         recipe.protein_per_serving
       ),
+      estimated: Boolean(recipe.nutrition?.estimated),
+      calculatedIngredientCount: getValidNumber(
+        recipe.nutrition?.calculatedIngredientCount
+      ),
+      ingredientCount: getValidNumber(recipe.nutrition?.ingredientCount),
     },
   };
 };

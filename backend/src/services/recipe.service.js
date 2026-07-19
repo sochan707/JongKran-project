@@ -5,6 +5,85 @@ const normalizeIngredient = (ingredient) =>
     .trim()
     .toLowerCase();
 
+const UNIT_TO_GRAMS = {
+  g: 1,
+  gram: 1,
+  grams: 1,
+  kg: 1000,
+  kilogram: 1000,
+  kilograms: 1000,
+  ml: 1,
+  milliliter: 1,
+  milliliters: 1,
+};
+
+// Count-based units need an ingredient-specific edible-weight estimate. Keeping
+// these conversions explicit prevents an unknown "piece" from silently being
+// treated as 1 gram.
+const INGREDIENT_GRAMS_PER_UNIT = {
+  egg: 50,
+  lime: 67,
+  "red chili": 5,
+  "kaffir lime leaf": 0.5,
+};
+
+const getIngredientWeightInGrams = ({ ingredient, quantity, unit }) => {
+  const amount = Number(quantity);
+  if (!Number.isFinite(amount) || amount <= 0) return null;
+
+  const normalizedUnit = String(unit || "").trim().toLowerCase();
+  if (UNIT_TO_GRAMS[normalizedUnit]) {
+    return amount * UNIT_TO_GRAMS[normalizedUnit];
+  }
+
+  const normalizedName = normalizeIngredient(ingredient?.name);
+  const gramsPerUnit = INGREDIENT_GRAMS_PER_UNIT[normalizedName];
+  return gramsPerUnit ? amount * gramsPerUnit : null;
+};
+
+export const calculateRecipeNutrition = (recipe) => {
+  const totals = { calories: 0, fat: 0, carbs: 0, protein: 0 };
+  let calculatedIngredientCount = 0;
+
+  for (const row of recipe.recipeIngredients || []) {
+    const grams = getIngredientWeightInGrams(row);
+    const nutrientValues = {
+      calories: row.ingredient?.calories_per_100g,
+      fat: row.ingredient?.fat_per_100g,
+      carbs: row.ingredient?.carbs_per_100g,
+      protein: row.ingredient?.protein_per_100g,
+    };
+
+    if (grams === null || Object.values(nutrientValues).every((value) => value == null)) {
+      continue;
+    }
+
+    const multiplier = grams / 100;
+    for (const [nutrient, value] of Object.entries(nutrientValues)) {
+      const numericValue = Number(value);
+      if (Number.isFinite(numericValue)) totals[nutrient] += numericValue * multiplier;
+    }
+    calculatedIngredientCount += 1;
+  }
+
+  if (calculatedIngredientCount === 0) return null;
+
+  const servings = Number(recipe.servings) > 0 ? Number(recipe.servings) : 1;
+  const round = (value) => Math.round(value * 10) / 10;
+
+  return {
+    perServing: Object.fromEntries(
+      Object.entries(totals).map(([key, value]) => [key, round(value / servings)]),
+    ),
+    total: Object.fromEntries(
+      Object.entries(totals).map(([key, value]) => [key, round(value)]),
+    ),
+    calculatedIngredientCount,
+    ingredientCount: recipe.recipeIngredients?.length || 0,
+    estimated: true,
+  };
+};
+
 const formatRecipe = (recipe, requestedIngredients) => {
   const requestedSet = new Set(requestedIngredients);
   const ingredients = recipe.recipeIngredients.map((item) => ({
@@ -160,6 +239,10 @@ export const getRecipesByIdService = async (recipeId) => {
           ingredient: {
             select: {
               name: true,
+              calories_per_100g: true,
+              carbs_per_100g: true,
+              fat_per_100g: true,
+              protein_per_100g: true,
             },
           },
         },
@@ -176,7 +259,10 @@ export const getRecipesByIdService = async (recipeId) => {
     throw new Error("Recipe not found! ˏ(•́∧•̀)ˎ")
   }
 
-  return recipe;
+  return {
+    ...recipe,
+    nutrition: calculateRecipeNutrition(recipe),
+  };
 };
 
 export const deleteRecipeService = async (recipeId, adminId) => {

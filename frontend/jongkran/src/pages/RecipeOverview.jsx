@@ -226,7 +226,7 @@ export default function RecipeOverview() {
                   </h2>
 
                   <span className="pb-0.5 text-sm text-gray-600">
-                    Per serving
+                    Per serving{recipe.nutrition?.estimated ? " · estimated" : ""}
                   </span>
                 </div>
 
@@ -253,6 +253,16 @@ export default function RecipeOverview() {
                     provided for this recipe.
                   </p>
                 )}
+
+                {!noNutrition &&
+                  recipe.nutrition?.calculatedIngredientCount <
+                    recipe.nutrition?.ingredientCount && (
+                    <p className="mt-4 text-sm text-gray-500">
+                      Based on {recipe.nutrition.calculatedIngredientCount} of{" "}
+                      {recipe.nutrition.ingredientCount} ingredients with available
+                      nutrition data.
+                    </p>
+                  )}
               </section>
             </div>
 
