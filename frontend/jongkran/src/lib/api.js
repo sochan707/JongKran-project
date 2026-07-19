@@ -162,7 +162,7 @@ export const normalizeRecipe = (recipe) => {
   return {
     ...recipe,
 
-    id: recipe.recipe_id ?? recipe.id,
+    id: recipe.recipe_id ?? recipe.ai_recipe_id ?? recipe.id,
 
     name: recipe.title ?? recipe.name,
 
@@ -211,6 +211,7 @@ export const normalizeRecipe = (recipe) => {
         id: row.ingredient_id ?? row.ingredient?.ingredient_id ?? row.id,
         name: row.ingredient?.name || row.name || row.ingredientName,
         quantity: getValidNumber(row.quantity),
+        quantityText: typeof row.quantity === "string" ? row.quantity : "",
         unit: row.unit || "",
       }))
       .filter((row) => row.name),

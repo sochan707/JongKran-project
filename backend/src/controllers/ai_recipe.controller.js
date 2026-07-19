@@ -2,7 +2,7 @@ import { getAIRecipesService, reviewAIRecipeService } from "../services/ai_recip
 import prisma from "../prismaClient.js";
 
 export const getPendingAIRecipesController = async (_req, res) => {
-  const recipes = await prisma.aiGeneratedRecipe.findMany({
+  const recipes = await prisma.aIGeneratedRecipe.findMany({
     where: { status: "pending" },
     orderBy: { created_at: "desc" },
   });
@@ -45,7 +45,7 @@ export const aiRecipeActionController = async (req, res) => {
       });
     }
 
-    const aiRecipe = await prisma.aiGeneratedRecipe.findUnique({
+    const aiRecipe = await prisma.aIGeneratedRecipe.findUnique({
       where: { ai_recipe_id: parseInt(id) }
     });
 
@@ -117,9 +117,9 @@ export const generateAIRecipesController = async (req, res) => {
   } catch (error) {
     console.error("[AI Recipe Controller]", error);
 
-    return res.status(500).json({
+    return res.status(error.statusCode || 500).json({
       success: false,
-      message: "Failed to generate AI recipes! o(╥﹏╥)o"
+      message: error.message || "Failed to generate AI recipes! o(╥﹏╥)o"
     });
   }
 };

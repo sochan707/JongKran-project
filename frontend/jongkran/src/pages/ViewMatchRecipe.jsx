@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Sparkles, Utensils } from "lucide-react";
+import { Sparkles, Utensils, X } from "lucide-react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import RecipeCart from "../components/RecipeCart";
+import AIRecipeCart from "../components/AIRecipeCart";
 import { apiRequest, normalizeRecipe } from "../lib/api";
 import { getRecipeMatchPercentage } from "../lib/recipeMatching";
 
@@ -15,6 +16,9 @@ export default function ViewMatchRecipe() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [sortByMatch, setSortByMatch] = useState(false);
   const [error, setError] = useState("");
+  const [actingRecipeId, setActingRecipeId] = useState(null);
+  const [selectedAIRecipe, setSelectedAIRecipe] = useState(null);
+  const [generationsRemaining, setGenerationsRemaining] = useState(null);
 
   const selectedIngredients =
     JSON.parse(
@@ -68,11 +72,15 @@ export default function ViewMatchRecipe() {
         method: "POST",
         body: JSON.stringify({ ingredients: selectedIngredients }),
       });
-      const generated = result.data?.recipes || result.data || [];
+      const generated = result.recipes || result.data?.recipes || result.data || [];
       const validRecipes = (Array.isArray(generated) ? generated : [generated])
         .filter(Boolean)
         .map(normalizeRecipe);
       setAiRecipes(validRecipes);
+      setGenerationsRemaining(result.generationsRemaining ?? null);
+      if (validRecipes.length === 0 && result.message) {
+        setError(result.message);
+      }
     } catch (error) {
       console.error(
         "AI recipe generation error:",
@@ -85,6 +93,22 @@ export default function ViewMatchRecipe() {
       );
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const handleCookAIRecipe = async (recipe) => {
+    try {
+      setActingRecipeId(recipe.id);
+      setError("");
+      await apiRequest(`/ai-recipes/${recipe.id}/action`, {
+        method: "POST",
+        body: JSON.stringify({ action: "cook" }),
+      });
+      setSelectedAIRecipe(recipe);
+    } catch (actionError) {
+      setError(actionError.message || "Could not start cooking this recipe.");
+    } finally {
+      setActingRecipeId(null);
     }
   };
 
@@ -115,6 +139,10 @@ export default function ViewMatchRecipe() {
             : "We could not find a recipe using your selected ingredients. You can explore all recipes or generate a new recipe using AI."}
         </p>
 
+        {error && (
+          <p className="mt-4 font-medium text-red-500">{error}</p>
+        )}
+
         {/* Sort button */}
         {displayedRecipes.length > 0 && (
           <div className="flex gap-4 mt-6">
@@ -135,22 +163,31 @@ export default function ViewMatchRecipe() {
                 ? "Sorted By Match"
                 : "Sort By Match"}
             </button>
+
           </div>
         )}
 
         {/* Recipe cards */}
         {displayedRecipes.length > 0 ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
-            {sortedRecipes.map((recipe) => (
-              <RecipeCart
-                key={recipe.id}
-                recipe={recipe}
-                matched
-                selectedIngredients={
-                  selectedIngredients
-                }
-              />
-            ))}
+            {sortedRecipes.map((recipe) =>
+              recipe.ai_recipe_id ? (
+                <AIRecipeCart
+                  key={`ai-${recipe.id}`}
+                  recipe={recipe}
+                  selectedIngredients={selectedIngredients}
+                  busy={actingRecipeId === recipe.id || isGenerating}
+                  onCook={handleCookAIRecipe}
+                />
+              ) : (
+                <RecipeCart
+                  key={`recipe-${recipe.id}`}
+                  recipe={recipe}
+                  matched
+                  selectedIngredients={selectedIngredients}
+                />
+              )
+            )}
           </div>
         ) : (
           <div className="mt-10 w-full bg-[#E5F1E2] rounded-2xl p-8 md:p-10 text-center shadow-sm">
@@ -169,12 +206,6 @@ export default function ViewMatchRecipe() {
               Explore our available recipes or let AI
               create a recipe using your ingredients.
             </p>
-
-            {error && (
-              <p className="mt-4 text-red-500 font-medium">
-                {error}
-              </p>
-            )}
 
             <div className="flex flex-col sm:flex-row justify-center gap-4 mt-7">
               <button
@@ -202,7 +233,64 @@ export default function ViewMatchRecipe() {
             </div>
           </div>
         )}
+
+        {aiRecipes.length > 0 && (
+          <div className="mt-8 flex flex-col items-end gap-2">
+            <button
+              type="button"
+              onClick={generateAIRecipe}
+              disabled={isGenerating || generationsRemaining === 0}
+              className="flex items-center gap-2 rounded-md bg-[#468432] px-6 py-3 font-bold text-white transition hover:bg-[#1A5C05] disabled:cursor-not-allowed disabled:bg-gray-400"
+            >
+              <Sparkles size={20} />
+              {isGenerating ? "Generating..." : "AI Generate"}
+            </button>
+            {generationsRemaining !== null && (
+              <p className="text-sm text-gray-500">
+                {generationsRemaining} of 5 generation requests remaining for the next 3 hours
+              </p>
+            )}
+          </div>
+        )}
       </main>
+
+      {selectedAIRecipe && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <section className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <span className="text-sm font-bold text-[#468432]">AI Cooking Guide</span>
+                <h2 className="title-font mt-1 text-3xl font-bold">{selectedAIRecipe.name}</h2>
+              </div>
+              <button
+                type="button"
+                aria-label="Close cooking guide"
+                onClick={() => setSelectedAIRecipe(null)}
+                className="rounded-full p-2 hover:bg-gray-100"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <h3 className="mt-6 text-lg font-bold">Ingredients</h3>
+            <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-700">
+              {selectedAIRecipe.ingredientDetails.map((ingredient) => (
+                <li key={`${ingredient.name}-${ingredient.quantity}-${ingredient.unit}`}>
+                  {ingredient.quantityText || ingredient.quantity || ""}{" "}
+                  {ingredient.quantityText ? "" : ingredient.unit} {ingredient.name}
+                </li>
+              ))}
+            </ul>
+
+            <h3 className="mt-6 text-lg font-bold">Cooking Steps</h3>
+            <ol className="mt-2 list-decimal space-y-3 pl-5 text-gray-700">
+              {selectedAIRecipe.steps.map((step, index) => (
+                <li key={`${index}-${step}`}>{step}</li>
+              ))}
+            </ol>
+          </section>
+        </div>
+      )}
 
       <Footer />
     </>
