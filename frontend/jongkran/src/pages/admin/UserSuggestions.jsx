@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { Search } from "lucide-react";
 import AdminHeader from "../../components/AdminHeader";
 import { apiRequest, normalizeRecipe } from "../../lib/api";
-import recipeData from "../../data/recipes";
 import { RECIPE_PLACEHOLDER, handleRecipeImageError, } from "../../lib/recipeImage";
 
 export default function UserSuggestions() {

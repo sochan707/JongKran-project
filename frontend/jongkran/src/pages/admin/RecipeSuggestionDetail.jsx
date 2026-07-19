@@ -3,41 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, MessageCircle, Trash2, } from "lucide-react";
 import AdminHeader from "../../components/AdminHeader";
 import { apiRequest, normalizeRecipe } from "../../lib/api";
-import recipeData from "../../data/recipes";
 import { RECIPE_PLACEHOLDER, handleRecipeImageError, } from "../../lib/recipeImage";
-
-// Get a stable value that identifies a user
-const getUserKey = (user) => {
-  return String(
-    user?.id ||
-      user?.userId ||
-      user?.email ||
-      ""
-  );
-};
-
-// Get the latest username
-const getUserName = (user) => {
-  return (
-    user?.username ||
-    user?.fullname ||
-    user?.fullName ||
-    user?.name ||
-    "Anonymous User"
-  );
-};
-
-// Get the latest profile picture
-const getUserImage = (user) => {
-  return (
-    user?.profileImage ||
-    user?.profilePicture ||
-    user?.picture ||
-    user?.image ||
-    user?.avatar ||
-    ""
-  );
-};
 
 export default function RecipeSuggestionDetail() {
   const navigate = useNavigate();
@@ -46,6 +12,7 @@ export default function RecipeSuggestionDetail() {
   const [recipe, setRecipe] = useState(null);
   const [suggestions, setSuggestions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
   useEffect(() => {
     Promise.all([apiRequest(`/recipes/${recipeId}`), apiRequest("/suggestions")])
@@ -73,7 +40,11 @@ export default function RecipeSuggestionDetail() {
     setSuggestions(recipeSuggestions);
     setLoading(false);
       })
-      .catch(() => { setRecipe(null); setLoading(false); });
+      .catch((error) => {
+        setRecipe(null);
+        setLoadError(error.message || "Failed to load suggestions.");
+        setLoading(false);
+      });
   }, [recipeId]);
 
   const formatDate = (dateString) => {
@@ -134,7 +105,7 @@ export default function RecipeSuggestionDetail() {
 
         <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center px-5 text-center">
           <h1 className="text-3xl font-bold">
-            Recipe not found
+            {loadError || "Recipe not found"}
           </h1>
 
           <button

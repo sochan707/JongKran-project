@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { CheckCircle } from "lucide-react";
 import Header from "../components/Header";
-import { recipeApi } from "../lib/api";
+import { apiRequest, recipeApi } from "../lib/api";
 
 export default function Instruction() {
   const navigate = useNavigate();
@@ -154,7 +154,7 @@ export default function Instruction() {
   };
 
   // ---------------- SUBMIT SUGGESTION ----------------
-  const handleSubmitSuggestion = () => {
+  const handleSubmitSuggestion = async () => {
     const cleanSuggestion = suggestion.trim();
 
     if (!cleanSuggestion) {
@@ -166,113 +166,19 @@ export default function Instruction() {
 
     setIsSubmitting(true);
 
-    const userProfile = getLocalStorageData(
-      "userProfile",
-      {}
-    );
-
-    const registeredUser = getLocalStorageData(
-      "registeredUser",
-      {}
-    );
-
-    const currentUser = {
-      ...registeredUser,
-      ...userProfile,
-    };
-
-    const savedSuggestions = getLocalStorageData(
-      "suggestions",
-      []
-    );
-
-    const userName =
-      currentUser.username ||
-      currentUser.fullname ||
-      currentUser.name ||
-      "Anonymous User";
-
-    const profileImage =
-      currentUser.profileImage ||
-      currentUser.image ||
-      currentUser.avatar ||
-      "";
-
-    const newSuggestion = {
-      id: Date.now(),
-
-      recipeId: recipe.id,
-
-      recipeName:
-        recipe.name ||
-        recipe.title ||
-        "Unknown Recipe",
-
-      // Avoid storing large Base64 recipe images.
-      recipeImage:
-        typeof recipe.image === "string" &&
-        !recipe.image.startsWith("data:image")
-          ? recipe.image
-          : "",
-
-      userId:
-        currentUser.id ||
-        currentUser.userId ||
-        currentUser.email ||
-        "anonymous",
-
-      userEmail: currentUser.email || "",
-
-      userName,
-
-      // Avoid storing a large Base64 profile image.
-      userImage:
-        typeof profileImage === "string" &&
-        !profileImage.startsWith("data:image")
-          ? profileImage
-          : "",
-
-      message: cleanSuggestion,
-      createdAt: new Date().toISOString(),
-    };
-
-    const updatedSuggestions = [
-      ...savedSuggestions,
-      newSuggestion,
-    ];
-
     try {
-      localStorage.setItem(
-        "suggestions",
-        JSON.stringify(updatedSuggestions)
-      );
+      await apiRequest("/suggestions", {
+        method: "POST",
+        body: JSON.stringify({
+          recipe_id: recipe.id,
+          suggestion_text: cleanSuggestion,
+        }),
+      });
     } catch (error) {
-      console.error(
-        "Storage full. Removing history and trying again:",
-        error
-      );
-
-      // History can contain old large recipe images.
-      localStorage.removeItem("history");
-
-      try {
-        localStorage.setItem(
-          "suggestions",
-          JSON.stringify(updatedSuggestions)
-        );
-      } catch (secondError) {
-        console.error(
-          "Suggestion still cannot be saved:",
-          secondError
-        );
-
-        alert(
-          "Storage is still full. Please delete some locally created recipes."
-        );
-
-        setIsSubmitting(false);
-        return;
-      }
+      console.error("Failed to submit suggestion:", error);
+      alert(error.message || "Failed to submit suggestion.");
+      setIsSubmitting(false);
+      return;
     }
 
     setSuggestion("");
