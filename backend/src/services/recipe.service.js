@@ -227,7 +227,7 @@ export const getAllRecipesService = async () => {
   return recipes;
 }
 
-export const getRecipesByIdService = async (recipeId) => {
+export const getRecipesByIdService = async (recipeId, includeCookingDetails = false) => {
   const recipe = await prisma.recipe.findFirst({
     where: {
       recipe_id: Number(recipeId),
@@ -259,10 +259,20 @@ export const getRecipesByIdService = async (recipeId) => {
     throw new Error("Recipe not found! ˏ(•́∧•̀)ˎ")
   }
 
-  return {
+  const response = {
     ...recipe,
     nutrition: calculateRecipeNutrition(recipe),
+    cookingDetailsAvailable: includeCookingDetails,
   };
+
+  // Recipe descriptions stay public, but the content needed to cook is only
+  // returned after optionalAuthenticate has identified a signed-in user.
+  if (!includeCookingDetails) {
+    delete response.recipeIngredients;
+    delete response.steps;
+  }
+
+  return response;
 };
 
 export const deleteRecipeService = async (recipeId, adminId) => {

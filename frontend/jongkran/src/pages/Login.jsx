@@ -13,7 +13,7 @@ export default function Login() {
 
   const [error, setError] = useState("");
 
-  const successMessage = location.state?.message;
+  const loginMessage = location.state?.message;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -44,7 +44,15 @@ export default function Login() {
         body: JSON.stringify({ email: form.email.trim().toLowerCase(), password: form.password }),
       });
       saveSession(result.data);
-      navigate(result.data.user?.role === "Admin" ? "/admin" : "/");
+      const returnTo = location.state?.returnTo;
+      navigate(
+        result.data.user?.role === "Admin"
+          ? "/admin"
+          : returnTo?.startsWith("/")
+            ? returnTo
+            : "/",
+        { replace: true }
+      );
     } catch (err) {
       setError(err.message);
     } finally {
@@ -77,9 +85,9 @@ export default function Login() {
                 Please enter your details to log in.
               </p>
 
-              {successMessage && (
-                <p className="mt-5 bg-green-100 text-green-700 px-4 py-3 rounded-md text-sm">
-                  {successMessage}
+              {loginMessage && (
+                <p className="mt-5 bg-amber-100 text-amber-800 px-4 py-3 rounded-md text-sm">
+                  {loginMessage}
                 </p>
               )}
 

@@ -9,51 +9,11 @@ export default function History() {
   const [history, setHistory] = useState([]);
 
   useEffect(() => {
-    const readLocalHistory = () => {
-      try {
-        const savedHistory = JSON.parse(
-          localStorage.getItem("history") || "[]"
-        );
-
-        return Array.isArray(savedHistory) ? savedHistory : [];
-      } catch {
-        return [];
-      }
-    };
-
-    const mergeHistory = (...historyLists) => {
-      const recipesById = new Map();
-
-      historyLists.flat().forEach((recipe) => {
-        if (recipe?.id == null) return;
-
-        const key = String(recipe.id);
-        const existing = recipesById.get(key);
-        const existingDate = new Date(existing?.completedAt || 0).getTime();
-        const recipeDate = new Date(recipe.completedAt || 0).getTime();
-
-        if (!existing || recipeDate >= existingDate) {
-          recipesById.set(key, recipe);
-        }
-      });
-
-      return [...recipesById.values()].sort(
-        (left, right) =>
-          new Date(right.completedAt || 0).getTime() -
-          new Date(left.completedAt || 0).getTime()
-      );
-    };
-
-    const localHistory = readLocalHistory();
-    setHistory(localHistory);
-
     if (!isAuthenticated()) return;
 
     recipeApi.history()
-      .then((serverHistory) =>
-        setHistory(mergeHistory(serverHistory, localHistory))
-      )
-      .catch(() => setHistory(localHistory));
+      .then(setHistory)
+      .catch(() => setHistory([]));
   }, []);
 
   return (
@@ -69,11 +29,6 @@ export default function History() {
           Based on the recipes you recently explored and enjoyed.
         </p>
 
-        {!isAuthenticated() && history.length === 0 && (
-          <p className="mt-8">
-            Complete a recipe to add it to your cooking history.
-          </p>
-        )}
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
           {history.map((recipe) => (
             <RecipeCart key={recipe.id} recipe={recipe} />

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
-import { recipeApi } from "../lib/api";
+import { isAuthenticated, recipeApi } from "../lib/api";
 import {
   RECIPE_PLACEHOLDER,
   handleRecipeImageError,
@@ -37,6 +37,18 @@ export default function RecipeOverview() {
   const [recipe, setRecipe] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+
+  const startCooking = () => {
+    const ingredientsPath = `/recipe/${recipe.id}/ingredients`;
+
+    if (!isAuthenticated() || recipe.cookingDetailsAvailable === false) {
+      setShowLoginPrompt(true);
+      return;
+    }
+
+    navigate(ingredientsPath);
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -270,20 +282,66 @@ export default function RecipeOverview() {
             <div className="mt-6 flex justify-end">
               <button
                 type="button"
-                onClick={() =>
-                  navigate(
-                    `/recipe/${recipe.id}/ingredients`
-                  )
-                }
+                onClick={startCooking}
                 className="rounded-lg bg-[#468432] px-10 py-5 font-semibold text-white transition hover:bg-[#1A5C05] "
               >
-                Start
+                Start Cooking
               </button>
             </div>
           </div>
         </section>
       </main>
 
+      {showLoginPrompt && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-5"
+          role="presentation"
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="login-required-title"
+            className="w-full max-w-md rounded-2xl bg-white p-7 text-center shadow-2xl"
+          >
+            <h2
+              id="login-required-title"
+              className="title-font text-2xl font-bold text-gray-900"
+            >
+              Login Required
+            </h2>
+
+            <p className="mt-3 leading-7 text-gray-600">
+              If you want to start cooking and view the ingredients and
+              instructions, you need to log in first.
+            </p>
+
+            <div className="mt-7 flex gap-3">
+              <button
+                type="button"
+                onClick={() => setShowLoginPrompt(false)}
+                className="flex-1 rounded-lg border border-gray-300 px-5 py-3 font-semibold text-gray-700 transition hover:bg-gray-100"
+              >
+                Later
+              </button>
+
+              <button
+                type="button"
+                onClick={() =>
+                  navigate("/login", {
+                    state: {
+                      message: "Please log in to continue cooking.",
+                      returnTo: `/recipe/${recipe.id}/ingredients`,
+                    },
+                  })
+                }
+                className="flex-1 rounded-lg bg-[#468432] px-5 py-3 font-semibold text-white transition hover:bg-[#1A5C05]"
+              >
+                Login
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
 
     </>
   );

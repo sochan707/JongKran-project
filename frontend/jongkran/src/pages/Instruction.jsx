@@ -24,28 +24,23 @@ export default function Instruction() {
 
   useEffect(() => {
     recipeApi.get(id)
-      .then(setRecipe)
+      .then((recipeData) => {
+        if (recipeData.cookingDetailsAvailable === false) {
+          navigate("/login", {
+            replace: true,
+            state: {
+              message: "Please log in first to view recipe instructions.",
+              returnTo: `/instruction/${id}`,
+            },
+          });
+          return;
+        }
+
+        setRecipe(recipeData);
+      })
       .catch((err) => setLoadError(err.message))
       .finally(() => setLoading(false));
-  }, [id]);
-
-  // ---------------- READ LOCAL STORAGE ----------------
-  const getLocalStorageData = (key, fallbackValue) => {
-    try {
-      const savedData = localStorage.getItem(key);
-
-      return savedData
-        ? JSON.parse(savedData)
-        : fallbackValue;
-    } catch (error) {
-      console.error(
-        `Failed to read ${key} from localStorage:`,
-        error
-      );
-
-      return fallbackValue;
-    }
-  };
+  }, [id, navigate]);
 
   if (loading) {
     return <div className="p-10 text-2xl">Loading instructions...</div>;
@@ -84,56 +79,8 @@ export default function Instruction() {
       await recipeApi.addHistory(recipe.id);
     } catch (error) {
       console.error("Failed to save server history:", error);
-    }
-    const savedHistory = getLocalStorageData(
-      "history",
-      []
-    );
-
-    // Save only small recipe information.
-    // Do not copy a large Base64 image into history.
-    const completedRecipe = {
-      id: recipe.id,
-      name: recipe.name || recipe.title,
-      title: recipe.title || recipe.name,
-
-      image:
-        typeof recipe.image === "string" &&
-        !recipe.image.startsWith("data:image")
-          ? recipe.image
-          : "",
-
-      time: recipe.time || recipe.cookTime || "",
-      difficulty: recipe.difficulty || "Easy",
-      servings: recipe.servings || 1,
-      completedAt: new Date().toISOString(),
-    };
-
-    const alreadyExists = savedHistory.some(
-      (item) =>
-        String(item.id) === String(recipe.id)
-    );
-
-    const updatedHistory = alreadyExists
-      ? savedHistory.map((item) =>
-          String(item.id) === String(recipe.id)
-            ? completedRecipe
-            : item
-        )
-      : [...savedHistory, completedRecipe];
-
-    try {
-      localStorage.setItem(
-        "history",
-        JSON.stringify(updatedHistory)
-      );
-    } catch (error) {
-      console.error(
-        "Failed to save cooking history:",
-        error
-      );
-
-      // Continue opening the popup even if history cannot save.
+      alert(error.message || "Failed to save cooking history.");
+      return;
     }
 
     setShowCompleteModal(true);

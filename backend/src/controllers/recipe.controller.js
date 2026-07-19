@@ -39,7 +39,7 @@ export const getAllRecipesController = async (req, res) => {
 export const getRecipeByIdController = async (req, res) => {
   try{
     const {id} = req.params;
-    const recipe = await getRecipesByIdService(id);
+    const recipe = await getRecipesByIdService(id, Boolean(req.user));
 
     return res.status(200).json({
       success: true,

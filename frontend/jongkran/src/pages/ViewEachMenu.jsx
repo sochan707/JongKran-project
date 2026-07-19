@@ -17,10 +17,23 @@ export default function ViewEachMenu() {
 
   useEffect(() => {
     recipeApi.get(id)
-      .then(setRecipe)
+      .then((recipeData) => {
+        if (recipeData.cookingDetailsAvailable === false) {
+          navigate("/login", {
+            replace: true,
+            state: {
+              message: "Please log in first to view recipe ingredients.",
+              returnTo: `/recipe/${id}/ingredients`,
+            },
+          });
+          return;
+        }
+
+        setRecipe(recipeData);
+      })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [id, navigate]);
 
   useEffect(() => {
     if (!recipe) return;
