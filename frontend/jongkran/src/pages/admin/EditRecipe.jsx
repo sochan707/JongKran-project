@@ -237,7 +237,7 @@ export default function EditRecipe() {
 
     alert("Recipe updated successfully.");
 
-    navigate("/admin");
+    navigate("/admin", { replace: true });
   };
 
   if (loading) {
@@ -541,7 +541,7 @@ export default function EditRecipe() {
               }
               className="w-full bg-[#FFA02E] text-black px-6 py-3 rounded-lg"
             >
-              Save Recipe
+              Save Edit
             </button>
           </form>
         </div>

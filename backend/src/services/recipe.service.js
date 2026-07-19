@@ -190,7 +190,7 @@ export const createRecipeService = async (data, userId) => {
       const name = String(rawName).trim().toLowerCase();
       if (!name) continue;
       if (name.length > 20) throw new Error(`Ingredient '${name}' must not exceed 20 characters`);
-      const ingredient = await tx.ingredient.upsert({ where: { name }, update: {}, data: { name } });
+      const ingredient = await tx.ingredient.upsert({ where: { name }, update: {}, create: { name } });
       await tx.recipeIngredient.create({ data: { recipe_id: created.recipe_id, ingredient_id: ingredient.ingredient_id, quantity: 1, unit: "item" } });
     }
 
@@ -342,7 +342,7 @@ export const updateRecipeService = async (recipeId, updateData, adminId) => {
         const name = String(rawName).trim().toLowerCase();
         if (!name) continue;
         if (name.length > 20) throw new Error(`Ingredient '${name}' must not exceed 20 characters`);
-        const ingredient = await tx.ingredient.upsert({ where: { name }, update: {}, data: { name } });
+        const ingredient = await tx.ingredient.upsert({ where: { name }, update: {}, create: { name } });
         await tx.recipeIngredient.create({ data: { recipe_id: recipeId, ingredient_id: ingredient.ingredient_id, quantity: 1, unit: "item" } });
       }
     }
