@@ -99,7 +99,7 @@ export const getUserFavoritesService = async (userId) => {
       },
     },
     orderBy: {
-      favorite_id: "desc",
+      created_at: "desc",
     },
   });
 

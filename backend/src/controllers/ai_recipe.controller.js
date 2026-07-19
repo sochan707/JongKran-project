@@ -1,5 +1,36 @@
-import { getAIRecipesService } from "../services/ai_recipe.service.js";
+import { getAIRecipesService, reviewAIRecipeService } from "../services/ai_recipe.service.js";
 import prisma from "../prismaClient.js";
+
+export const getPendingAIRecipesController = async (_req, res) => {
+  const recipes = await prisma.aiGeneratedRecipe.findMany({
+    where: { status: "pending" },
+    orderBy: { created_at: "desc" },
+  });
+  return res.json({ success: true, data: recipes });
+};
+
+export const reviewAIRecipeController = async (req, res) => {
+  try {
+    const recipe = await reviewAIRecipeService(
+      Number(req.params.id),
+      req.body.status,
+      req.user.userId,
+    );
+
+    return res.json({
+      success: true,
+      message: req.body.status === "approved"
+        ? "AI recipe approved and added to recipes"
+        : "AI recipe rejected",
+      data: recipe,
+    });
+  } catch (error) {
+    return res.status(error.statusCode || 500).json({
+      success: false,
+      message: error.message || "Failed to review AI recipe",
+    });
+  }
+};
 
 export const aiRecipeActionController = async (req, res) => {
   try {
@@ -92,4 +123,3 @@ export const generateAIRecipesController = async (req, res) => {
     });
   }
 };
-

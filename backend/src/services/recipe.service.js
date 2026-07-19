@@ -79,7 +79,7 @@ export const findRecipesByIngredients = async (ingredients) => {
 };
 
 export const createRecipeService = async (data, userId) => {
-  const {title, description, image_url, difficulty, prep_time, cook_time, servings} = data;
+  const {title, description, image_url, difficulty, prep_time, cook_time, servings, ingredients = [], steps = []} = data;
 
   if (!title || !difficulty || prep_time == null || cook_time == null || !servings){
     throw new Error("Title, difficulty, prep_time, cook_time, and servings are required! ʕ•̀ᆺ•́ʔ");
@@ -95,8 +95,8 @@ export const createRecipeService = async (data, userId) => {
     throw error;
   }
 
-  const recipe = await prisma.recipe.create({
-    data: {
+  const recipe = await prisma.$transaction(async (tx) => {
+    const created = await tx.recipe.create({ data: {
       title: trimmedTitle,
       description,
       image_url,
@@ -105,7 +105,19 @@ export const createRecipeService = async (data, userId) => {
       cook_time,
       servings,
       created_by: userId,
-    },
+    }});
+
+    for (const rawName of ingredients) {
+      const name = String(rawName).trim().toLowerCase();
+      if (!name) continue;
+      if (name.length > 20) throw new Error(`Ingredient '${name}' must not exceed 20 characters`);
+      const ingredient = await tx.ingredient.upsert({ where: { name }, update: {}, data: { name } });
+      await tx.recipeIngredient.create({ data: { recipe_id: created.recipe_id, ingredient_id: ingredient.ingredient_id, quantity: 1, unit: "item" } });
+    }
+
+    if (steps.length) await tx.recipeStep.createMany({ data: steps.map((instruction, index) => ({ recipe_id: created.recipe_id, step_number: index + 1, instruction_text: String(instruction).trim() })) });
+    await tx.logs_audit.create({ data: { user_id: userId, recipe_id: created.recipe_id, action_type: "create" } });
+    return created;
   });
 
   return recipe;
@@ -236,12 +248,29 @@ export const updateRecipeService = async (recipeId, updateData, adminId) => {
   }
 
   const updatedRecipe = await prisma.$transaction(async (tx) => {
+    const { ingredients, steps, ...recipeFields } = updateData;
     const updated = await tx.recipe.update({
       where: {
         recipe_id: recipeId,
       },
-      data: updateData,
+      data: recipeFields,
     });
+
+    if (ingredients !== undefined) {
+      await tx.recipeIngredient.deleteMany({ where: { recipe_id: recipeId } });
+      for (const rawName of ingredients) {
+        const name = String(rawName).trim().toLowerCase();
+        if (!name) continue;
+        if (name.length > 20) throw new Error(`Ingredient '${name}' must not exceed 20 characters`);
+        const ingredient = await tx.ingredient.upsert({ where: { name }, update: {}, data: { name } });
+        await tx.recipeIngredient.create({ data: { recipe_id: recipeId, ingredient_id: ingredient.ingredient_id, quantity: 1, unit: "item" } });
+      }
+    }
+
+    if (steps !== undefined) {
+      await tx.recipeStep.deleteMany({ where: { recipe_id: recipeId } });
+      if (steps.length) await tx.recipeStep.createMany({ data: steps.map((instruction, index) => ({ recipe_id: recipeId, step_number: index + 1, instruction_text: String(instruction).trim() })) });
+    }
 
     await tx.logs_audit.create({
       data: {

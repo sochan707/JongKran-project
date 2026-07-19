@@ -2,9 +2,9 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, MessageCircle, Trash2, } from "lucide-react";
 import AdminHeader from "../../components/AdminHeader";
+import { apiRequest, normalizeRecipe } from "../../lib/api";
 import recipeData from "../../data/recipes";
 import { RECIPE_PLACEHOLDER, handleRecipeImageError, } from "../../lib/recipeImage";
-
 
 // Get a stable value that identifies a user
 const getUserKey = (user) => {
@@ -48,135 +48,19 @@ export default function RecipeSuggestionDetail() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get recipes created by admin
-    const localRecipes =
-      JSON.parse(localStorage.getItem("recipes")) || [];
-
-    // Get all user suggestions
-    const savedSuggestions =
-      JSON.parse(localStorage.getItem("suggestions")) || [];
-
-    // Get all registered users, when available
-    const savedUsers =
-      JSON.parse(localStorage.getItem("users")) || [];
-
-    // Get original registration information
-    const registeredUser =
-      JSON.parse(
-        localStorage.getItem("registeredUser")
-      ) || {};
-
-    // Get the latest profile information
-    const userProfile =
-      JSON.parse(
-        localStorage.getItem("userProfile")
-      ) || {};
-
-    // Combine registered information with updated profile
-    const currentUser = {
-      ...registeredUser,
-      ...userProfile,
-    };
-
-    // Include the current user in the user list
-    const allUsers = [...savedUsers];
-
-    if (getUserKey(currentUser)) {
-      const currentUserExists = allUsers.some(
-        (user) =>
-          getUserKey(user) ===
-          getUserKey(currentUser)
-      );
-
-      if (currentUserExists) {
-        // Replace old account information with latest information
-        const currentUserIndex = allUsers.findIndex(
-          (user) =>
-            getUserKey(user) ===
-            getUserKey(currentUser)
-        );
-
-        allUsers[currentUserIndex] = {
-          ...allUsers[currentUserIndex],
-          ...currentUser,
-        };
-      } else {
-        allUsers.push(currentUser);
-      }
-    }
-
-    // Prepare normal recipes
-    const normalRecipes = recipeData.map((item) => ({
-      ...item,
-      title:
-        item.title ||
-        item.name ||
-        "Untitled Recipe",
-    }));
-
-    // Prepare recipes created from recipe management
-    const createdRecipes = localRecipes.map((item) => ({
-      ...item,
-      title:
-        item.title ||
-        item.name ||
-        "Untitled Recipe",
-    }));
-
-    const allRecipes = [
-      ...normalRecipes,
-      ...createdRecipes,
-    ];
-
-    // Find the selected recipe
-    const selectedRecipe = allRecipes.find(
-      (item) =>
-        String(item.id) === String(recipeId)
-    );
-
-    // Find suggestions belonging to this recipe
-    const recipeSuggestions = savedSuggestions
-      .filter(
-        (suggestion) =>
-          String(suggestion.recipeId) ===
-          String(recipeId)
-      )
+    Promise.all([apiRequest(`/recipes/${recipeId}`), apiRequest("/suggestions")])
+      .then(([recipeResult, suggestionResult]) => {
+        const selectedRecipe = normalizeRecipe(recipeResult.data);
+        const recipeSuggestions = suggestionResult.data
+      .filter((suggestion) => String(suggestion.recipe_id) === String(recipeId))
       .map((suggestion) => {
-        const suggestionUserKey = String(
-          suggestion.userId ||
-            suggestion.userEmail ||
-            ""
-        );
-
-        // Find the latest account information
-        const matchedUser = allUsers.find((user) => {
-          const userId = String(
-            user.id || user.userId || ""
-          );
-
-          const userEmail = String(
-            user.email || ""
-          );
-
-          return (
-            userId === suggestionUserKey ||
-            userEmail === suggestionUserKey ||
-            userEmail ===
-              String(suggestion.userEmail || "")
-          );
-        });
-
         return {
           ...suggestion,
-
-          displayName: matchedUser
-            ? getUserName(matchedUser)
-            : suggestion.userName ||
-              "Anonymous User",
-
-          displayImage: matchedUser
-            ? getUserImage(matchedUser)
-            : suggestion.userImage || "",
+          id: suggestion.suggestion_id,
+          message: suggestion.suggestion_text,
+          createdAt: suggestion.created_at,
+          displayName: suggestion.user?.user_name || "Anonymous User",
+          displayImage: suggestion.user?.user_profile || "",
         };
       })
       .sort(
@@ -185,9 +69,11 @@ export default function RecipeSuggestionDetail() {
           new Date(first.createdAt)
       );
 
-    setRecipe(selectedRecipe || null);
+    setRecipe(selectedRecipe);
     setSuggestions(recipeSuggestions);
     setLoading(false);
+      })
+      .catch(() => { setRecipe(null); setLoading(false); });
   }, [recipeId]);
 
   const formatDate = (dateString) => {
@@ -210,7 +96,7 @@ export default function RecipeSuggestionDetail() {
     });
   };
 
-  const deleteSuggestion = (suggestionId) => {
+  const deleteSuggestion = async (suggestionId) => {
     const shouldDelete = window.confirm(
       "Are you sure you want to delete this suggestion?"
     );
@@ -219,30 +105,12 @@ export default function RecipeSuggestionDetail() {
       return;
     }
 
-    const allSuggestions =
-      JSON.parse(
-        localStorage.getItem("suggestions")
-      ) || [];
-
-    const updatedSuggestions =
-      allSuggestions.filter(
-        (suggestion) =>
-          String(suggestion.id) !==
-          String(suggestionId)
-      );
-
-    localStorage.setItem(
-      "suggestions",
-      JSON.stringify(updatedSuggestions)
-    );
-
-    setSuggestions((currentSuggestions) =>
-      currentSuggestions.filter(
-        (suggestion) =>
-          String(suggestion.id) !==
-          String(suggestionId)
-      )
-    );
+    try {
+      await apiRequest(`/suggestions/${suggestionId}`, { method: "DELETE" });
+      setSuggestions((current) => current.filter((suggestion) => suggestion.id !== suggestionId));
+    } catch (error) {
+      alert(error.message);
+    }
   };
 
   if (loading) {

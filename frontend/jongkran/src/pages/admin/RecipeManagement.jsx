@@ -2,9 +2,9 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search } from "lucide-react";
 import AdminHeader from "../../components/AdminHeader";
+import { apiRequest, normalizeRecipe } from "../../lib/api";
 import recipeData from "../../data/recipes";
 import { RECIPE_PLACEHOLDER, handleRecipeImageError, } from "../../lib/recipeImage";
-
 
 export default function RecipeManagement() {
   const navigate = useNavigate();
@@ -12,60 +12,26 @@ export default function RecipeManagement() {
   const [recipes, setRecipes] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const recipesPerPage = 10;
 
-  const sortRecipes = (recipeList) => {
-    return [...recipeList].sort((a, b) => {
-      if (
-        a.status === "deleted" &&
-        b.status !== "deleted"
-      ) {
-        return 1;
-      }
-
-      if (
-        a.status !== "deleted" &&
-        b.status === "deleted"
-      ) {
-        return -1;
-      }
-
-      return 0;
-    });
-  };
-
-  const loadRecipes = () => {
-    const localRecipes =
-      JSON.parse(localStorage.getItem("recipes")) || [];
-
-    const formattedRecipes = recipeData.map((recipe) => ({
-      ...recipe,
-      title: recipe.title || recipe.name,
-      status: recipe.status || "public",
-      createdAt: recipe.createdAt || "2026-07-06",
-    }));
-
-    const recipeMap = new Map();
-
-    formattedRecipes.forEach((recipe) => {
-      recipeMap.set(String(recipe.id), recipe);
-    });
-
-    localRecipes.forEach((recipe) => {
-      const originalRecipe = recipeMap.get(
-        String(recipe.id)
-      );
-
-      recipeMap.set(String(recipe.id), {
-        ...originalRecipe,
-        ...recipe,
-      });
-    });
-
-    setRecipes(
-      sortRecipes(Array.from(recipeMap.values()))
-    );
+  const loadRecipes = async () => {
+    try {
+      setLoading(true);
+      setError("");
+      const result = await apiRequest("/recipes");
+      setRecipes(result.data.map((recipe) => ({
+        ...normalizeRecipe(recipe),
+        status: "public",
+        createdAt: recipe.created_at,
+      })));
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -91,22 +57,6 @@ export default function RecipeManagement() {
 
   const total = recipes.length;
 
-  const pending = recipes.filter(
-    (recipe) => recipe.status === "pending"
-  ).length;
-
-  const published = recipes.filter(
-    (recipe) => recipe.status === "public"
-  ).length;
-
-  const aiGenerated = recipes.filter(
-    (recipe) => recipe.status === "ai_generated"
-  ).length;
-
-  const deleted = recipes.filter(
-    (recipe) => recipe.status === "deleted"
-  ).length;
-
   const totalPages = Math.ceil(
     filteredRecipes.length / recipesPerPage
   );
@@ -119,113 +69,25 @@ export default function RecipeManagement() {
     startIndex + recipesPerPage
   );
 
-  const saveRecipeToLocalStorage = (changedRecipe) => {
-    const localRecipes =
-      JSON.parse(localStorage.getItem("recipes")) || [];
-
-    const exists = localRecipes.some(
-      (recipe) =>
-        String(recipe.id) === String(changedRecipe.id)
-    );
-
-    const updatedRecipes = exists
-      ? localRecipes.map((recipe) =>
-          String(recipe.id) ===
-          String(changedRecipe.id)
-            ? changedRecipe
-            : recipe
-        )
-      : [...localRecipes, changedRecipe];
-
-    localStorage.setItem(
-      "recipes",
-      JSON.stringify(updatedRecipes)
-    );
-  };
-
-  const softDelete = (id) => {
+  const deleteRecipe = async (id) => {
     const confirmed = window.confirm(
       "Do you want to delete this recipe?"
     );
 
     if (!confirmed) return;
 
-    const recipeToDelete = recipes.find(
-      (recipe) => String(recipe.id) === String(id)
-    );
-
-    if (!recipeToDelete) return;
-
-    const deletedRecipe = {
-      ...recipeToDelete,
-      previousStatus:
-        recipeToDelete.status === "deleted"
-          ? recipeToDelete.previousStatus
-          : recipeToDelete.status,
-      status: "deleted",
-      deletedAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    saveRecipeToLocalStorage(deletedRecipe);
-
-    setRecipes(
-      sortRecipes(
-        recipes.map((recipe) =>
-          String(recipe.id) === String(id)
-            ? deletedRecipe
-            : recipe
-        )
-      )
-    );
-  };
-
-  const restoreRecipe = (id) => {
-    const confirmed = window.confirm(
-      "Do you want to restore this recipe?"
-    );
-
-    if (!confirmed) return;
-
-    const recipeToRestore = recipes.find(
-      (recipe) => String(recipe.id) === String(id)
-    );
-
-    if (!recipeToRestore) return;
-
-    const restoredRecipe = {
-      ...recipeToRestore,
-      status:
-        recipeToRestore.previousStatus || "public",
-      previousStatus: null,
-      deletedAt: null,
-      updatedAt: new Date().toISOString(),
-    };
-
-    saveRecipeToLocalStorage(restoredRecipe);
-
-    setRecipes(
-      sortRecipes(
-        recipes.map((recipe) =>
-          String(recipe.id) === String(id)
-            ? restoredRecipe
-            : recipe
-        )
-      )
-    );
+    try {
+      setError("");
+      await apiRequest(`/recipes/${id}`, { method: "DELETE" });
+      setRecipes((current) => current.filter((recipe) => recipe.id !== id));
+    } catch (err) {
+      setError(err.message);
+    }
   };
 
   const getStatusStyle = (status) => {
     if (status === "public") {
       return "bg-[#468432] text-white";
-    }
-
-    if (status === "deleted") {
-      return "bg-red-600 text-white";
-    }
-
-    if (status === "ai_generated") {
-      return "bg-blue-600 text-white";
     }
 
     return "bg-[#FFA02E] text-black";
@@ -248,13 +110,7 @@ export default function RecipeManagement() {
         </main>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-          {[
-            ["Total Recipes", total],
-            ["Pending Recipes", pending],
-            ["Published Recipes", published],
-            ["AI Generated", aiGenerated],
-            ["Deleted Recipes", deleted],
-          ].map(([label, value]) => (
+          {[["Database Recipes", total]].map(([label, value]) => (
             <div
               key={label}
               className="bg-white p-6 rounded-xl shadow"
@@ -269,6 +125,8 @@ export default function RecipeManagement() {
             </div>
           ))}
         </div>
+
+        {error && <p className="mt-5 rounded-lg bg-red-100 p-4 text-red-700">{error}</p>}
 
         <div className="bg-white rounded-xl shadow mt-5 overflow-x-auto mb-10">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 p-4">
@@ -307,7 +165,11 @@ export default function RecipeManagement() {
             </thead>
 
             <tbody>
-              {currentRecipes.map((recipe) => (
+              {loading ? (
+                <tr><td colSpan="4" className="p-10 text-center text-gray-500">Loading recipes...</td></tr>
+              ) : currentRecipes.length === 0 ? (
+                <tr><td colSpan="4" className="p-10 text-center text-gray-500">No recipes found in the database.</td></tr>
+              ) : currentRecipes.map((recipe) => (
                 <tr
                   key={recipe.id}
                   className={
@@ -349,18 +211,7 @@ export default function RecipeManagement() {
 
                   <td className="p-3">
                     <div className="flex gap-4">
-                      {recipe.status === "deleted" ? (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            restoreRecipe(recipe.id)
-                          }
-                          className="text-blue-600 font-semibold"
-                        >
-                          Restore
-                        </button>
-                      ) : (
-                        <>
+                    <>
                           <button
                             type="button"
                             onClick={() =>
@@ -376,14 +227,13 @@ export default function RecipeManagement() {
                           <button
                             type="button"
                             onClick={() =>
-                              softDelete(recipe.id)
+                              deleteRecipe(recipe.id)
                             }
                             className="text-red-600 font-semibold"
                           >
                             Delete
                           </button>
-                        </>
-                      )}
+                    </>
                     </div>
                   </td>
                 </tr>

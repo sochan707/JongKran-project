@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import AdminHeader from "../../components/AdminHeader";
+import { apiRequest } from "../../lib/api";
 import recipeData from "../../data/recipes";
 import { RECIPE_PLACEHOLDER, handleRecipeImageError, } from "../../lib/recipeImage";
-
 
 export default function EditRecipe() {
   const { id } = useParams();
@@ -14,6 +14,7 @@ export default function EditRecipe() {
 
   const [title, setTitle] = useState("");
   const [imagePreview, setImagePreview] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
   const [prepTime, setPrepTime] = useState("");
   const [cookTime, setCookTime] = useState("");
   const [servings, setServings] = useState("");
@@ -25,79 +26,38 @@ export default function EditRecipe() {
 
   const fileInputRef = useRef(null);
 
-  // ---------------- MERGE RECIPES ----------------
-  const getMergedRecipes = () => {
-    const localRecipes =
-      JSON.parse(localStorage.getItem("recipes")) || [];
-
-    const formattedRecipes = recipeData.map((recipe) => ({
-      ...recipe,
-      title: recipe.title || recipe.name,
-      status: recipe.status || "public",
-      createdAt: recipe.createdAt || "2026-07-06",
-    }));
-
-    const recipeMap = new Map();
-
-    formattedRecipes.forEach((recipe) => {
-      recipeMap.set(String(recipe.id), recipe);
-    });
-
-    localRecipes.forEach((recipe) => {
-      const originalRecipe = recipeMap.get(
-        String(recipe.id)
-      );
-
-      recipeMap.set(String(recipe.id), {
-        ...originalRecipe,
-        ...recipe,
-      });
-    });
-
-    return Array.from(recipeMap.values());
-  };
-
   // ---------------- LOAD RECIPE ----------------
   useEffect(() => {
-    const allRecipes = getMergedRecipes();
-
-    const foundRecipe = allRecipes.find(
-      (recipe) => String(recipe.id) === String(id)
-    );
-
-    if (!foundRecipe) {
-      setNotFound(true);
-      setLoading(false);
-      return;
-    }
+    apiRequest(`/recipes/${id}`).then(({ data: foundRecipe }) => {
 
     setTitle(
       foundRecipe.title || foundRecipe.name || ""
     );
 
-    setImagePreview(foundRecipe.image || null);
-    setPrepTime(foundRecipe.prepTime || "");
-    setCookTime(foundRecipe.cookTime || "");
+    setImagePreview(foundRecipe.image_url || null);
+    setPrepTime(foundRecipe.prep_time || "");
+    setCookTime(foundRecipe.cook_time || "");
     setServings(foundRecipe.servings || "");
-    setStatus(foundRecipe.status || "pending");
+    setStatus("public");
 
     setCreatedAt(
-      foundRecipe.createdAt || new Date().toISOString()
+      foundRecipe.created_at || new Date().toISOString()
     );
 
     setIngredients(
-      foundRecipe.ingredients?.length
-        ? foundRecipe.ingredients
+      foundRecipe.recipeIngredients?.length
+        ? foundRecipe.recipeIngredients.map((item) => item.ingredient?.name).filter(Boolean)
         : [""]
     );
 
     setSteps(
       foundRecipe.steps?.length
-        ? foundRecipe.steps
+        ? foundRecipe.steps.map((step) => step.instruction_text)
         : [""]
     );
 
     setLoading(false);
+    }).catch(() => { setNotFound(true); setLoading(false); });
   }, [id]);
 
   // ---------------- IMAGE ----------------
@@ -105,6 +65,7 @@ export default function EditRecipe() {
     const file = e.target.files?.[0];
 
     if (!file) return;
+    setImageFile(file);
 
     if (!file.type.startsWith("image/")) {
       alert("Please select a valid image file.");
@@ -136,6 +97,7 @@ export default function EditRecipe() {
     e.stopPropagation();
 
     setImagePreview(null);
+    setImageFile(null);
 
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -219,7 +181,7 @@ export default function EditRecipe() {
   };
 
   // ---------------- SAVE ----------------
-  const handleSave = (e, selectedStatus) => {
+  const handleSave = async (e) => {
     e.preventDefault();
 
     const cleanIngredients = ingredients.filter(
@@ -250,67 +212,28 @@ export default function EditRecipe() {
       return;
     }
 
-    const localRecipes =
-      JSON.parse(localStorage.getItem("recipes")) || [];
-
-    const allRecipes = getMergedRecipes();
-
-    const existingRecipe = allRecipes.find(
-      (recipe) => String(recipe.id) === String(id)
-    );
-
-    if (!existingRecipe) {
-      alert("Recipe not found.");
-      return;
-    }
-
-    const updatedRecipe = {
-      ...existingRecipe,
-      id: existingRecipe.id,
+    try {
+      let imageUrl = imagePreview;
+      if (imageFile) {
+        const imageBody = new FormData();
+        imageBody.append("image", imageFile);
+        const upload = await apiRequest("/uploads/recipe-image", { method: "POST", body: imageBody });
+        imageUrl = upload.data?.image_url;
+      }
+      await apiRequest(`/recipes/${id}`, { method: "PATCH", body: JSON.stringify({
       title: title.trim(),
-      name: title.trim(),
-      image: imagePreview,
-      prepTime: Number(prepTime),
-      cookTime: Number(cookTime),
+      image_url: imageUrl,
+      difficulty: "easy",
+      prep_time: Number(prepTime),
+      cook_time: Number(cookTime),
       servings: Number(servings),
-      status: selectedStatus,
       ingredients: cleanIngredients,
       steps: cleanSteps,
-      createdAt:
-        createdAt ||
-        existingRecipe.createdAt ||
-        new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    const existsInLocalStorage = localRecipes.some(
-      (recipe) => String(recipe.id) === String(id)
-    );
-
-    const updatedLocalRecipes = existsInLocalStorage
-      ? localRecipes.map((recipe) =>
-          String(recipe.id) === String(id)
-            ? updatedRecipe
-            : recipe
-        )
-      : [...localRecipes, updatedRecipe];
-
-    try {
-      localStorage.setItem(
-        "recipes",
-        JSON.stringify(updatedLocalRecipes)
-      );
+      }) });
     } catch (error) {
-      console.error("Unable to save recipe:", error);
-
-      alert(
-        "Could not save the recipe. The image may be too large."
-      );
-
+      alert(error.message);
       return;
     }
-
-    setStatus(selectedStatus);
 
     alert("Recipe updated successfully.");
 
@@ -614,7 +537,7 @@ export default function EditRecipe() {
             <button
               type="button"
               onClick={(e) =>
-                handleSave(e, status === "pending" ? "pending" : "public")
+                handleSave(e)
               }
               className="w-full bg-[#FFA02E] text-black px-6 py-3 rounded-lg"
             >
