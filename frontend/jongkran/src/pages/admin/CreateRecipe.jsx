@@ -2,14 +2,18 @@ import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AdminHeader from "../../components/AdminHeader";
 import { apiRequest } from "../../lib/api";
-import { RECIPE_PLACEHOLDER, handleRecipeImageError, } from "../../lib/recipeImage";
+import { ImagePlus } from "lucide-react";
 
 export default function CreateRecipe() {
   const navigate = useNavigate();
+  const fileInputRef = useRef(null);
 
   const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+
   const [imagePreview, setImagePreview] = useState(null);
   const [imageFile, setImageFile] = useState(null);
+
   const [prepTime, setPrepTime] = useState("");
   const [cookTime, setCookTime] = useState("");
   const [servings, setServings] = useState("");
@@ -17,27 +21,37 @@ export default function CreateRecipe() {
   const [ingredients, setIngredients] = useState([""]);
   const [steps, setSteps] = useState([""]);
 
-  const fileInputRef = useRef(null);
+  const [submittingStatus, setSubmittingStatus] =
+    useState("");
 
   // ---------------- IMAGE ----------------
-  const handleImageChange = (e) => {
-    const file = e.target.files?.[0];
+
+  const handleImageChange = (event) => {
+    const file = event.target.files?.[0];
 
     if (!file) return;
-    setImageFile(file);
 
     if (!file.type.startsWith("image/")) {
       alert("Please select a valid image file.");
-      e.target.value = "";
+
+      event.target.value = "";
+      setImageFile(null);
+      setImagePreview(null);
+
       return;
     }
 
-    // LocalStorage is small, so limit the image size
     if (file.size > 2 * 1024 * 1024) {
       alert("Please choose an image smaller than 2MB.");
-      e.target.value = "";
+
+      event.target.value = "";
+      setImageFile(null);
+      setImagePreview(null);
+
       return;
     }
+
+    setImageFile(file);
 
     const reader = new FileReader();
 
@@ -47,14 +61,18 @@ export default function CreateRecipe() {
 
     reader.onerror = () => {
       alert("Could not read the selected image.");
+
+      setImageFile(null);
+      setImagePreview(null);
+      event.target.value = "";
     };
 
     reader.readAsDataURL(file);
   };
 
-  const removeImage = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const removeImage = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
 
     setImagePreview(null);
     setImageFile(null);
@@ -65,14 +83,20 @@ export default function CreateRecipe() {
   };
 
   // ---------------- INGREDIENTS ----------------
+
   const handleIngredientChange = (value, index) => {
-    const updated = [...ingredients];
-    updated[index] = value;
-    setIngredients(updated);
+    const updatedIngredients = [...ingredients];
+
+    updatedIngredients[index] = value;
+
+    setIngredients(updatedIngredients);
   };
 
   const addIngredient = () => {
-    setIngredients([...ingredients, ""]);
+    setIngredients((currentIngredients) => [
+      ...currentIngredients,
+      "",
+    ]);
   };
 
   const removeIngredient = (index) => {
@@ -81,36 +105,47 @@ export default function CreateRecipe() {
       return;
     }
 
-    setIngredients(
-      ingredients.filter(
+    setIngredients((currentIngredients) =>
+      currentIngredients.filter(
         (_, currentIndex) => currentIndex !== index
       )
     );
   };
 
   const moveIngredient = (index, direction) => {
-    const updated = [...ingredients];
+    const updatedIngredients = [...ingredients];
     const newIndex = index + direction;
 
-    if (newIndex < 0 || newIndex >= updated.length) return;
+    if (
+      newIndex < 0 ||
+      newIndex >= updatedIngredients.length
+    ) {
+      return;
+    }
 
-    [updated[index], updated[newIndex]] = [
-      updated[newIndex],
-      updated[index],
+    [
+      updatedIngredients[index],
+      updatedIngredients[newIndex],
+    ] = [
+      updatedIngredients[newIndex],
+      updatedIngredients[index],
     ];
 
-    setIngredients(updated);
+    setIngredients(updatedIngredients);
   };
 
   // ---------------- STEPS ----------------
+
   const handleStepChange = (value, index) => {
-    const updated = [...steps];
-    updated[index] = value;
-    setSteps(updated);
+    const updatedSteps = [...steps];
+
+    updatedSteps[index] = value;
+
+    setSteps(updatedSteps);
   };
 
   const addStep = () => {
-    setSteps([...steps, ""]);
+    setSteps((currentSteps) => [...currentSteps, ""]);
   };
 
   const removeStep = (index) => {
@@ -119,98 +154,159 @@ export default function CreateRecipe() {
       return;
     }
 
-    setSteps(
-      steps.filter(
+    setSteps((currentSteps) =>
+      currentSteps.filter(
         (_, currentIndex) => currentIndex !== index
       )
     );
   };
 
   const moveStep = (index, direction) => {
-    const updated = [...steps];
+    const updatedSteps = [...steps];
     const newIndex = index + direction;
 
-    if (newIndex < 0 || newIndex >= updated.length) return;
+    if (newIndex < 0 || newIndex >= updatedSteps.length) {
+      return;
+    }
 
-    [updated[index], updated[newIndex]] = [
-      updated[newIndex],
-      updated[index],
+    [updatedSteps[index], updatedSteps[newIndex]] = [
+      updatedSteps[newIndex],
+      updatedSteps[index],
     ];
 
-    setSteps(updated);
+    setSteps(updatedSteps);
   };
 
-  // ---------------- CREATE ----------------
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  // ---------------- VALIDATION ----------------
 
-    const cleanIngredients = ingredients.filter(
-      (ingredient) => ingredient.trim() !== ""
-    );
-
-    const cleanSteps = steps.filter(
-      (step) => step.trim() !== ""
-    );
-
+  const validateForm = (cleanIngredients, cleanSteps) => {
     if (!title.trim()) {
       alert("Please enter the recipe title.");
-      return;
+      return false;
     }
 
-    if (!imagePreview) {
+    if (!description.trim()) {
+      alert("Please enter the recipe description.");
+      return false;
+    }
+
+    if (!imageFile) {
       alert("Please upload a recipe image.");
-      return;
+      return false;
     }
 
-    if (!prepTime) {
-      alert("Please enter the prep time.");
-      return;
+    if (prepTime === "" || Number(prepTime) < 0) {
+      alert("Please enter a valid prep time.");
+      return false;
     }
 
-    if (!cookTime) {
-      alert("Please enter the cooking time.");
-      return;
+    if (cookTime === "" || Number(cookTime) < 0) {
+      alert("Please enter a valid cooking time.");
+      return false;
     }
 
-    if (!servings) {
-      alert("Please enter the number of servings.");
-      return;
+    if (servings === "" || Number(servings) < 1) {
+      alert("Please enter a valid number of servings.");
+      return false;
     }
 
     if (cleanIngredients.length === 0) {
       alert("Please add at least one ingredient.");
-      return;
+      return false;
     }
 
     if (cleanSteps.length === 0) {
       alert("Please add at least one cooking step.");
-      return;
+      return false;
     }
+
+    return true;
+  };
+
+  // ---------------- CREATE RECIPE ----------------
+
+  const handleSubmit = async (event, selectedStatus) => {
+    event.preventDefault();
+
+    if (submittingStatus) return;
+
+    const cleanIngredients = ingredients
+      .map((ingredient) => ingredient.trim())
+      .filter(Boolean);
+
+    const cleanSteps = steps
+      .map((step) => step.trim())
+      .filter(Boolean);
+
+    const isValid = validateForm(
+      cleanIngredients,
+      cleanSteps
+    );
+
+    if (!isValid) return;
 
     try {
+      setSubmittingStatus(selectedStatus);
+
+      // Upload image first
       const imageBody = new FormData();
+
       imageBody.append("image", imageFile);
-      const upload = await apiRequest("/uploads/recipe-image", { method: "POST", body: imageBody });
-      const imageUrl = upload.data?.image_url;
 
-      await apiRequest("/recipes", { method: "POST", body: JSON.stringify({
-      title: title.trim(),
-      image_url: imageUrl,
-      difficulty: "easy",
-      prep_time: Number(prepTime),
-      cook_time: Number(cookTime),
-      servings: Number(servings),
-      ingredients: cleanIngredients,
-      steps: cleanSteps,
-      }) });
+      const uploadResponse = await apiRequest(
+        "/uploads/recipe-image",
+        {
+          method: "POST",
+          body: imageBody,
+        }
+      );
+
+      const imageUrl = uploadResponse.data?.image_url;
+
+      if (!imageUrl) {
+        throw new Error(
+          "The recipe image could not be uploaded."
+        );
+      }
+
+      // Create recipe
+      await apiRequest("/recipes", {
+        method: "POST",
+
+        body: JSON.stringify({
+          title: title.trim(),
+
+          // New description field
+          description: description.trim(),
+
+          image_url: imageUrl,
+          difficulty: "easy",
+          prep_time: Number(prepTime),
+          cook_time: Number(cookTime),
+          servings: Number(servings),
+          status: selectedStatus,
+          ingredients: cleanIngredients,
+          steps: cleanSteps,
+        }),
+      });
+
+      alert(
+        selectedStatus === "public"
+          ? "Recipe published successfully!"
+          : "Recipe saved as pending!"
+      );
+
+      navigate("/admin");
     } catch (error) {
-      alert(error.message);
-      return;
+      console.error("Create recipe error:", error);
+
+      alert(
+        error.message ||
+          "Could not create the recipe. Please try again."
+      );
+    } finally {
+      setSubmittingStatus("");
     }
-
-    alert("Recipe saved to the database successfully!");
-
-    navigate("/admin");
   };
 
   return (
@@ -218,56 +314,106 @@ export default function CreateRecipe() {
       <AdminHeader />
 
       <div className="min-h-screen bg-gray-100 p-4 md:p-8">
-        <div className="max-w-4xl mx-auto bg-white rounded-xl shadow p-6 md:p-8">
-          <h1 className="text-4xl font-bold mb-6">
+        <div className="mx-auto max-w-4xl rounded-xl bg-white p-6 shadow md:p-8">
+          <h1 className="mb-6 text-4xl font-bold">
             Create New Recipe
           </h1>
 
-          <form className="space-y-6">
-            {/* TITLE AND IMAGE */}
-            <div className="shadow bg-white rounded-xl p-6 border border-[#468432]">
+          <form
+            className="space-y-6"
+            onSubmit={(event) => event.preventDefault()}
+          >
+            {/* BASIC RECIPE INFORMATION */}
+            <div className="rounded-xl border border-[#468432] bg-white p-6 shadow">
+              {/* TITLE */}
               <div>
-                <label className="block font-medium mb-2 text-xl">
+                <label
+                  htmlFor="recipeTitle"
+                  className="mb-2 block text-xl font-medium"
+                >
                   Recipe Title
                 </label>
 
                 <input
+                  id="recipeTitle"
                   type="text"
                   value={title}
-                  onChange={(e) => setTitle(e.target.value)}
+                  onChange={(event) =>
+                    setTitle(event.target.value)
+                  }
                   placeholder="Enter recipe name"
-                  className="w-full border rounded-lg p-3 outline-none focus:border-[#468432]"
+                  maxLength={150}
+                  className="w-full rounded-lg border p-3 outline-none focus:border-[#468432]"
                 />
+              </div>
+
+              {/* DESCRIPTION */}
+              <div className="mt-6">
+                <label
+                  htmlFor="recipeDescription"
+                  className="mb-2 block text-xl font-medium"
+                >
+                  Description
+                </label>
+
+                <input
+                  id="recipeDescription"
+                  value={description}
+                  onChange={(event) =>
+                    setDescription(event.target.value)
+                  }
+                  placeholder="Describe the recipe, its taste, background, and what makes it special"
+                  rows={5}
+                  maxLength={500}
+                  className="w-full resize-y rounded-lg border p-3 leading-7 outline-none focus:border-[#468432]"
+                />
+
+                <p className="mt-2 text-right text-sm text-gray-500">
+                  {description.length}/500
+                </p>
               </div>
 
               {/* IMAGE */}
               <div className="mt-6">
+                <p className="mb-5 block text-xl font-medium">
+                  Recipe Image
+                </p>
+
                 <label
                   htmlFor="imageUpload"
-                  className="relative h-[300px] rounded-[40px] border-2 border-dashed border-gray-400 bg-[#EAF1E7] flex items-center justify-center cursor-pointer overflow-hidden"
+                  className="relative flex h-[300px] cursor-pointer items-center justify-center overflow-hidden rounded-[40px] border-2 border-dashed border-gray-400 bg-[#EAF1E7]"
                 >
                   {imagePreview ? (
                     <>
                       <img
                         src={imagePreview}
                         alt="Recipe preview"
-                        className="w-full h-full object-cover"
+                        className="h-full w-full object-cover"
                       />
 
                       <button
                         type="button"
                         onClick={removeImage}
-                        className="absolute top-4 right-4 w-10 h-10 bg-red-500 hover:bg-red-600 text-white text-2xl rounded-full flex items-center justify-center"
+                        aria-label="Remove recipe image"
+                        className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-red-500 text-2xl text-white hover:bg-red-600"
                       >
                         ×
                       </button>
                     </>
                   ) : (
-                    <div className="text-center">
-                      <div className="text-5xl">📷</div>
+                    <div className="flex flex-col items-center text-center">
+                      <ImagePlus
+                        size={60}
+                        strokeWidth={1.8}
+                        className="text-gray-400"
+                      />
 
-                      <p className="text-2xl font-bold mt-3 text-gray-400">
+                      <p className="mt-3 text-2xl font-bold text-gray-400">
                         Upload Hero Photo
+                      </p>
+
+                      <p className="mt-2 text-sm text-gray-400">
+                        PNG, JPG or WEBP — maximum file size: 5MB
                       </p>
                     </div>
                   )}
@@ -282,65 +428,86 @@ export default function CreateRecipe() {
                   className="hidden"
                 />
 
-                <p className="text-center text-gray-500 mt-3">
+                <p className="mt-3 text-center text-gray-500">
                   {imagePreview
-                    ? "Click the image to change it"
+                    ? "Click the image to choose another image"
                     : "Click to upload an image"}
                 </p>
               </div>
             </div>
 
             {/* TIME AND SERVINGS */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="border border-[#468432] p-4 rounded-lg">
-                <label className="block font-medium mb-2">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              {/* PREP TIME */}
+              <div className="rounded-lg border border-[#468432] p-4">
+                <label
+                  htmlFor="prepTime"
+                  className="mb-2 block font-medium"
+                >
                   Prep Time (min)
                 </label>
 
                 <input
+                  id="prepTime"
                   type="number"
                   min="0"
                   value={prepTime}
-                  onChange={(e) => setPrepTime(e.target.value)}
+                  onChange={(event) =>
+                    setPrepTime(event.target.value)
+                  }
                   placeholder="Enter prep time"
-                  className="w-full border rounded-lg p-3 outline-none"
+                  className="w-full rounded-lg border p-3 outline-none focus:border-[#468432]"
                 />
               </div>
 
-              <div className="border border-[#468432] p-4 rounded-lg">
-                <label className="block font-medium mb-2">
+              {/* COOK TIME */}
+              <div className="rounded-lg border border-[#468432] p-4">
+                <label
+                  htmlFor="cookTime"
+                  className="mb-2 block font-medium"
+                >
                   Cooking Time (min)
                 </label>
 
                 <input
+                  id="cookTime"
                   type="number"
                   min="0"
                   value={cookTime}
-                  onChange={(e) => setCookTime(e.target.value)}
+                  onChange={(event) =>
+                    setCookTime(event.target.value)
+                  }
                   placeholder="Enter cooking time"
-                  className="w-full border rounded-lg p-3 outline-none"
+                  className="w-full rounded-lg border p-3 outline-none focus:border-[#468432]"
                 />
               </div>
 
-              <div className="border border-[#468432] p-4 rounded-lg">
-                <label className="block font-medium mb-2">
+              {/* SERVINGS */}
+              <div className="rounded-lg border border-[#468432] p-4">
+                <label
+                  htmlFor="servings"
+                  className="mb-2 block font-medium"
+                >
                   Servings
                 </label>
 
                 <input
+                  id="servings"
                   type="number"
                   min="1"
                   value={servings}
-                  onChange={(e) => setServings(e.target.value)}
+                  onChange={(event) =>
+                    setServings(event.target.value)
+                  }
                   placeholder="Enter servings"
-                  className="w-full border rounded-lg p-3 outline-none"
+                  className="w-full rounded-lg border p-3 outline-none focus:border-[#468432]"
                 />
               </div>
             </div>
 
             {/* INGREDIENTS */}
-            <div className="border border-[#468432] p-4 rounded-lg">
-              <div className="flex justify-between items-center mb-4">
+            <div className="rounded-lg border border-[#468432] p-4">
+              <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-xl font-semibold">
                   Ingredients
                 </h2>
@@ -348,7 +515,7 @@ export default function CreateRecipe() {
                 <button
                   type="button"
                   onClick={addIngredient}
-                  className="text-[#468432] font-semibold"
+                  className="font-semibold text-[#468432] hover:text-[#1A5C05]"
                 >
                   + Add
                 </button>
@@ -356,46 +523,55 @@ export default function CreateRecipe() {
 
               {ingredients.map((ingredient, index) => (
                 <div
-                  key={index}
-                  className="flex gap-2 mb-3"
+                  key={`ingredient-${index}`}
+                  className="mb-3 flex gap-2"
                 >
                   <input
                     type="text"
                     value={ingredient}
-                    onChange={(e) =>
+                    onChange={(event) =>
                       handleIngredientChange(
-                        e.target.value,
+                        event.target.value,
                         index
                       )
                     }
                     placeholder={`Ingredient ${index + 1}`}
-                    className="flex-1 border p-3 rounded-lg outline-none"
+                    className="min-w-0 flex-1 rounded-lg border p-3 outline-none focus:border-[#468432]"
                   />
 
                   <button
                     type="button"
-                    onClick={() => moveIngredient(index, -1)}
+                    onClick={() =>
+                      moveIngredient(index, -1)
+                    }
                     disabled={index === 0}
-                    className="px-3 bg-gray-200 rounded-lg disabled:opacity-40"
+                    aria-label="Move ingredient up"
+                    className="rounded-lg bg-gray-200 px-3 hover:bg-gray-300 disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     ↑
                   </button>
 
                   <button
                     type="button"
-                    onClick={() => moveIngredient(index, 1)}
+                    onClick={() =>
+                      moveIngredient(index, 1)
+                    }
                     disabled={
                       index === ingredients.length - 1
                     }
-                    className="px-3 bg-gray-200 rounded-lg disabled:opacity-40"
+                    aria-label="Move ingredient down"
+                    className="rounded-lg bg-gray-200 px-3 hover:bg-gray-300 disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     ↓
                   </button>
 
                   <button
                     type="button"
-                    onClick={() => removeIngredient(index)}
-                    className="px-3 bg-red-500 text-white rounded-lg"
+                    onClick={() =>
+                      removeIngredient(index)
+                    }
+                    aria-label="Remove ingredient"
+                    className="rounded-lg bg-red-500 px-3 text-white hover:bg-red-600"
                   >
                     ✕
                   </button>
@@ -403,9 +579,9 @@ export default function CreateRecipe() {
               ))}
             </div>
 
-            {/* STEPS */}
-            <div className="border border-[#468432] p-4 rounded-lg">
-              <div className="flex justify-between items-center mb-4">
+            {/* COOKING STEPS */}
+            <div className="rounded-lg border border-[#468432] p-4">
+              <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-xl font-semibold">
                   Cooking Steps
                 </h2>
@@ -413,7 +589,7 @@ export default function CreateRecipe() {
                 <button
                   type="button"
                   onClick={addStep}
-                  className="text-[#468432] font-semibold"
+                  className="font-semibold text-[#468432] hover:text-[#1A5C05]"
                 >
                   + Add
                 </button>
@@ -421,27 +597,28 @@ export default function CreateRecipe() {
 
               {steps.map((step, index) => (
                 <div
-                  key={index}
-                  className="flex gap-2 mb-3"
+                  key={`step-${index}`}
+                  className="mb-3 flex gap-2"
                 >
-                  <textarea
+                  <input
                     value={step}
-                    onChange={(e) =>
+                    onChange={(event) =>
                       handleStepChange(
-                        e.target.value,
+                        event.target.value,
                         index
                       )
                     }
                     placeholder={`Step ${index + 1}`}
-                    rows="2"
-                    className="flex-1 border p-3 rounded-lg outline-none resize-none"
+                    rows={2}
+                    className="min-w-0 flex-1 resize-y rounded-lg border p-3 outline-none focus:border-[#468432]"
                   />
 
                   <button
                     type="button"
                     onClick={() => moveStep(index, -1)}
                     disabled={index === 0}
-                    className="px-3 bg-gray-200 rounded-lg disabled:opacity-40"
+                    aria-label="Move step up"
+                    className="rounded-lg bg-gray-200 px-3 hover:bg-gray-300 disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     ↑
                   </button>
@@ -450,7 +627,8 @@ export default function CreateRecipe() {
                     type="button"
                     onClick={() => moveStep(index, 1)}
                     disabled={index === steps.length - 1}
-                    className="px-3 bg-gray-200 rounded-lg disabled:opacity-40"
+                    aria-label="Move step down"
+                    className="rounded-lg bg-gray-200 px-3 hover:bg-gray-300 disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     ↓
                   </button>
@@ -458,7 +636,8 @@ export default function CreateRecipe() {
                   <button
                     type="button"
                     onClick={() => removeStep(index)}
-                    className="px-3 bg-red-500 text-white rounded-lg"
+                    aria-label="Remove step"
+                    className="rounded-lg bg-red-500 px-3 text-white hover:bg-red-600"
                   >
                     ✕
                   </button>
@@ -466,14 +645,32 @@ export default function CreateRecipe() {
               ))}
             </div>
 
-            {/* SUBMIT */}
-            <div className="grid grid-cols-1 gap-4">
+            {/* ACTION BUTTONS */}
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
               <button
                 type="button"
-                onClick={handleSubmit}
-                className="bg-[#FFA02E] text-black px-6 py-3 rounded-lg"
+                onClick={(event) =>
+                  handleSubmit(event, "pending")
+                }
+                disabled={Boolean(submittingStatus)}
+                className="rounded-lg border border-[#FFA02E] bg-white px-6 py-3 font-semibold text-black transition hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-60 md:col-span-2"
               >
-                Save Recipe
+                {submittingStatus === "pending"
+                  ? "Saving..."
+                  : "Pending Recipe"}
+              </button>
+
+              <button
+                type="button"
+                onClick={(event) =>
+                  handleSubmit(event, "public")
+                }
+                disabled={Boolean(submittingStatus)}
+                className="rounded-lg bg-[#FFA02E] px-6 py-3 font-semibold text-black transition hover:bg-[#e99120] disabled:cursor-not-allowed disabled:opacity-60 md:col-span-3"
+              >
+                {submittingStatus === "public"
+                  ? "Publishing..."
+                  : "Public Recipe"}
               </button>
             </div>
           </form>

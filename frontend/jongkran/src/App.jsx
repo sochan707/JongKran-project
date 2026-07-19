@@ -25,6 +25,7 @@ const Language = lazy(() => import("./pages/Language"));
 const UserSuggestions = lazy(() => import("./pages/admin/UserSuggestions"));
 const RecipeSuggestionDetail = lazy(() => import("./pages/admin/RecipeSuggestionDetail"));
 const AdminApprove = lazy(() => import("./pages/admin/AdminApprove"));
+const RecipeOverview = lazy(() => import("./pages/RecipeOverview"));
 
 export default function App() {
   return (
@@ -37,7 +38,8 @@ export default function App() {
         <Route path="/register" element={<Register />} />
 
         <Route path="/input-ingredients" element={<InputIngredients />} />
-        <Route path="/matched-recipes" element={<ViewMatchRecipe />} />
+        <Route path="/recipe/:id" element={<RecipeOverview />} />
+        <Route path="/recipe/:id/ingredients" element={<ViewEachMenu />} />
 
         <Route path="/recipes" element={<AllRecipes />} />
         <Route path="/recipe/:id" element={<ViewEachMenu />} />
