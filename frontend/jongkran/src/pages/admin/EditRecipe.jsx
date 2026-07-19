@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import AdminHeader from "../../components/AdminHeader";
 import { apiRequest } from "../../lib/api";
+import recipeData from "../../data/recipes";
+import { RECIPE_PLACEHOLDER, handleRecipeImageError, } from "../../lib/recipeImage";
 
 export default function EditRecipe() {
   const { id } = useParams();

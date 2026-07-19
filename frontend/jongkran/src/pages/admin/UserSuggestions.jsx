@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { Search } from "lucide-react";
 import AdminHeader from "../../components/AdminHeader";
 import { apiRequest, normalizeRecipe } from "../../lib/api";
+import recipeData from "../../data/recipes";
+import { RECIPE_PLACEHOLDER, handleRecipeImageError, } from "../../lib/recipeImage";
 
 export default function UserSuggestions() {
   const navigate = useNavigate();
@@ -246,15 +248,12 @@ export default function UserSuggestions() {
                     >
                       <td className="p-3 pl-10">
                         <div className="flex items-center gap-3">
-                          {recipe.image ? (
-                            <img
-                              src={recipe.image}
-                              alt={recipe.title}
-                              className="w-12 h-12 rounded-md object-cover flex-shrink-0"
-                            />
-                          ) : (
-                            <div className="w-12 h-12 rounded-md bg-gray-200 flex-shrink-0" />
-                          )}
+                          <img
+                            src={recipe.image || RECIPE_PLACEHOLDER}
+                            alt={recipe.title || "Recipe"}
+                            onError={handleRecipeImageError}
+                            className="w-12 h-12 rounded-md object-cover flex-shrink-0"
+                          />
 
                           <span className="font-medium">
                             {recipe.title}

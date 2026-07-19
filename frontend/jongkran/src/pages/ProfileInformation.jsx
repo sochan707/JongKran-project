@@ -4,67 +4,78 @@ import { Camera, Save } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+const DEFAULT_PROFILE = {
+  username: "User",
+  email: "",
+  gender: "",
+  dob: "",
+  age: null,
+  bio: "",
+  profileImage: null,
+  memberSince: new Date().toISOString(),
+};
+
 export default function ProfileInformation() {
   const navigate = useNavigate();
 
   const getSavedProfile = () => {
     try {
+      const savedProfile =
+        JSON.parse(localStorage.getItem("userProfile")) || {};
+
       const registeredUser =
         JSON.parse(localStorage.getItem("registeredUser")) || {};
 
-      const userProfile =
-        JSON.parse(localStorage.getItem("userProfile")) || {};
-
+      /*
+       * userProfile is the main source.
+       * registeredUser is used only when profile data has not been saved yet.
+       */
       return {
-        // Get these values from registration
+        ...DEFAULT_PROFILE,
+
         username:
-          userProfile.username ??
+          savedProfile.username ??
           registeredUser.username ??
-          "",
+          DEFAULT_PROFILE.username,
 
         email:
-          userProfile.email ??
+          savedProfile.email ??
           registeredUser.email ??
           "",
 
-        // These values will be empty until the user fills them
-        phone:
-          userProfile.phone ??
-          registeredUser.phone ??
+        gender:
+          savedProfile.gender ??
+          registeredUser.gender ??
           "",
 
         dob:
-          userProfile.dob ??
+          savedProfile.dob ??
           registeredUser.dob ??
           "",
 
+        age:
+          savedProfile.age ??
+          registeredUser.age ??
+          null,
+
         bio:
-          userProfile.bio ??
+          savedProfile.bio ??
           registeredUser.bio ??
           "",
 
         profileImage:
-          userProfile.profileImage ??
+          savedProfile.profileImage ??
           registeredUser.profileImage ??
           null,
 
         memberSince:
-          userProfile.memberSince ??
+          savedProfile.memberSince ??
           registeredUser.memberSince ??
-          new Date().toISOString(),
+          DEFAULT_PROFILE.memberSince,
       };
     } catch (error) {
       console.error("Could not load profile:", error);
-
-      return {
-        username: "",
-        email: "",
-        phone: "",
-        dob: "",
-        bio: "",
-        profileImage: null,
-        memberSince: new Date().toISOString(),
-      };
+      return DEFAULT_PROFILE;
     }
   };
 
@@ -73,17 +84,45 @@ export default function ProfileInformation() {
   const [success, setSuccess] = useState("");
 
   useEffect(() => {
-    const isLoggedIn = localStorage.getItem("isLoggedIn");
+    const isLoggedIn =
+      localStorage.getItem("isLoggedIn") === "true";
 
-    if (isLoggedIn !== "true") {
+    if (!isLoggedIn) {
       navigate("/login", { replace: true });
     }
   }, [navigate]);
 
+  /*
+   * Keep this page synchronized if userProfile changes
+   * in another tab or from another mounted component.
+   */
+  useEffect(() => {
+    const reloadProfile = (event) => {
+      if (event?.detail) {
+        setForm((current) => ({
+          ...current,
+          ...event.detail,
+        }));
+        return;
+      }
+
+      setForm(getSavedProfile());
+    };
+
+    window.addEventListener("storage", reloadProfile);
+    window.addEventListener("profile-updated", reloadProfile);
+
+    return () => {
+      window.removeEventListener("storage", reloadProfile);
+      window.removeEventListener(
+        "profile-updated",
+        reloadProfile
+      );
+    };
+  }, []);
+
   const calculateAge = (dob) => {
-    if (!dob) {
-      return "";
-    }
+    if (!dob) return "";
 
     const birthDate = new Date(`${dob}T00:00:00`);
     const today = new Date();
@@ -114,8 +153,11 @@ export default function ProfileInformation() {
 
   const age = calculateAge(form.dob);
 
+  const username =
+    form.username?.trim() || "User";
+
   const firstLetter =
-    form.username?.trim().charAt(0).toUpperCase() || "U";
+    username.charAt(0).toUpperCase();
 
   const formattedMemberSince = (() => {
     const date = new Date(form.memberSince);
@@ -130,8 +172,8 @@ export default function ProfileInformation() {
     });
   })();
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
+  const handleChange = (event) => {
+    const { name, value } = event.target;
 
     setForm((previousForm) => ({
       ...previousForm,
@@ -142,19 +184,16 @@ export default function ProfileInformation() {
     setSuccess("");
   };
 
-  const handlePhotoChange = (e) => {
-    const file = e.target.files?.[0];
+  const handlePhotoChange = (event) => {
+    const file = event.target.files?.[0];
 
-    if (!file) {
-      return;
-    }
+    if (!file) return;
 
     if (!file.type.startsWith("image/")) {
       setError("Please select a valid image.");
       return;
     }
 
-    // LocalStorage is small, so prevent very large images
     if (file.size > 2 * 1024 * 1024) {
       setError("Profile image must be smaller than 2 MB.");
       return;
@@ -193,71 +232,84 @@ export default function ProfileInformation() {
     setError("");
     setSuccess("");
 
-    const username = form.username.trim();
-    const email = form.email.trim().toLowerCase();
-    const phone = form.phone.trim();
-    const bio = form.bio.trim();
+    const cleanUsername = form.username.trim();
+    const cleanEmail = form.email.trim().toLowerCase();
+    const cleanBio = form.bio?.trim() || "";
 
-    if (!username) {
+    if (!cleanUsername) {
       setError("Username cannot be empty.");
       return;
     }
 
-    if (!email) {
+    if (!cleanEmail) {
       setError("Email cannot be empty.");
       return;
     }
 
-    if (!email.endsWith("@gmail.com")) {
+    if (!cleanEmail.endsWith("@gmail.com")) {
       setError("Please enter a valid Gmail address.");
       return;
     }
 
-    if (form.dob && !age && age !== 0) {
+    if (form.dob && age === "") {
       setError("Please select a valid date of birth.");
       return;
     }
 
     const updatedProfile = {
-      username,
-      email,
-      phone: phone || null,
+      username: cleanUsername,
+      email: cleanEmail,
+      gender: form.gender || null,
       dob: form.dob || null,
       age: age === "" ? null : age,
-      bio: bio || null,
+      bio: cleanBio || null,
       profileImage: form.profileImage || null,
-      memberSince: form.memberSince,
+      memberSince:
+        form.memberSince || new Date().toISOString(),
     };
 
     try {
-      // Save information for the current login session
+      /*
+       * Save the shared profile object used by:
+       * - Header
+       * - AdminHeader
+       * - UserProfile
+       * - ProfileInformation
+       */
       localStorage.setItem(
         "userProfile",
         JSON.stringify(updatedProfile)
       );
 
-      // Also update the registered account
-      // This keeps the information after logout and login
+      /*
+       * Keep registeredUser synchronized so the edited
+       * information remains after logout and login.
+       */
       const registeredUser =
         JSON.parse(localStorage.getItem("registeredUser")) || {};
 
-      const updatedRegisteredUser = {
-        ...registeredUser,
-        ...updatedProfile,
-
-        // Keep the registered password
-        password: registeredUser.password,
-      };
-
       localStorage.setItem(
         "registeredUser",
-        JSON.stringify(updatedRegisteredUser)
+        JSON.stringify({
+          ...registeredUser,
+          ...updatedProfile,
+          password: registeredUser.password,
+        })
       );
 
       setForm(updatedProfile);
       setSuccess("Profile updated successfully.");
 
-      // Go back after saving
+      /*
+       * Immediately update every profile location
+       * in the same browser tab.
+       */
+      window.dispatchEvent(
+        new CustomEvent("profile-updated", {
+          detail: updatedProfile,
+        })
+      );
+
       navigate("/profile");
     } catch (error) {
       console.error("Could not save profile:", error);
@@ -275,18 +327,32 @@ export default function ProfileInformation() {
         </h1>
 
         <div className="bg-white rounded-2xl shadow-md p-8">
-          {/* Profile picture */}
-          <div className="flex flex-col items-center">
+          {/* Same profile data shown in Header and UserProfile */}
+          <div className="flex flex-col items-center text-center">
             {form.profileImage ? (
               <img
                 src={form.profileImage}
-                alt={form.username || "Profile"}
+                alt={username}
                 className="w-32 h-32 rounded-full object-cover"
               />
             ) : (
               <div className="w-32 h-32 rounded-full bg-[#468432] text-white flex items-center justify-center text-5xl font-bold">
                 {firstLetter}
               </div>
+            )}
+
+            <h2 className="title-font text-2xl font-bold mt-4">
+              {username}
+            </h2>
+
+            {form.bio ? (
+              <p className="text-gray-500 mt-2">
+                {form.bio}
+              </p>
+            ) : (
+              <p className="text-gray-400 mt-2">
+                No bio yet
+              </p>
             )}
 
             <input
@@ -331,7 +397,6 @@ export default function ProfileInformation() {
           )}
 
           <div className="mt-10 space-y-6">
-            {/* Loaded from registration */}
             <div>
               <label className="block font-semibold mb-2">
                 Username
@@ -347,7 +412,6 @@ export default function ProfileInformation() {
               />
             </div>
 
-            {/* Loaded from registration */}
             <div>
               <label className="block font-semibold mb-2">
                 Email
@@ -363,24 +427,29 @@ export default function ProfileInformation() {
               />
             </div>
 
-            {/* Empty until user fills it */}
+            {/* Gender replaces Phone Number */}
             <div>
               <label className="block font-semibold mb-2">
-                Phone Number
+                Gender
               </label>
 
-              <input
-                type="tel"
-                name="phone"
-                value={form.phone || ""}
+              <select
+                name="gender"
+                value={form.gender || ""}
                 onChange={handleChange}
-                placeholder="Enter your phone number"
-                className="w-full border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-[#468432]"
-              />
+                className="w-full border rounded-xl px-4 py-3 bg-white outline-none focus:ring-2 focus:ring-[#468432]"
+              >
+                <option value="">Select gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+                <option value="Prefer not to say">
+                  Prefer not to say
+                </option>
+              </select>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              {/* Empty until user fills it */}
               <div>
                 <label className="block font-semibold mb-2">
                   Date of Birth
@@ -411,7 +480,6 @@ export default function ProfileInformation() {
               </div>
             </div>
 
-            {/* Empty until user fills it */}
             <div>
               <label className="block font-semibold mb-2">
                 Bio

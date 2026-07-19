@@ -12,44 +12,79 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { clearSession } from "../lib/api";
 
+const DEFAULT_PROFILE = {
+  username: "User",
+  email: "",
+  bio: null,
+  profileImage: null,
+};
+
 export default function UserProfile() {
   const navigate = useNavigate();
 
-  const [userProfile] = useState(() => {
-    try {
-      const savedProfile = localStorage.getItem("userProfile");
-
-      if (!savedProfile) {
-        return {
-          username: "User",
-          email: "",
-          bio: null,
-          profileImage: null,
-        };
-      }
-
-      return JSON.parse(savedProfile);
-    } catch {
-      return {
-        username: "User",
-        email: "",
-        bio: null,
-        profileImage: null,
-      };
-    }
-  });
+  const [userProfile, setUserProfile] =
+    useState(DEFAULT_PROFILE);
 
   useEffect(() => {
-    const isLoggedIn = localStorage.getItem("isLoggedIn");
+    const loadProfile = (event) => {
+      try {
+        // Use event data immediately when ProfileInformation saves.
+        if (event?.detail) {
+          setUserProfile({
+            ...DEFAULT_PROFILE,
+            ...event.detail,
+          });
+          return;
+        }
 
-    if (isLoggedIn !== "true") {
+        const savedProfile =
+          localStorage.getItem("userProfile");
+
+        if (!savedProfile) {
+          setUserProfile(DEFAULT_PROFILE);
+          return;
+        }
+
+        setUserProfile({
+          ...DEFAULT_PROFILE,
+          ...JSON.parse(savedProfile),
+        });
+      } catch (error) {
+        console.error("Could not load user profile:", error);
+        setUserProfile(DEFAULT_PROFILE);
+      }
+    };
+
+    const loggedIn =
+      localStorage.getItem("isLoggedIn") === "true";
+
+    if (!loggedIn) {
       navigate("/login", { replace: true });
+      return;
     }
+
+    loadProfile();
+
+    window.addEventListener("storage", loadProfile);
+    window.addEventListener(
+      "profile-updated",
+      loadProfile
+    );
+
+    return () => {
+      window.removeEventListener("storage", loadProfile);
+      window.removeEventListener(
+        "profile-updated",
+        loadProfile
+      );
+    };
   }, [navigate]);
 
-  const username = userProfile?.username?.trim() || "User";
+  const username =
+    userProfile?.username?.trim() || "User";
 
-  const firstLetter = username.charAt(0).toUpperCase();
+  const firstLetter =
+    username.charAt(0).toUpperCase();
 
   const items = [
     {
@@ -90,7 +125,6 @@ export default function UserProfile() {
       <main className="mx-[25px] py-6 max-w-2xl md:mx-auto">
         <div className="border-2 border-[#468432] rounded-xl p-6">
           <div className="text-center">
-            {/* Show uploaded picture or first username letter */}
             {userProfile?.profileImage ? (
               <img
                 src={userProfile.profileImage}

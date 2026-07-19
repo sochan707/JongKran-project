@@ -69,7 +69,12 @@ export default function ViewEachMenu() {
       <main>
         <section
           className="relative h-[360px] bg-cover bg-center"
-          style={{ backgroundImage: `url(${recipe.image})` }}
+          style={{
+            backgroundImage: `url(${
+              recipe.image ||
+              "https://madeinindiarestaurant.com/img/placeholders/comfort_food_placeholder.png"
+            })`,
+          }}
         >
           <div className="absolute inset-0 bg-black/35" />
 
