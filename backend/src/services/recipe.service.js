@@ -148,13 +148,13 @@ export const getAllRecipesService = async () => {
   return recipes;
 }
 
-export const getRecipesByIdService = async (recipeId, isLoggedIn) => {
+export const getRecipesByIdService = async (recipeId) => {
   const recipe = await prisma.recipe.findFirst({
     where: {
       recipe_id: Number(recipeId),
       deleted_at: null,
     },
-    include: isLoggedIn ? {
+    include: {
       recipeIngredients: {
         include: {
           ingredient: {
@@ -169,27 +169,11 @@ export const getRecipesByIdService = async (recipeId, isLoggedIn) => {
           step_number: "asc",
         },
       },
-    }
-    : {},
+    },
   });
 
   if (!recipe){
     throw new Error("Recipe not found! ˏ(•́∧•̀)ˎ")
-  }
-
-  if(!isLoggedIn) {
-    return {
-      recipe_id: recipe.recipe_id,
-      title: recipe.title,
-      description: recipe.description,
-      image_url: recipe.image_url,
-      difficulty: recipe.difficulty,
-      prep_time: recipe.prep_time,
-      cook_time: recipe.cook_time,
-      servings: recipe.servings,
-      view_count: recipe.view_count,
-      message: "Login to view ingredients and instructions! ʕ•̀ᆺ•́ʔ",
-    };
   }
 
   return recipe;

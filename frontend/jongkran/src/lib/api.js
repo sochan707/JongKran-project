@@ -29,11 +29,14 @@ export const getSession = () => {
 
 export const isAuthenticated = () => Boolean(getSession()?.accessToken);
 
-export const apiRequest = async (path, options = {}) => {
-  const session = getSession();
-  const headers = new Headers(options.headers || {});
+let refreshRequest = null;
 
-  if (options.body && !(options.body instanceof FormData)) {
+export const apiRequest = async (path, options = {}) => {
+  const { retryAfterRefresh = true, ...fetchOptions } = options;
+  const session = getSession();
+  const headers = new Headers(fetchOptions.headers || {});
+
+  if (fetchOptions.body && !(fetchOptions.body instanceof FormData)) {
     headers.set("Content-Type", "application/json");
   }
   if (session?.accessToken) {
@@ -41,10 +44,59 @@ export const apiRequest = async (path, options = {}) => {
   }
 
   const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...options,
+    ...fetchOptions,
     headers,
   });
   const payload = await response.json().catch(() => ({}));
+
+  if (
+    response.status === 401 &&
+    retryAfterRefresh &&
+    path !== "/auth/refresh" &&
+    session?.refreshToken
+  ) {
+    if (!refreshRequest) {
+      refreshRequest = fetch(`${API_BASE_URL}/auth/refresh`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          refreshToken: session.refreshToken,
+        }),
+      }).then(async (refreshResponse) => ({
+        ok: refreshResponse.ok,
+        payload: await refreshResponse.json().catch(() => ({})),
+      }));
+    }
+
+    let refreshResult;
+
+    try {
+      refreshResult = await refreshRequest;
+    } finally {
+      refreshRequest = null;
+    }
+
+    const refreshPayload = refreshResult.payload;
+
+    if (refreshResult.ok && refreshPayload.data?.accessToken) {
+      localStorage.setItem(
+        "authSession",
+        JSON.stringify({
+          ...session,
+          accessToken: refreshPayload.data.accessToken,
+          refreshToken:
+            refreshPayload.data.refreshToken || session.refreshToken,
+        })
+      );
+
+      return apiRequest(path, {
+        ...fetchOptions,
+        retryAfterRefresh: false,
+      });
+    }
+
+    clearSession();
+  }
 
   if (!response.ok) {
     throw new Error(payload.message || "The server could not complete the request.");

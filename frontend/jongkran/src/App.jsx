@@ -42,7 +42,6 @@ export default function App() {
         <Route path="/recipe/:id/ingredients" element={<ViewEachMenu />} />
 
         <Route path="/recipes" element={<AllRecipes />} />
-        <Route path="/recipe/:id" element={<ViewEachMenu />} />
 
         <Route path="/instruction/:id" element={<Instruction />} />
         <Route path="/menu-instruction/:id" element={<Instruction />} />

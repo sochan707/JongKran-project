@@ -48,6 +48,11 @@ export default function RecipeCart({
       }
     } catch (err) {
       console.error(err);
+      if (!isAuthenticated()) {
+        navigate("/login");
+      } else {
+        window.alert(err.message || "Could not update this favorite.");
+      }
     }
   };
 
