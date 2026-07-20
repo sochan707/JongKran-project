@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search } from "lucide-react";
+import { Check, ChevronDown, Search, SlidersHorizontal } from "lucide-react";
 import AdminHeader from "../../components/AdminHeader";
 import { apiRequest } from "../../lib/api";
 import { RECIPE_PLACEHOLDER, handleRecipeImageError, } from "../../lib/recipeImage";
@@ -12,6 +12,11 @@ export default function AdminApprove() {
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState(null);
   const [message, setMessage] = useState(null);
+  const [showSortMenu, setShowSortMenu] = useState(false);
+  const [sortConfig, setSortConfig] = useState({
+    key: "createdAt",
+    direction: "desc",
+  });
 
   const recipesPerPage = 10;
   const [currentPage, setCurrentPage] = useState(1);
@@ -27,13 +32,76 @@ export default function AdminApprove() {
     recipe.title.toLowerCase().includes(search.toLowerCase())
   );
 
+  const statusRank = {
+    pending: 0,
+    approved: 1,
+    rejected: 2,
+  };
+
+  const sortedRecipes = [...filteredRecipes].sort((first, second) => {
+    let firstValue;
+    let secondValue;
+
+    if (sortConfig.key === "status") {
+      firstValue = statusRank[first.status] ?? 3;
+      secondValue = statusRank[second.status] ?? 3;
+    } else if (sortConfig.key === "action") {
+      firstValue = first.status === "pending" ? 0 : 1;
+      secondValue = second.status === "pending" ? 0 : 1;
+    } else {
+      firstValue = new Date(first.createdAt).getTime() || 0;
+      secondValue = new Date(second.createdAt).getTime() || 0;
+    }
+
+    const comparison = firstValue === secondValue
+      ? first.id - second.id
+      : firstValue - secondValue;
+
+    return sortConfig.direction === "asc" ? comparison : -comparison;
+  });
+
+  const sortOptions = [
+    { label: "Newest", key: "createdAt", direction: "desc" },
+    { label: "Oldest", key: "createdAt", direction: "asc" },
+    { label: "Pending", key: "status", direction: "asc" },
+    { label: "Rejected", key: "status", direction: "desc" },
+    { label: "Available", key: "action", direction: "asc" },
+    { label: "Reviewed", key: "action", direction: "desc" },
+  ];
+
+  const activeSortOption = sortOptions.find(
+    (option) =>
+      option.key === sortConfig.key &&
+      option.direction === sortConfig.direction
+  ) || sortOptions[0];
+
+  const selectSort = (option) => {
+    setSortConfig({ key: option.key, direction: option.direction });
+    setShowSortMenu(false);
+    setCurrentPage(1);
+  };
+
+  const formatDateTime = (value) => {
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) return "Unknown";
+
+    return date.toLocaleString([], {
+      year: "numeric",
+      month: "short",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
   const totalPages = Math.ceil(
-    filteredRecipes.length / recipesPerPage
+    sortedRecipes.length / recipesPerPage
   );
 
   const start = (currentPage - 1) * recipesPerPage;
 
-  const currentRecipes = filteredRecipes.slice(
+  const currentRecipes = sortedRecipes.slice(
     start,
     start + recipesPerPage
   );
@@ -118,27 +186,78 @@ export default function AdminApprove() {
 
         <div className="bg-white rounded-xl shadow overflow-x-auto">
 
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 p-4">
+          <div className="flex flex-col gap-4 border-b border-gray-100 px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
 
             <div className="text-2xl font-semibold">
               AI Recipe Reviews
             </div>
 
-            <div className="relative w-full sm:w-2/3 md:w-2/3 lg:w-[450px]">
-              <Search
-                className="absolute left-4 top-1/2 -translate-y-1/2"
-                size={18}
-              />
+            <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center lg:w-auto">
+              <div className="relative w-full sm:w-[340px] lg:w-[360px]">
+                <Search
+                  className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+                  size={18}
+                />
 
-              <input
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setCurrentPage(1);
-                }}
-                placeholder="Search recipe..."
-                className="w-full rounded-lg bg-gray-100 border px-4 py-3 pl-10"
-              />
+                <input
+                  value={search}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  placeholder="Search recipe..."
+                  aria-label="Search AI recipes"
+                  className="h-12 w-full rounded-xl border border-gray-300 bg-white pl-11 pr-4 text-gray-800 outline-none transition placeholder:text-gray-400 hover:border-gray-400 focus:border-[#468432] focus:ring-2 focus:ring-[#468432]/20"
+                />
+              </div>
+
+              <div className="relative w-full sm:w-[190px] sm:flex-none">
+                <button
+                  type="button"
+                  onClick={() => setShowSortMenu((current) => !current)}
+                  aria-haspopup="menu"
+                  aria-expanded={showSortMenu}
+                  className="flex h-12 w-full items-center justify-between gap-3 rounded-xl border border-[#468432]/40 bg-[#F5FAF3] px-4 font-semibold text-[#356A27] outline-none transition hover:border-[#468432] hover:bg-[#EAF3E7] focus:ring-2 focus:ring-[#468432]/20"
+                >
+                  <span className="flex min-w-0 items-center gap-2 whitespace-nowrap">
+                    <SlidersHorizontal size={18} className="shrink-0" />
+                    Sort: {activeSortOption.label}
+                  </span>
+                  <ChevronDown
+                    size={18}
+                    className={`shrink-0 transition ${showSortMenu ? "rotate-180" : ""}`}
+                  />
+                </button>
+
+                {showSortMenu && (
+                  <div
+                    role="menu"
+                    className="absolute right-0 z-30 mt-2 w-full overflow-hidden rounded-xl border border-gray-200 bg-white py-2 shadow-xl"
+                  >
+                    {sortOptions.map((option) => {
+                      const isActive =
+                        option.key === sortConfig.key &&
+                        option.direction === sortConfig.direction;
+
+                      return (
+                        <button
+                          key={`${option.key}-${option.direction}`}
+                          type="button"
+                          role="menuitemradio"
+                          aria-checked={isActive}
+                          onClick={() => selectSort(option)}
+                          className={`flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left text-sm transition hover:bg-green-50 ${
+                            isActive ? "font-semibold text-[#468432]" : "text-gray-700"
+                          }`}
+                        >
+                          {option.label}
+                          {isActive && <Check size={17} />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
 
           </div>
@@ -148,9 +267,9 @@ export default function AdminApprove() {
             <thead className="bg-[#468432] text-white">
               <tr>
                 <th className="p-4 pl-10 text-left">Recipe</th>
-                <th>Status</th>
-                <th>Date</th>
-                <th>Action</th>
+                <th className="px-4 py-4 text-left">Status</th>
+                <th className="px-4 py-4 text-left">Date &amp; Time</th>
+                <th className="px-4 py-4 text-left">Action</th>
               </tr>
             </thead>
 
@@ -214,9 +333,13 @@ export default function AdminApprove() {
                     </span>
                   </td>
 
-                  <td>{recipe.createdAt}</td>
+                  <td className="px-4">
+                    <time dateTime={recipe.createdAt}>
+                      {formatDateTime(recipe.createdAt)}
+                    </time>
+                  </td>
 
-                  <td>
+                  <td className="px-4">
                     {recipe.status === "pending" ? (
                     <div className="flex gap-3">
                       <button

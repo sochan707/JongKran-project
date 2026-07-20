@@ -3,6 +3,19 @@ import OpenAI from "openai";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+// These basic seasonings may be used by generated recipes, but they are not
+// treated as user-selected ingredients when determining recipe matches.
+const PANTRY_STAPLES = [
+  "salt",
+  "sugar",
+  "black pepper",
+  "white pepper",
+  "pepper",
+  "cooking oil",
+  "vegetable oil",
+  "water",
+];
+
 const serviceError = (message, statusCode) => {
   const error = new Error(message);
   error.statusCode = statusCode;
@@ -39,6 +52,31 @@ const normalizeStep = (step) => {
     return String(step.instruction || step.instruction_text || step.text || "").trim();
   }
   return String(step || "").trim();
+};
+
+const normalizeIngredientName = (ingredient) =>
+  String(ingredient?.name ?? ingredient ?? "").trim().toLowerCase();
+
+const isAllowedGeneratedRecipe = (recipe, userIngredientSet, allowedIngredientSet) => {
+  if (
+    !recipe?.title?.trim() ||
+    !Array.isArray(recipe.ingredients) ||
+    recipe.ingredients.length === 0 ||
+    !Array.isArray(recipe.steps) ||
+    recipe.steps.length === 0
+  ) {
+    return false;
+  }
+
+  const generatedIngredientNames = recipe.ingredients
+    .map(normalizeIngredientName)
+    .filter(Boolean);
+
+  return (
+    generatedIngredientNames.length === recipe.ingredients.length &&
+    generatedIngredientNames.every((name) => allowedIngredientSet.has(name)) &&
+    generatedIngredientNames.some((name) => userIngredientSet.has(name))
+  );
 };
 
 export const getAIRecipeForUserService = async (aiRecipeId, userId) => {
@@ -188,9 +226,24 @@ export const getAIRecipesService = async (ingredients, userId) => {
   const GENERATION_WINDOW_MS = 3 * 60 * 60 * 1000;
   const RECIPES_PER_BATCH = 4;
 
-  const normalizedKey = ingredients
-    .map((ingredient) => String(ingredient).trim().toLowerCase())
-    .filter(Boolean)
+  const normalizedUserIngredients = [...new Set(
+    ingredients
+      .map((ingredient) => String(ingredient).trim().toLowerCase())
+      .filter(Boolean)
+  )];
+  const userIngredientSet = new Set(normalizedUserIngredients);
+
+  if (normalizedUserIngredients.length === 0) {
+    throw serviceError("At least one valid user ingredient is required", 400);
+  }
+
+  const allowedIngredients = [...new Set([
+    ...normalizedUserIngredients,
+    ...PANTRY_STAPLES,
+  ])];
+  const allowedIngredientSet = new Set(allowedIngredients);
+
+  const normalizedKey = normalizedUserIngredients
     .sort()
     .join(",");
 
@@ -230,6 +283,9 @@ export const getAIRecipesService = async (ingredients, userId) => {
     orderBy: { created_at: "asc" }
   });
   const availableRecipes = existingRecipes
+    .filter((recipe) =>
+      isAllowedGeneratedRecipe(recipe, userIngredientSet, allowedIngredientSet)
+    )
     .filter((recipe) => !previouslyShownIds.has(recipe.ai_recipe_id))
     .slice(0, RECIPES_PER_BATCH);
 
@@ -238,37 +294,93 @@ export const getAIRecipesService = async (ingredients, userId) => {
     const existingTitles = existingRecipes.map(r => r.title).join(", ");
 
     const prompt = `
-      You are a chef specialized in Khmer (Cambodian) cuisine. 
-      Generate ${recipesNeeded} different Khmer recipes using the following ingredients: ${ingredients.join(", ")}.
-      Do NOT repeat the following recipes: ${existingTitles || "none"}.
-      Return JSON ONLY as an array of ${recipesNeeded} objects, each with keys:
-      {
-        "title": "recipe title",
-        "description": "short description",
-        "ingredients": [{"name": "ingredient name", "quantity": "amount"}],
-        "steps": ["step 1", "step 2", "..."]
-      }
-    `;
+You are a chef specializing in Khmer (Cambodian) cuisine.
+
+Create up to ${recipesNeeded} different recipes.
+
+USER INGREDIENTS (the main food ingredients):
+${JSON.stringify(normalizedUserIngredients)}
+
+OPTIONAL PANTRY STAPLES (may be used, but do not count as user ingredients):
+${JSON.stringify(PANTRY_STAPLES)}
+
+STRICT RULES:
+1. Use only exact ingredient names from USER INGREDIENTS or OPTIONAL PANTRY STAPLES.
+2. Never add, substitute, infer, garnish with, serve with, or recommend any other ingredient.
+3. This restriction also applies to every ingredient mentioned in descriptions and cooking steps.
+4. Every ingredient mentioned in a description or step must appear in that recipe's ingredients array.
+5. Every recipe must use at least one USER INGREDIENT. Pantry staples alone are not sufficient.
+6. Do not repeat these existing recipe titles: ${existingTitles || "none"}.
+7. If fewer than ${recipesNeeded} valid Khmer recipes can be made, return fewer recipes instead of inventing ingredients.
+8. Ingredient names must use the exact lowercase spelling supplied in the allowed lists.
+`;
 
     console.log("[AI] Calling OpenAI for ingredient key:", normalizedKey);
 
     const response = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [{ role: "user", content: prompt }],
-      temperature: 0.7
+      temperature: 0.4,
+      response_format: {
+        type: "json_schema",
+        json_schema: {
+          name: "khmer_recipe_batch",
+          strict: true,
+          schema: {
+            type: "object",
+            properties: {
+              recipes: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    title: { type: "string" },
+                    description: { type: "string" },
+                    ingredients: {
+                      type: "array",
+                      items: {
+                        type: "object",
+                        properties: {
+                          name: { type: "string", enum: allowedIngredients },
+                          quantity: { type: "string" },
+                        },
+                        required: ["name", "quantity"],
+                        additionalProperties: false,
+                      },
+                    },
+                    steps: {
+                      type: "array",
+                      items: { type: "string" },
+                    },
+                  },
+                  required: ["title", "description", "ingredients", "steps"],
+                  additionalProperties: false,
+                },
+              },
+            },
+            required: ["recipes"],
+            additionalProperties: false,
+          },
+        },
+      },
     });
 
     const text = response.choices[0].message.content;
-    const jsonMatch = text.match(/\[.*\]/s);
-    if (!jsonMatch) throw new Error("OpenAI returned invalid JSON");
+    if (!text) throw new Error("OpenAI did not return a recipe response");
 
     let aiRecipes;
-    try { aiRecipes = JSON.parse(jsonMatch[0]); }
+    try { aiRecipes = JSON.parse(text).recipes; }
     catch { throw new Error("OpenAI returned invalid JSON"); }
+    if (!Array.isArray(aiRecipes)) {
+      throw new Error("OpenAI returned an invalid recipe list");
+    }
 
     const existingTitleSet = new Set(existingRecipes.map((recipe) => recipe.title.trim().toLowerCase()));
     const newRecipes = aiRecipes
-      .filter((recipe) => recipe?.title && !existingTitleSet.has(recipe.title.trim().toLowerCase()))
+      .filter((recipe) =>
+        isAllowedGeneratedRecipe(recipe, userIngredientSet, allowedIngredientSet)
+      )
+      .filter((recipe) => !existingTitleSet.has(recipe.title.trim().toLowerCase()))
       .slice(0, recipesNeeded);
 
     for (const recipe of newRecipes) {

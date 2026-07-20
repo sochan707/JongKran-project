@@ -19,8 +19,21 @@ export const ingredientsMatch = (firstIngredient, secondIngredient) => {
   );
 };
 
+const PANTRY_STAPLES = new Set([
+  "salt",
+  "sugar",
+  "black pepper",
+  "white pepper",
+  "pepper",
+  "cooking oil",
+  "vegetable oil",
+  "water",
+]);
+
 export const getRecipeMatchPercentage = (recipe, selectedIngredients) => {
-  const recipeIngredients = recipe.ingredients || [];
+  const recipeIngredients = (recipe.ingredients || []).filter(
+    (ingredient) => !PANTRY_STAPLES.has(normalizeIngredientName(ingredient))
+  );
 
   if (recipeIngredients.length === 0) {
     return 0;
