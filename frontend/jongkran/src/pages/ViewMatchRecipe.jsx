@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Sparkles, Utensils } from "lucide-react";
+import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import RecipeCart from "../components/RecipeCart";
@@ -172,10 +173,25 @@ export default function ViewMatchRecipe() {
         ) : (
           <div className="mt-10 w-full bg-[#E5F1E2] rounded-2xl p-8 md:p-10 text-center shadow-sm">
             <div className="w-16 h-16 mx-auto rounded-full bg-white flex items-center justify-center">
-              <Utensils
-                size={32}
-                className="text-[#468432]"
-              />
+              {isGenerating ? (
+                <div
+                  role="img"
+                  aria-label="Generating AI recipes"
+                  className="h-16 w-16 overflow-hidden rounded-full"
+                >
+                  <DotLottieReact
+                    src="/Cooking%20loader.lottie"
+                    autoplay
+                    loop
+                    className="h-full w-full"
+                  />
+                </div>
+              ) : (
+                <Utensils
+                  size={32}
+                  className="text-[#468432]"
+                />
+              )}
             </div>
 
             <h2 className="title-font text-2xl font-bold mt-5">

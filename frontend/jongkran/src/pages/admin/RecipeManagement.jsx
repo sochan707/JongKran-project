@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Search } from "lucide-react";
 
 import AdminHeader from "../../components/AdminHeader";
@@ -11,12 +11,16 @@ import {
 
 export default function RecipeManagement() {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [recipes, setRecipes] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState(
+    location.state?.successMessage || ""
+  );
   const [deletedCount, setDeletedCount] = useState(0);
   const [recipeToDelete, setRecipeToDelete] = useState(null);
   const [recipeToRepublish, setRecipeToRepublish] = useState(null);
@@ -154,6 +158,15 @@ export default function RecipeManagement() {
   useEffect(() => {
     loadRecipes();
   }, []);
+
+  useEffect(() => {
+    if (location.state?.successMessage) {
+      navigate(location.pathname, {
+        replace: true,
+        state: null,
+      });
+    }
+  }, [location.pathname, location.state, navigate]);
 
   const searchText = input.toLowerCase().trim();
 
@@ -345,6 +358,24 @@ export default function RecipeManagement() {
             </div>
           ))}
         </div>
+
+        {successMessage && (
+          <div
+            role="status"
+            className="mt-5 flex items-center justify-between gap-4 rounded-lg border border-green-200 bg-green-50 p-4 text-green-800"
+          >
+            <p className="font-medium">{successMessage}</p>
+
+            <button
+              type="button"
+              onClick={() => setSuccessMessage("")}
+              aria-label="Dismiss success message"
+              className="flex-shrink-0 text-xl leading-none text-green-700 transition hover:text-green-900"
+            >
+              ×
+            </button>
+          </div>
+        )}
 
         {error && (
           <div

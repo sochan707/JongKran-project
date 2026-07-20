@@ -5,6 +5,7 @@ import { apiRequest } from "../../lib/api";
 import recipeData from "../../data/recipes";
 import { RECIPE_PLACEHOLDER, handleRecipeImageError, } from "../../lib/recipeImage";
 import { ImagePlus } from "lucide-react";
+import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 
 export default function EditRecipe() {
   const { id } = useParams();
@@ -13,6 +14,7 @@ export default function EditRecipe() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [showDiscardConfirmation, setShowDiscardConfirmation] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const [title, setTitle] = useState("");
   const [imagePreview, setImagePreview] = useState(null);
@@ -186,6 +188,8 @@ export default function EditRecipe() {
   const handleSave = async (e) => {
     e.preventDefault();
 
+    if (isSaving) return;
+
     const cleanIngredients = ingredients.filter(
       (ingredient) => ingredient.trim() !== ""
     );
@@ -215,6 +219,8 @@ export default function EditRecipe() {
     }
 
     try {
+      setIsSaving(true);
+
       let imageUrl = imagePreview;
       if (imageFile) {
         const imageBody = new FormData();
@@ -232,14 +238,17 @@ export default function EditRecipe() {
       ingredients: cleanIngredients,
       steps: cleanSteps,
       }) });
+      navigate("/admin", {
+        replace: true,
+        state: {
+          successMessage: "Recipe updated successfully.",
+        },
+      });
     } catch (error) {
       alert(error.message);
-      return;
+    } finally {
+      setIsSaving(false);
     }
-
-    alert("Recipe updated successfully.");
-
-    navigate("/admin", { replace: true });
   };
 
   if (loading) {
@@ -563,9 +572,22 @@ export default function EditRecipe() {
                 onClick={(e) =>
                   handleSave(e)
                 }
-                className="w-full rounded-lg bg-[#FFA02E] px-6 py-3 font-semibold text-black transition hover:bg-[#e89120]"
+                disabled={isSaving}
+                className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#FFA02E] px-6 py-3 font-semibold text-black transition hover:bg-[#e89120] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Save Edit
+                {isSaving ? (
+                  <>
+                    <DotLottieReact
+                      src="/loading.lottie"
+                      autoplay
+                      loop
+                      className="h-6 w-6"
+                    />
+                    Saving...
+                  </>
+                ) : (
+                  "Save Edit"
+                )}
               </button>
             </div>
           </form>

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import AdminHeader from "../../components/AdminHeader";
 import { apiRequest } from "../../lib/api";
 import { ImagePlus } from "lucide-react";
+import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 
 export default function CreateRecipe() {
   const navigate = useNavigate();
@@ -290,13 +291,14 @@ export default function CreateRecipe() {
         }),
       });
 
-      alert(
-        selectedStatus === "public"
-          ? "Recipe published successfully!"
-          : "Recipe saved as pending!"
-      );
-
-      navigate("/admin");
+      navigate("/admin", {
+        state: {
+          successMessage:
+            selectedStatus === "public"
+              ? "Recipe published successfully!"
+              : "Recipe saved as pending!",
+        },
+      });
     } catch (error) {
       console.error("Create recipe error:", error);
 
@@ -653,11 +655,21 @@ export default function CreateRecipe() {
                   handleSubmit(event, "pending")
                 }
                 disabled={Boolean(submittingStatus)}
-                className="rounded-lg border border-[#FFA02E] bg-white px-6 py-3 font-semibold text-black transition hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-60 md:col-span-2"
+                className="flex items-center justify-center gap-2 rounded-lg border border-[#FFA02E] bg-white px-6 py-3 font-semibold text-black transition hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-60 md:col-span-2"
               >
-                {submittingStatus === "pending"
-                  ? "Saving..."
-                  : "Pending Recipe"}
+                {submittingStatus === "pending" ? (
+                  <>
+                    <DotLottieReact
+                      src="/loading.lottie"
+                      autoplay
+                      loop
+                      className="h-6 w-6"
+                    />
+                    Saving...
+                  </>
+                ) : (
+                  "Pending Recipe"
+                )}
               </button>
 
               <button
@@ -666,11 +678,21 @@ export default function CreateRecipe() {
                   handleSubmit(event, "public")
                 }
                 disabled={Boolean(submittingStatus)}
-                className="rounded-lg bg-[#FFA02E] px-6 py-3 font-semibold text-black transition hover:bg-[#e99120] disabled:cursor-not-allowed disabled:opacity-60 md:col-span-3"
+                className="flex items-center justify-center gap-2 rounded-lg bg-[#FFA02E] px-6 py-3 font-semibold text-black transition hover:bg-[#e99120] disabled:cursor-not-allowed disabled:opacity-60 md:col-span-3"
               >
-                {submittingStatus === "public"
-                  ? "Publishing..."
-                  : "Public Recipe"}
+                {submittingStatus === "public" ? (
+                  <>
+                    <DotLottieReact
+                      src="/loading.lottie"
+                      autoplay
+                      loop
+                      className="h-6 w-6"
+                    />
+                    Publishing...
+                  </>
+                ) : (
+                  "Public Recipe"
+                )}
               </button>
             </div>
           </form>
