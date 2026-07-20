@@ -19,6 +19,7 @@ const UserProfile = lazy(() => import("./pages/UserProfile"));
 const RecipeManagement = lazy(() => import("./pages/admin/RecipeManagement"));
 const CreateRecipe = lazy(() => import("./pages/admin/CreateRecipe"));
 const EditRecipe = lazy(() => import("./pages/admin/EditRecipe"));
+const ViewRecipe = lazy(() => import("./pages/admin/ViewRecipe"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const ProfileInformation = lazy(() => import("./pages/ProfileInformation"));
 const AccountSetting = lazy(() => import("./pages/AccountSetting"));
@@ -68,6 +69,7 @@ export default function App() {
           <Route index element={<RecipeManagement />} />
           <Route path="create" element={<CreateRecipe />} />
           <Route path="edit/:id" element={<EditRecipe />} />
+          <Route path="view-recipe/:id" element={<ViewRecipe />} />
           <Route path="suggestions" element={<UserSuggestions />} />
           <Route path="suggestions/:recipeId" element={<RecipeSuggestionDetail />} />
           <Route path="pending-approve" element={<AdminApprove />} />

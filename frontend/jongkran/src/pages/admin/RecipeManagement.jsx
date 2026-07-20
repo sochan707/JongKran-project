@@ -428,10 +428,21 @@ export default function RecipeManagement() {
                 currentRecipes.map((recipe) => (
                   <tr
                     key={recipe.id}
+                    role="link"
+                    tabIndex={0}
+                    onClick={() =>
+                      navigate(`/admin/view-recipe/${recipe.id}`)
+                    }
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        navigate(`/admin/view-recipe/${recipe.id}`);
+                      }
+                    }}
                     className={
                       recipe.status === "deleted"
-                        ? "border-b bg-red-50 opacity-75"
-                        : "border-b transition hover:bg-gray-50"
+                        ? "cursor-pointer border-b bg-red-50 opacity-75"
+                        : "cursor-pointer border-b transition hover:bg-gray-50 focus:bg-gray-50 focus:outline-none"
                     }
                   >
                     <td className="p-3 pl-10">
@@ -483,11 +494,12 @@ export default function RecipeManagement() {
                         <div className="flex gap-4">
                           <button
                             type="button"
-                            onClick={() =>
+                            onClick={(event) => {
+                              event.stopPropagation();
                               navigate(
                                 `/admin/edit/${recipe.id}`
-                              )
-                            }
+                              );
+                            }}
                             className="font-semibold text-[#468432] transition hover:text-[#1A5C05]"
                           >
                             Edit
@@ -495,9 +507,10 @@ export default function RecipeManagement() {
 
                           <button
                             type="button"
-                            onClick={() =>
-                              deleteRecipe(recipe.id)
-                            }
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              deleteRecipe(recipe.id);
+                            }}
                             className="font-semibold text-red-600 transition hover:text-red-800"
                           >
                             Delete
