@@ -1,4 +1,5 @@
 import Header from "../components/Header";
+import AdminHeader from "../components/AdminHeader";
 import Footer from "../components/Footer";
 import {
   Bell,
@@ -13,7 +14,7 @@ import { useNavigate } from "react-router-dom";
 import { clearSession } from "../lib/api";
 import useUserProfile from "../hooks/useUserProfile";
 
-export default function UserProfile() {
+export default function UserProfile({ adminMode = false }) {
   const navigate = useNavigate();
 
   const { profile: userProfile, isLoggedIn } = useUserProfile();
@@ -30,7 +31,7 @@ export default function UserProfile() {
   const firstLetter =
     username.charAt(0).toUpperCase();
 
-  const items = [
+  const userItems = [
     {
       icon: User,
       name: "Personal Information",
@@ -57,6 +58,25 @@ export default function UserProfile() {
     },
   ];
 
+  const adminItems = [
+    {
+      icon: User,
+      name: "Personal Information",
+      path: "/admin/profile-information",
+    },
+    {
+      icon: Bell,
+      name: "Account Setting",
+      path: "/admin/account-setting",
+    },
+    {
+      icon: HelpCircle,
+      name: "Help & Support",
+    },
+  ];
+
+  const items = adminMode ? adminItems : userItems;
+
   const handleLogout = () => {
     clearSession();
     navigate("/login", { replace: true });
@@ -64,7 +84,7 @@ export default function UserProfile() {
 
   return (
     <>
-      <Header />
+      {adminMode ? <AdminHeader /> : <Header />}
 
       <main className="mx-[25px] py-6 max-w-2xl md:mx-auto">
         <div className="border-2 border-[#468432] rounded-xl p-6">
@@ -136,7 +156,7 @@ export default function UserProfile() {
         </button>
       </main>
 
-      <Footer />
+      {!adminMode && <Footer />}
     </>
   );
 }

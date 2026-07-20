@@ -1,4 +1,5 @@
 import Header from "../components/Header";
+import AdminHeader from "../components/AdminHeader";
 import Footer from "../components/Footer";
 import { Camera, Save } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -16,7 +17,7 @@ const DEFAULT_PROFILE = {
   memberSince: new Date().toISOString(),
 };
 
-export default function ProfileInformation() {
+export default function ProfileInformation({ adminMode = false }) {
   const navigate = useNavigate();
 
   const getSavedProfile = () => {
@@ -259,7 +260,7 @@ export default function ProfileInformation() {
 
   return (
     <>
-      <Header />
+      {adminMode ? <AdminHeader /> : <Header />}
 
       <main className="mx-[25px] md:mx-auto max-w-2xl py-6">
         <h1 className="title-font text-3xl font-bold mb-8">
@@ -466,7 +467,7 @@ export default function ProfileInformation() {
         </div>
       </main>
 
-      <Footer />
+      {!adminMode && <Footer />}
     </>
   );
 }

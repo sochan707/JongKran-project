@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../components/Header";
+import AdminHeader from "../components/AdminHeader";
 import Footer from "../components/Footer";
 
-export default function Language() {
+export default function Language({ adminMode = false }) {
 
   const navigate = useNavigate();
   const [language, setLanguage] = useState("English");
@@ -15,12 +16,12 @@ export default function Language() {
       return;
     }
 
-    navigate("/AccountSetting");
+    navigate(adminMode ? "/admin/account-setting" : "/AccountSetting");
   };
 
   return (
     <>
-      <Header />
+      {adminMode ? <AdminHeader /> : <Header />}
 
       <main className="mx-[25px] md:mx-auto max-w-2xl py-12">
 
@@ -56,7 +57,7 @@ export default function Language() {
 
       </main>
 
-      <Footer />
+      {!adminMode && <Footer />}
 
       {showModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center px-4 z-50">

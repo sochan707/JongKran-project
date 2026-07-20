@@ -75,6 +75,11 @@ export default function App() {
           <Route path="suggestions/:recipeId" element={<RecipeSuggestionDetail />} />
           <Route path="pending-approve" element={<AdminApprove />} />
           <Route path="pending-approve/:id" element={<ViewPendingAIRecipe />} />
+          <Route path="profile" element={<UserProfile adminMode />} />
+          <Route path="profile-information" element={<ProfileInformation adminMode />} />
+          <Route path="account-setting" element={<AccountSetting adminMode />} />
+          <Route path="change-password" element={<ChangePassword adminMode />} />
+          <Route path="language" element={<Language adminMode />} />
         </Route>
         </Routes>
       </Suspense>

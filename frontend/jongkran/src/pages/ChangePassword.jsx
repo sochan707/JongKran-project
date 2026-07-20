@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../components/Header";
+import AdminHeader from "../components/AdminHeader";
 import Footer from "../components/Footer";
 
-export default function ChangePassword() {
+export default function ChangePassword({ adminMode = false }) {
   const navigate = useNavigate();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -21,12 +22,12 @@ export default function ChangePassword() {
       return;
     }
 
-    navigate("/AccountSetting");
+    navigate(adminMode ? "/admin/account-setting" : "/AccountSetting");
   };
 
   return (
     <>
-      <Header />
+      {adminMode ? <AdminHeader /> : <Header />}
 
       <main className="mx-[25px] md:mx-auto max-w-2xl py-12">
         <h1 className="title-font text-3xl mb-8 font-bold">
@@ -81,7 +82,7 @@ export default function ChangePassword() {
         </div>
       </main>
 
-      <Footer />
+      {!adminMode && <Footer />}
     </>
   );
 }

@@ -55,7 +55,7 @@ export default function AdminHeader() {
           ))}
 
           <Link
-            to={isLoggedIn ? "/profile" : "/login"}
+            to={isLoggedIn ? "/admin/profile" : "/login"}
             className="flex items-center"
           >
             {isLoggedIn ? (
@@ -109,7 +109,7 @@ export default function AdminHeader() {
           ))}
 
           <Link
-            to={isLoggedIn ? "/profile" : "/login"}
+            to={isLoggedIn ? "/admin/profile" : "/login"}
             onClick={() => setOpen(false)}
             className="flex items-center gap-3 text-sm font-semibold hover:text-[#468432]"
           >

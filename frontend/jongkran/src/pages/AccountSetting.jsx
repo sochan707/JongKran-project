@@ -1,27 +1,28 @@
 import Header from "../components/Header";
+import AdminHeader from "../components/AdminHeader";
 import Footer from "../components/Footer";
 import { Lock, Globe, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-export default function AccountSetting() {
+export default function AccountSetting({ adminMode = false }) {
   const navigate = useNavigate();
 
   const settings = [
     {
       icon: Lock,
       name: "Change Password",
-      path: "/ChangePassword",
+      path: adminMode ? "/admin/change-password" : "/ChangePassword",
     },
     {
       icon: Globe,
       name: "Language",
-      path: "/Language",
+      path: adminMode ? "/admin/language" : "/Language",
     },
   ];
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
+      {adminMode ? <AdminHeader /> : <Header />}
 
       <main className="flex-1 w-full mx-auto max-w-2xl px-[25px] py-6">
         <h1 className="title-font text-3xl font-bold mb-8">
@@ -49,7 +50,7 @@ export default function AccountSetting() {
         </div>
       </main>
 
-      <Footer />
+      {!adminMode && <Footer />}
     </div>
   );
 }
