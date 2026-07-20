@@ -79,7 +79,7 @@ export default function UserProfile({ adminMode = false }) {
 
   const handleLogout = () => {
     clearSession();
-    navigate("/login", { replace: true });
+    navigate("/", { replace: true });
   };
 
   return (
