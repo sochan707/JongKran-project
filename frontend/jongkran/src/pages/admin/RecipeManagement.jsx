@@ -18,6 +18,10 @@ export default function RecipeManagement() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [deletedCount, setDeletedCount] = useState(0);
+  const [aiRecipeStats, setAIRecipeStats] = useState({
+    pendingCount: 0,
+    publishedCount: 0,
+  });
 
   const recipesPerPage = 10;
 
@@ -85,9 +89,10 @@ export default function RecipeManagement() {
       setLoading(true);
       setError("");
 
-      const [result, deletedCountResult] = await Promise.all([
+      const [result, deletedCountResult, aiStatsResult] = await Promise.all([
         apiRequest("/recipes"),
         apiRequest("/recipes/admin/deleted-count"),
+        apiRequest("/ai-recipes/admin/stats"),
       ]);
 
       const recipeList = Array.isArray(result)
@@ -124,6 +129,10 @@ export default function RecipeManagement() {
 
       setRecipes(sortRecipes(formattedRecipes));
       setDeletedCount(Number(deletedCountResult.data?.count) || 0);
+      setAIRecipeStats({
+        pendingCount: Number(aiStatsResult.data?.pendingCount) || 0,
+        publishedCount: Number(aiStatsResult.data?.publishedCount) || 0,
+      });
     } catch (err) {
       console.error("Failed to load recipes:", err);
 
@@ -162,16 +171,8 @@ export default function RecipeManagement() {
   // Dashboard values
   const total = recipes.length;
 
-  const pending = recipes.filter(
-    (recipe) => recipe.status === "pending"
-  ).length;
-
   const published = recipes.filter(
     (recipe) => recipe.status === "public"
-  ).length;
-
-  const aiGenerated = recipes.filter(
-    (recipe) => recipe.status === "ai_generated"
   ).length;
 
   const summaryCards = [
@@ -181,7 +182,7 @@ export default function RecipeManagement() {
     },
     {
       label: "Pending Recipes",
-      value: pending,
+      value: aiRecipeStats.pendingCount,
     },
     {
       label: "Published Recipes",
@@ -189,7 +190,7 @@ export default function RecipeManagement() {
     },
     {
       label: "AI Generated",
-      value: aiGenerated,
+      value: aiRecipeStats.publishedCount,
     },
     {
       label: "Deleted Recipes",

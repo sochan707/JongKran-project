@@ -9,6 +9,32 @@ export const getPendingAIRecipesController = async (_req, res) => {
   return res.json({ success: true, data: recipes });
 };
 
+export const getAIRecipeStatsController = async (_req, res) => {
+  try {
+    const [pendingCount, publishedCount] = await prisma.$transaction([
+      prisma.aIGeneratedRecipe.count({
+        where: { status: "pending" },
+      }),
+      prisma.aIGeneratedRecipe.count({
+        where: {
+          status: "approved",
+          approved_recipe_id: { not: null },
+        },
+      }),
+    ]);
+
+    return res.json({
+      success: true,
+      data: { pendingCount, publishedCount },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to get AI recipe statistics",
+    });
+  }
+};
+
 export const reviewAIRecipeController = async (req, res) => {
   try {
     const recipe = await reviewAIRecipeService(

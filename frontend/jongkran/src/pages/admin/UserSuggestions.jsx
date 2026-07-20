@@ -12,6 +12,7 @@ export default function UserSuggestions() {
   const [suggestions, setSuggestions] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [input, setInput] = useState("");
+  const [sortBy, setSortBy] = useState("suggestionCount");
 
   const recipesPerPage = 10;
 
@@ -69,6 +70,32 @@ export default function UserSuggestions() {
     }
   );
 
+  const sortedRecipes = [...filteredRecipes].sort((recipeA, recipeB) => {
+    const countDifference =
+      recipeB.suggestionCount - recipeA.suggestionCount;
+    const dateA = recipeA.latestSuggestionDate
+      ? new Date(recipeA.latestSuggestionDate).getTime()
+      : 0;
+    const dateB = recipeB.latestSuggestionDate
+      ? new Date(recipeB.latestSuggestionDate).getTime()
+      : 0;
+    const dateDifference = dateB - dateA;
+
+    if (sortBy === "newestSuggestion") {
+      return (
+        dateDifference ||
+        countDifference ||
+        String(recipeA.title || "").localeCompare(String(recipeB.title || ""))
+      );
+    }
+
+    return (
+      countDifference ||
+      dateDifference ||
+      String(recipeA.title || "").localeCompare(String(recipeB.title || ""))
+    );
+  });
+
   const totalRecipes = recipes.length;
   const totalSuggestions = suggestions.length;
 
@@ -78,13 +105,13 @@ export default function UserSuggestions() {
     ).length;
 
   const totalPages = Math.ceil(
-    filteredRecipes.length / recipesPerPage
+    sortedRecipes.length / recipesPerPage
   );
 
   const startIndex =
     (currentPage - 1) * recipesPerPage;
 
-  const currentRecipes = filteredRecipes.slice(
+  const currentRecipes = sortedRecipes.slice(
     startIndex,
     startIndex + recipesPerPage
   );
@@ -175,13 +202,28 @@ export default function UserSuggestions() {
 
         {/* Recipe table */}
         <div className="bg-white rounded-xl shadow mt-5 mb-10 overflow-hidden">
-          <div className="grid lg:grid-cols-2 gap-4 p-4">
+          <div className="flex flex-col gap-4 p-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="text-2xl font-semibold pl-2 sm:pl-6 flex items-center">
               Recipe List
             </div>
 
-            <div className="flex justify-end items-center">
-              <div className="relative w-full lg:w-[450px]">
+            <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center lg:w-auto">
+              <label className="flex items-center gap-2 whitespace-nowrap font-medium text-gray-700">
+                Sort by
+                <select
+                  value={sortBy}
+                  onChange={(event) => {
+                    setSortBy(event.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="rounded-lg border border-gray-300 bg-white px-3 py-3 outline-none focus:border-[#468432] focus:ring-1 focus:ring-[#468432]"
+                >
+                  <option value="suggestionCount">Most suggestions</option>
+                  <option value="newestSuggestion">Newest suggestion</option>
+                </select>
+              </label>
+
+              <div className="relative w-full sm:w-[350px] lg:w-[450px]">
                 <Search
                   className="absolute left-4 top-4 text-black"
                   size={18}
