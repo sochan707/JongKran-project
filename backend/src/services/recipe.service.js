@@ -237,11 +237,31 @@ export const getDeletedRecipeCountService = async () => {
   });
 };
 
-export const getRecipesByIdService = async (recipeId, includeCookingDetails = false) => {
+export const getAllRecipesForAdminService = async () => {
+  return prisma.recipe.findMany({
+    select: {
+      recipe_id: true,
+      title: true,
+      description: true,
+      image_url: true,
+      difficulty: true,
+      prep_time: true,
+      cook_time: true,
+      servings: true,
+      view_count: true,
+      created_at: true,
+      updated_at: true,
+      deleted_at: true,
+    },
+    orderBy: { created_at: "desc" },
+  });
+};
+
+export const getRecipesByIdService = async (recipeId, includeCookingDetails = false, includeDeleted = false) => {
   const recipe = await prisma.recipe.findFirst({
     where: {
       recipe_id: Number(recipeId),
-      deleted_at: null,
+      ...(includeDeleted ? {} : { deleted_at: null }),
     },
     include: {
       recipeIngredients: {
@@ -321,6 +341,38 @@ export const deleteRecipeService = async (recipeId, adminId) => {
   });
 
   return deletedRecipe;
+};
+
+export const restoreRecipeService = async (recipeId, adminId) => {
+  const recipe = await prisma.recipe.findFirst({
+    where: {
+      recipe_id: recipeId,
+      deleted_at: { not: null },
+    },
+  });
+
+  if (!recipe) {
+    const error = new Error("Deleted recipe not found");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const restored = await tx.recipe.update({
+      where: { recipe_id: recipeId },
+      data: { deleted_at: null },
+    });
+
+    await tx.logs_audit.create({
+      data: {
+        user_id: adminId,
+        recipe_id: recipeId,
+        action_type: "approve",
+      },
+    });
+
+    return restored;
+  });
 };
 
 export const updateRecipeService = async (recipeId, updateData, adminId) => {

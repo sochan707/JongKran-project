@@ -1,4 +1,4 @@
-import {createRecipeService, getAllRecipesService, getDeletedRecipeCountService, getRecipesByIdService, deleteRecipeService, updateRecipeService} from "../services/recipe.service.js"
+import {createRecipeService, getAllRecipesForAdminService, getAllRecipesService, getDeletedRecipeCountService, getRecipesByIdService, deleteRecipeService, restoreRecipeService, updateRecipeService} from "../services/recipe.service.js"
 
 export const createRecipeController = async (req, res) => {
   try {
@@ -52,10 +52,23 @@ export const getDeletedRecipeCountController = async (req, res) => {
   }
 };
 
+export const getAllRecipesForAdminController = async (_req, res) => {
+  try {
+    const recipes = await getAllRecipesForAdminService();
+    return res.status(200).json({ success: true, data: recipes });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+};
+
 export const getRecipeByIdController = async (req, res) => {
   try{
     const {id} = req.params;
-    const recipe = await getRecipesByIdService(id, Boolean(req.user));
+    const recipe = await getRecipesByIdService(
+      id,
+      Boolean(req.user),
+      req.user?.role === "Admin"
+    );
 
     return res.status(200).json({
       success: true,
@@ -100,6 +113,27 @@ export const deleteRecipeController = async (req, res) => {
       message:
         error.message ||
         "Failed to delete recipe! o(╥﹏╥)o",
+    });
+  }
+};
+
+export const restoreRecipeController = async (req, res) => {
+  try {
+    const recipeId = Number(req.params.id);
+    if (!Number.isInteger(recipeId) || recipeId <= 0) {
+      return res.status(400).json({ success: false, message: "Recipe ID must be a valid number" });
+    }
+
+    const recipe = await restoreRecipeService(recipeId, req.user.userId);
+    return res.status(200).json({
+      success: true,
+      message: "Recipe republished successfully",
+      data: recipe,
+    });
+  } catch (error) {
+    return res.status(error.statusCode || 500).json({
+      success: false,
+      message: error.message || "Failed to republish recipe",
     });
   }
 };

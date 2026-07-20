@@ -18,6 +18,8 @@ export default function RecipeManagement() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [deletedCount, setDeletedCount] = useState(0);
+  const [recipeToDelete, setRecipeToDelete] = useState(null);
+  const [recipeToRepublish, setRecipeToRepublish] = useState(null);
   const [aiRecipeStats, setAIRecipeStats] = useState({
     pendingCount: 0,
     publishedCount: 0,
@@ -26,6 +28,10 @@ export default function RecipeManagement() {
   const recipesPerPage = 10;
 
   const normalizeStatus = (recipe) => {
+    if (recipe.deleted_at || recipe.deletedAt) {
+      return "deleted";
+    }
+
     const isAIGenerated =
       recipe.is_ai_generated === true ||
       recipe.isAiGenerated === true ||
@@ -90,7 +96,7 @@ export default function RecipeManagement() {
       setError("");
 
       const [result, deletedCountResult, aiStatsResult] = await Promise.all([
-        apiRequest("/recipes"),
+        apiRequest("/recipes/admin/all"),
         apiRequest("/recipes/admin/deleted-count"),
         apiRequest("/ai-recipes/admin/stats"),
       ]);
@@ -216,14 +222,6 @@ export default function RecipeManagement() {
   );
 
   const deleteRecipe = async (id) => {
-    const confirmed = window.confirm(
-      "Do you want to delete this recipe?"
-    );
-
-    if (!confirmed) {
-      return;
-    }
-
     try {
       setError("");
 
@@ -232,26 +230,15 @@ export default function RecipeManagement() {
       });
 
       setRecipes((currentRecipesList) =>
-        currentRecipesList.filter(
+        sortRecipes(currentRecipesList.map(
           (recipe) =>
-            String(recipe.id) !== String(id)
-        )
+            String(recipe.id) === String(id)
+              ? { ...recipe, status: "deleted", deletedAt: new Date().toISOString() }
+              : recipe
+        ))
       );
       setDeletedCount((count) => count + 1);
-
-      const remainingItems =
-        filteredRecipes.length - 1;
-
-      const remainingPages = Math.ceil(
-        remainingItems / recipesPerPage
-      );
-
-      if (
-        currentPage > remainingPages &&
-        currentPage > 1
-      ) {
-        setCurrentPage((page) => page - 1);
-      }
+      setRecipeToDelete(null);
     } catch (err) {
       console.error("Failed to delete recipe:", err);
 
@@ -259,6 +246,24 @@ export default function RecipeManagement() {
         err.message ||
           "Could not delete the recipe. Please try again."
       );
+    }
+  };
+
+  const republishRecipe = async (id) => {
+    try {
+      setError("");
+      await apiRequest(`/recipes/admin/${id}/restore`, { method: "PATCH" });
+      setRecipes((currentRecipesList) =>
+        sortRecipes(currentRecipesList.map((recipe) =>
+          String(recipe.id) === String(id)
+            ? { ...recipe, status: "public", deletedAt: null, deleted_at: null }
+            : recipe
+        ))
+      );
+      setDeletedCount((count) => Math.max(0, count - 1));
+      setRecipeToRepublish(null);
+    } catch (err) {
+      setError(err.message || "Could not republish the recipe. Please try again.");
     }
   };
 
@@ -488,9 +493,16 @@ export default function RecipeManagement() {
 
                     <td className="p-4">
                       {recipe.status === "deleted" ? (
-                        <span className="text-sm text-gray-400">
-                          Deleted
-                        </span>
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setRecipeToRepublish(recipe);
+                          }}
+                          className="font-semibold text-[#468432] transition hover:text-[#1A5C05]"
+                        >
+                          Republish
+                        </button>
                       ) : (
                         <div className="flex gap-4">
                           <button
@@ -510,7 +522,7 @@ export default function RecipeManagement() {
                             type="button"
                             onClick={(event) => {
                               event.stopPropagation();
-                              deleteRecipe(recipe.id);
+                              setRecipeToDelete(recipe);
                             }}
                             className="font-semibold text-red-600 transition hover:text-red-800"
                           >
@@ -578,6 +590,78 @@ export default function RecipeManagement() {
           + Add New Recipe
         </button>
       </div>
+
+      {recipeToDelete && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-recipe-title"
+            aria-describedby="delete-recipe-message"
+            className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"
+          >
+            <h2 id="delete-recipe-title" className="text-2xl font-bold text-gray-900">
+              Delete recipe?
+            </h2>
+            <p id="delete-recipe-message" className="mt-3 text-gray-600">
+              Are you sure you want to delete “{recipeToDelete.title}”? You can republish it later.
+            </p>
+            <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => deleteRecipe(recipeToDelete.id)}
+                className="rounded-lg bg-red-600 px-5 py-3 font-semibold text-white hover:bg-red-700"
+              >
+                Delete
+              </button>
+              <button
+                type="button"
+                autoFocus
+                onClick={() => setRecipeToDelete(null)}
+                className="rounded-lg border border-[#468432] px-5 py-3 font-semibold text-[#468432] hover:bg-green-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {recipeToRepublish && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="republish-recipe-title"
+            aria-describedby="republish-recipe-message"
+            className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"
+          >
+            <h2 id="republish-recipe-title" className="text-2xl font-bold text-gray-900">
+              Republish recipe?
+            </h2>
+            <p id="republish-recipe-message" className="mt-3 text-gray-600">
+              Are you sure you want to republish “{recipeToRepublish.title}”? It will become visible to users again.
+            </p>
+            <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => republishRecipe(recipeToRepublish.id)}
+                className="rounded-lg bg-[#468432] px-5 py-3 font-semibold text-white hover:bg-[#1A5C05]"
+              >
+                Republish
+              </button>
+              <button
+                type="button"
+                autoFocus
+                onClick={() => setRecipeToRepublish(null)}
+                className="rounded-lg border border-gray-400 px-5 py-3 font-semibold text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
