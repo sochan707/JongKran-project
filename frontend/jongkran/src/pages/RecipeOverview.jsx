@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
-import { isAuthenticated, recipeApi } from "../lib/api";
+import { aiRecipeApi, isAuthenticated, recipeApi } from "../lib/api";
 import {
   RECIPE_PLACEHOLDER,
   handleRecipeImageError,
@@ -30,7 +30,7 @@ const formatNutritionValue = (value, unit = "") => {
   return `${formattedValue}${unit}`;
 };
 
-export default function RecipeOverview() {
+export default function RecipeOverview({ aiMode = false }) {
   const navigate = useNavigate();
   const { id } = useParams();
 
@@ -40,7 +40,9 @@ export default function RecipeOverview() {
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
   const startCooking = () => {
-    const ingredientsPath = `/recipe/${recipe.id}/ingredients`;
+    const ingredientsPath = aiMode
+      ? `/ai-recipe/${recipe.id}/ingredients`
+      : `/recipe/${recipe.id}/ingredients`;
 
     if (!isAuthenticated() || recipe.cookingDetailsAvailable === false) {
       setShowLoginPrompt(true);
@@ -58,7 +60,9 @@ export default function RecipeOverview() {
         setLoading(true);
         setError("");
 
-        const recipeData = await recipeApi.get(id);
+        const recipeData = await (aiMode
+          ? aiRecipeApi.get(id)
+          : recipeApi.get(id));
 
         if (isMounted) {
           setRecipe(recipeData);
@@ -82,7 +86,7 @@ export default function RecipeOverview() {
     return () => {
       isMounted = false;
     };
-  }, [id]);
+  }, [aiMode, id]);
 
   if (loading) {
     return (
@@ -116,7 +120,7 @@ export default function RecipeOverview() {
 
           <button
             type="button"
-            onClick={() => navigate("/recipes")}
+            onClick={() => navigate(aiMode ? "/matched-recipes" : "/recipes")}
             className="mt-6 rounded-lg bg-[#468432] px-7 py-3 font-semibold text-white transition hover:bg-[#1A5C05]"
           >
             Back to Recipes
@@ -189,6 +193,11 @@ export default function RecipeOverview() {
 
           <div className="absolute bottom-8 left-[25px] text-white">
             <div className="flex gap-3 mb-3">
+              {aiMode && (
+                <span className="bg-[#468432] px-4 py-1 rounded-full text-sm">
+                  AI Generated
+                </span>
+              )}
               <span className="bg-orange-400 px-4 py-1 rounded-full text-sm">
                 Smart Choice
               </span>
@@ -275,6 +284,13 @@ export default function RecipeOverview() {
                       nutrition data.
                     </p>
                   )}
+
+                {!noNutrition && recipe.nutrition?.usedDefaultWeights && (
+                  <p className="mt-4 text-sm text-gray-500">
+                    Some ingredients did not include a weight, so the estimate
+                    uses 100 g per unmeasured item.
+                  </p>
+                )}
               </section>
             </div>
 
@@ -330,7 +346,9 @@ export default function RecipeOverview() {
                   navigate("/login", {
                     state: {
                       message: "Please log in to continue cooking.",
-                      returnTo: `/recipe/${recipe.id}/ingredients`,
+                      returnTo: aiMode
+                        ? `/ai-recipe/${recipe.id}/ingredients`
+                        : `/recipe/${recipe.id}/ingredients`,
                     },
                   })
                 }
@@ -342,6 +360,8 @@ export default function RecipeOverview() {
           </section>
         </div>
       )}
+
+      <Footer />
 
     </>
   );

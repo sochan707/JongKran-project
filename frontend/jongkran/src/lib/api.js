@@ -258,6 +258,7 @@ export const normalizeRecipe = (recipe) => {
         recipe.nutrition?.calculatedIngredientCount
       ),
       ingredientCount: getValidNumber(recipe.nutrition?.ingredientCount),
+      usedDefaultWeights: Boolean(recipe.nutrition?.usedDefaultWeights),
     },
   };
 };
@@ -268,8 +269,20 @@ export const recipeApi = {
   favorites: async () => (await apiRequest("/favorites")).data.map((item) => normalizeRecipe(item.recipe)),
   toggleFavorite: (id) => apiRequest(`/favorites/${id}`, { method: "POST" }),
   history: async () => (await apiRequest("/history")).data.map((item) => ({
-    ...normalizeRecipe(item.recipe),
-    completedAt: item.cooked_at,
+    ...normalizeRecipe(item.historyType === "ai" ? item.aiRecipe : item.recipe),
+    isAI: item.historyType === "ai",
+    completedAt: item.cooked_at || item.created_at,
   })),
   addHistory: (id) => apiRequest(`/history/${id}`, { method: "POST" }),
+};
+
+export const aiRecipeApi = {
+  get: async (id) => ({
+    ...normalizeRecipe((await apiRequest(`/ai-recipes/${id}`)).data),
+    isAI: true,
+  }),
+  complete: (id) => apiRequest(`/ai-recipes/${id}/action`, {
+    method: "POST",
+    body: JSON.stringify({ action: "cook" }),
+  }),
 };

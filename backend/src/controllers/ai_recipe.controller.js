@@ -1,4 +1,4 @@
-import { getAIRecipesService, reviewAIRecipeService } from "../services/ai_recipe.service.js";
+import { getAIRecipeForUserService, getAIRecipesService, reviewAIRecipeService } from "../services/ai_recipe.service.js";
 import prisma from "../prismaClient.js";
 
 export const getPendingAIRecipesController = async (_req, res) => {
@@ -6,6 +6,22 @@ export const getPendingAIRecipesController = async (_req, res) => {
     orderBy: { created_at: "desc" },
   });
   return res.json({ success: true, data: recipes });
+};
+
+export const getAIRecipeForUserController = async (req, res) => {
+  try {
+    const recipe = await getAIRecipeForUserService(
+      Number(req.params.id),
+      req.user.userId,
+    );
+
+    return res.json({ success: true, data: recipe });
+  } catch (error) {
+    return res.status(error.statusCode || 500).json({
+      success: false,
+      message: error.message || "Failed to get AI recipe",
+    });
+  }
 };
 
 export const getPendingAIRecipeByIdController = async (req, res) => {

@@ -55,7 +55,7 @@ export default function Home() {
           </h2>
 
           <div className="grid gap-5 md:grid-cols-3">
-            {recipes.map((recipe) => (
+            {recipes.slice(0, 6).map((recipe) => (
               <RecipeCart key={recipe.id} recipe={recipe} />
             ))}
           </div>

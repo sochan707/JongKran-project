@@ -2,9 +2,9 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { CheckCircle } from "lucide-react";
 import Header from "../components/Header";
-import { apiRequest, recipeApi } from "../lib/api";
+import { aiRecipeApi, apiRequest, recipeApi } from "../lib/api";
 
-export default function Instruction() {
+export default function Instruction({ aiMode = false }) {
   const navigate = useNavigate();
   const { id } = useParams();
 
@@ -23,14 +23,16 @@ export default function Instruction() {
   const [loadError, setLoadError] = useState("");
 
   useEffect(() => {
-    recipeApi.get(id)
+    (aiMode ? aiRecipeApi.get(id) : recipeApi.get(id))
       .then((recipeData) => {
         if (recipeData.cookingDetailsAvailable === false) {
           navigate("/login", {
             replace: true,
             state: {
               message: "Please log in first to view recipe instructions.",
-              returnTo: `/instruction/${id}`,
+              returnTo: aiMode
+                ? `/ai-instruction/${id}`
+                : `/instruction/${id}`,
             },
           });
           return;
@@ -40,7 +42,7 @@ export default function Instruction() {
       })
       .catch((err) => setLoadError(err.message))
       .finally(() => setLoading(false));
-  }, [id, navigate]);
+  }, [aiMode, id, navigate]);
 
   if (loading) {
     return <div className="p-10 text-2xl">Loading instructions...</div>;
@@ -76,7 +78,11 @@ export default function Instruction() {
   // ---------------- COMPLETE COOKING ----------------
   const completeCooking = async () => {
     try {
-      await recipeApi.addHistory(recipe.id);
+      if (aiMode) {
+        await aiRecipeApi.complete(recipe.id);
+      } else {
+        await recipeApi.addHistory(recipe.id);
+      }
     } catch (error) {
       console.error("Failed to save server history:", error);
       alert(error.message || "Failed to save cooking history.");
@@ -187,7 +193,9 @@ export default function Instruction() {
             <button
               type="button"
               onClick={() =>
-                navigate(`/recipe/${recipe.id}`)
+                navigate(aiMode
+                  ? `/ai-recipe/${recipe.id}/ingredients`
+                  : `/recipe/${recipe.id}/ingredients`)
               }
               className="flex-1 py-4 font-bold"
             >
@@ -314,28 +322,35 @@ export default function Instruction() {
                     .
                   </p>
 
-                  <p className="text-gray-500 mt-2">
-                    Would you like to give us a
-                    suggestion about this recipe?
-                  </p>
+                  {aiMode ? (
+                    <p className="text-gray-500 mt-2">
+                      This unpublished AI recipe has been added to your cooking history.
+                    </p>
+                  ) : (
+                    <p className="text-gray-500 mt-2">
+                      Would you like to give us a suggestion about this recipe?
+                    </p>
+                  )}
                 </div>
 
-                <div className="flex justify-between gap-4 mt-8">
+                <div className={`flex gap-4 mt-8 ${aiMode ? "justify-center" : "justify-between"}`}>
                   <button
                     type="button"
                     onClick={handleSkip}
                     className="flex-1 border border-gray-400 hover:bg-gray-100 px-5 py-3 rounded-md font-bold transition"
                   >
-                    Skip
+                    {aiMode ? "Done" : "Skip"}
                   </button>
 
-                  <button
-                    type="button"
-                    onClick={handleOpenSuggestion}
-                    className="flex-1 bg-[#468432] hover:bg-[#1A5C05] text-white px-5 py-3 rounded-md font-bold transition"
-                  >
-                    Give Suggestion
-                  </button>
+                  {!aiMode && (
+                    <button
+                      type="button"
+                      onClick={handleOpenSuggestion}
+                      className="flex-1 bg-[#468432] hover:bg-[#1A5C05] text-white px-5 py-3 rounded-md font-bold transition"
+                    >
+                      Give Suggestion
+                    </button>
+                  )}
                 </div>
               </>
             ) : (

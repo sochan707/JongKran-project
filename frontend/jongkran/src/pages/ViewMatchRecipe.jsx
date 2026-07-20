@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Sparkles, Utensils, X } from "lucide-react";
+import { Sparkles, Utensils } from "lucide-react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import RecipeCart from "../components/RecipeCart";
@@ -16,8 +16,6 @@ export default function ViewMatchRecipe() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [sortByMatch, setSortByMatch] = useState(false);
   const [error, setError] = useState("");
-  const [actingRecipeId, setActingRecipeId] = useState(null);
-  const [selectedAIRecipe, setSelectedAIRecipe] = useState(null);
   const [generationsRemaining, setGenerationsRemaining] = useState(null);
 
   const selectedIngredients =
@@ -96,22 +94,6 @@ export default function ViewMatchRecipe() {
     }
   };
 
-  const handleCookAIRecipe = async (recipe) => {
-    try {
-      setActingRecipeId(recipe.id);
-      setError("");
-      await apiRequest(`/ai-recipes/${recipe.id}/action`, {
-        method: "POST",
-        body: JSON.stringify({ action: "cook" }),
-      });
-      setSelectedAIRecipe(recipe);
-    } catch (actionError) {
-      setError(actionError.message || "Could not start cooking this recipe.");
-    } finally {
-      setActingRecipeId(null);
-    }
-  };
-
   return (
     <>
       <Header />
@@ -176,8 +158,6 @@ export default function ViewMatchRecipe() {
                   key={`ai-${recipe.id}`}
                   recipe={recipe}
                   selectedIngredients={selectedIngredients}
-                  busy={actingRecipeId === recipe.id || isGenerating}
-                  onCook={handleCookAIRecipe}
                 />
               ) : (
                 <RecipeCart
@@ -253,44 +233,6 @@ export default function ViewMatchRecipe() {
           </div>
         )}
       </main>
-
-      {selectedAIRecipe && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <section className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <span className="text-sm font-bold text-[#468432]">AI Cooking Guide</span>
-                <h2 className="title-font mt-1 text-3xl font-bold">{selectedAIRecipe.name}</h2>
-              </div>
-              <button
-                type="button"
-                aria-label="Close cooking guide"
-                onClick={() => setSelectedAIRecipe(null)}
-                className="rounded-full p-2 hover:bg-gray-100"
-              >
-                <X size={24} />
-              </button>
-            </div>
-
-            <h3 className="mt-6 text-lg font-bold">Ingredients</h3>
-            <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-700">
-              {selectedAIRecipe.ingredientDetails.map((ingredient) => (
-                <li key={`${ingredient.name}-${ingredient.quantity}-${ingredient.unit}`}>
-                  {ingredient.quantityText || ingredient.quantity || ""}{" "}
-                  {ingredient.quantityText ? "" : ingredient.unit} {ingredient.name}
-                </li>
-              ))}
-            </ul>
-
-            <h3 className="mt-6 text-lg font-bold">Cooking Steps</h3>
-            <ol className="mt-2 list-decimal space-y-3 pl-5 text-gray-700">
-              {selectedAIRecipe.steps.map((step, index) => (
-                <li key={`${index}-${step}`}>{step}</li>
-              ))}
-            </ol>
-          </section>
-        </div>
-      )}
 
       <Footer />
     </>

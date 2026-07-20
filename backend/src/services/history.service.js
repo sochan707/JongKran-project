@@ -55,7 +55,8 @@ export const addHistoryService = async (userId, recipeId) => {
 };
 
 export const getUserHistoryService = async (userId) => {
-    const history = await prisma.history.findMany({
+    const [history, aiHistory] = await Promise.all([
+      prisma.history.findMany({
         where: {
             user_id: userId
         },
@@ -74,7 +75,27 @@ export const getUserHistoryService = async (userId) => {
         orderBy: {
             cooked_at: "desc"
         }
-    });
+      }),
+      prisma.userAICooking.findMany({
+        where: {
+          user_id: userId,
+          action: "cook",
+        },
+        include: {
+          aiRecipe: true,
+        },
+        orderBy: {
+          created_at: "desc",
+        },
+      }),
+    ]);
 
-    return history;
+    return [
+      ...history.map((item) => ({ ...item, historyType: "recipe" })),
+      ...aiHistory.map((item) => ({ ...item, historyType: "ai" })),
+    ].sort(
+      (left, right) =>
+        new Date(right.cooked_at || right.created_at) -
+        new Date(left.cooked_at || left.created_at)
+    );
 };

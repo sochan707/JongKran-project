@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import RecipeCart from "../components/RecipeCart";
+import AIRecipeCart from "../components/AIRecipeCart";
 import { isAuthenticated, recipeApi } from "../lib/api";
 
 
@@ -31,7 +32,15 @@ export default function History() {
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
           {history.map((recipe) => (
-            <RecipeCart key={recipe.id} recipe={recipe} />
+            recipe.isAI ? (
+              <AIRecipeCart
+                key={`ai-${recipe.id}-${recipe.completedAt}`}
+                recipe={recipe}
+                completedAt={recipe.completedAt}
+              />
+            ) : (
+              <RecipeCart key={`recipe-${recipe.id}-${recipe.completedAt}`} recipe={recipe} />
+            )
           ))}
         </div>
       </main>

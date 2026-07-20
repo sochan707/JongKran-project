@@ -2,9 +2,9 @@ import { useNavigate, useParams } from "react-router-dom";
 import Header from "../components/Header";
 import { Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { recipeApi } from "../lib/api";
+import { aiRecipeApi, recipeApi } from "../lib/api";
 
-export default function ViewEachMenu() {
+export default function ViewEachMenu({ aiMode = false }) {
   const navigate = useNavigate();
   const { id } = useParams();
 
@@ -16,14 +16,16 @@ export default function ViewEachMenu() {
   const [missingIngredients, setMissingIngredients] = useState([]);
 
   useEffect(() => {
-    recipeApi.get(id)
+    (aiMode ? aiRecipeApi.get(id) : recipeApi.get(id))
       .then((recipeData) => {
         if (recipeData.cookingDetailsAvailable === false) {
           navigate("/login", {
             replace: true,
             state: {
               message: "Please log in first to view recipe ingredients.",
-              returnTo: `/recipe/${id}/ingredients`,
+              returnTo: aiMode
+                ? `/ai-recipe/${id}/ingredients`
+                : `/recipe/${id}/ingredients`,
             },
           });
           return;
@@ -33,7 +35,7 @@ export default function ViewEachMenu() {
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
-  }, [id, navigate]);
+  }, [aiMode, id, navigate]);
 
   useEffect(() => {
     if (!recipe) return;
@@ -48,17 +50,25 @@ export default function ViewEachMenu() {
           userIngredient.toLowerCase().includes(recipeIngredient.toLowerCase())
       );
 
-    const your = recipe.ingredients.filter((ingredient) =>
+    const recipeIngredients = aiMode && recipe.ingredientDetails.length > 0
+      ? recipe.ingredientDetails.map((ingredient) =>
+          `${ingredient.quantityText || ingredient.quantity || ""} ${
+            ingredient.quantityText ? "" : ingredient.unit
+          } ${ingredient.name}`.replace(/\s+/g, " ").trim()
+        )
+      : recipe.ingredients;
+
+    const your = recipeIngredients.filter((ingredient) =>
       isMatched(ingredient)
     );
 
-    const missing = recipe.ingredients.filter(
+    const missing = recipeIngredients.filter(
       (ingredient) => !isMatched(ingredient)
     );
 
     setYourIngredients(your);
     setMissingIngredients(missing);
-  }, [recipe]);
+  }, [aiMode, recipe]);
 
   if (loading) return <h1 className="p-10 text-2xl">Loading recipe...</h1>;
   if (error || !recipe) {
@@ -116,7 +126,9 @@ export default function ViewEachMenu() {
             </button>
 
             <button
-              onClick={() => navigate(`/instruction/${recipe.id}`)}
+              onClick={() => navigate(aiMode
+                ? `/ai-instruction/${recipe.id}`
+                : `/instruction/${recipe.id}`)}
               className="flex-1 py-4 font-bold"
             >
               Instructions
@@ -158,7 +170,9 @@ export default function ViewEachMenu() {
 
             <div className="flex justify-end mt-8">
               <button
-                onClick={() => navigate(`/instruction/${recipe.id}`)}
+                onClick={() => navigate(aiMode
+                  ? `/ai-instruction/${recipe.id}`
+                  : `/instruction/${recipe.id}`)}
                 className="bg-[#468432] hover:bg-[#1A5C05] text-white px-10 py-4 rounded-lg font-bold"
               >
                 Start Cooking

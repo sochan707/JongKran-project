@@ -4,6 +4,7 @@ import AdminHeader from "../../components/AdminHeader";
 import { apiRequest } from "../../lib/api";
 import recipeData from "../../data/recipes";
 import { RECIPE_PLACEHOLDER, handleRecipeImageError, } from "../../lib/recipeImage";
+import { ImagePlus } from "lucide-react";
 
 export default function EditRecipe() {
   const { id } = useParams();
@@ -304,32 +305,45 @@ export default function EditRecipe() {
 
               {/* IMAGE */}
               <div className="mt-6">
+                <p className="mb-5 block text-xl font-medium">
+                  Recipe Image
+                </p>
+
                 <label
                   htmlFor="imageUpload"
-                  className="relative h-[300px] rounded-[40px] border-2 border-dashed border-gray-400 bg-[#EAF1E7] flex items-center justify-center cursor-pointer overflow-hidden"
+                  className="relative flex h-[300px] cursor-pointer items-center justify-center overflow-hidden rounded-[40px] border-2 border-dashed border-gray-400 bg-[#EAF1E7]"
                 >
                   {imagePreview ? (
                     <>
                       <img
                         src={imagePreview}
                         alt="Recipe preview"
-                        className="w-full h-full object-cover"
+                        className="h-full w-full object-cover"
                       />
 
                       <button
                         type="button"
                         onClick={removeImage}
-                        className="absolute top-4 right-4 w-10 h-10 bg-red-500 hover:bg-red-600 text-white text-2xl rounded-full flex items-center justify-center"
+                        aria-label="Remove recipe image"
+                        className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-red-500 text-2xl text-white hover:bg-red-600"
                       >
                         ×
                       </button>
                     </>
                   ) : (
-                    <div className="text-center">
-                      <div className="text-5xl">📷</div>
+                    <div className="flex flex-col items-center text-center">
+                      <ImagePlus
+                        size={60}
+                        strokeWidth={1.8}
+                        className="text-gray-400"
+                      />
 
-                      <p className="text-2xl font-bold mt-3 text-gray-400">
+                      <p className="mt-3 text-2xl font-bold text-gray-400">
                         Upload Hero Photo
+                      </p>
+
+                      <p className="mt-2 text-sm text-gray-400">
+                        PNG, JPG or WEBP — maximum file size: 5MB
                       </p>
                     </div>
                   )}
@@ -344,9 +358,9 @@ export default function EditRecipe() {
                   className="hidden"
                 />
 
-                <p className="text-center text-gray-500 mt-3">
+                <p className="mt-3 text-center text-gray-500">
                   {imagePreview
-                    ? "Click the image to change it"
+                    ? "Click the image to choose another image"
                     : "Click to upload an image"}
                 </p>
               </div>

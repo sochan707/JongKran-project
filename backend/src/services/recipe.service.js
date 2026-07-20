@@ -27,26 +27,55 @@ const INGREDIENT_GRAMS_PER_UNIT = {
   "kaffir lime leaf": 0.5,
 };
 
+const DEFAULT_GRAMS_PER_ITEM = 100;
+
 const getIngredientWeightInGrams = ({ ingredient, quantity, unit }) => {
   const amount = Number(quantity);
   if (!Number.isFinite(amount) || amount <= 0) return null;
 
   const normalizedUnit = String(unit || "").trim().toLowerCase();
   if (UNIT_TO_GRAMS[normalizedUnit]) {
-    return amount * UNIT_TO_GRAMS[normalizedUnit];
+    return {
+      grams: amount * UNIT_TO_GRAMS[normalizedUnit],
+      usedDefaultWeight: false,
+    };
+  }
+
+  // Some AI-provided units contain preparation notes, such as
+  // "g, cooked". Preserve the explicit metric measurement.
+  if (normalizedUnit.startsWith("g,")) {
+    return { grams: amount, usedDefaultWeight: false };
+  }
+
+  if (normalizedUnit.startsWith("ml,")) {
+    return { grams: amount, usedDefaultWeight: false };
   }
 
   const normalizedName = normalizeIngredient(ingredient?.name);
   const gramsPerUnit = INGREDIENT_GRAMS_PER_UNIT[normalizedName];
-  return gramsPerUnit ? amount * gramsPerUnit : null;
+  if (gramsPerUnit) {
+    return {
+      grams: amount * gramsPerUnit,
+      usedDefaultWeight: false,
+    };
+  }
+
+  // The admin recipe form currently stores name-only ingredients as one
+  // "item". Use an explicit, surfaced estimate so the nutrition panel can
+  // still provide useful numbers until exact quantities are supplied.
+  return {
+    grams: amount * DEFAULT_GRAMS_PER_ITEM,
+    usedDefaultWeight: true,
+  };
 };
 
 export const calculateRecipeNutrition = (recipe) => {
   const totals = { calories: 0, fat: 0, carbs: 0, protein: 0 };
   let calculatedIngredientCount = 0;
+  let usedDefaultWeights = false;
 
   for (const row of recipe.recipeIngredients || []) {
-    const grams = getIngredientWeightInGrams(row);
+    const weight = getIngredientWeightInGrams(row);
     const nutrientValues = {
       calories: row.ingredient?.calories_per_100g,
       fat: row.ingredient?.fat_per_100g,
@@ -54,15 +83,16 @@ export const calculateRecipeNutrition = (recipe) => {
       protein: row.ingredient?.protein_per_100g,
     };
 
-    if (grams === null || Object.values(nutrientValues).every((value) => value == null)) {
+    if (weight === null || Object.values(nutrientValues).every((value) => value == null)) {
       continue;
     }
 
-    const multiplier = grams / 100;
+    const multiplier = weight.grams / 100;
     for (const [nutrient, value] of Object.entries(nutrientValues)) {
       const numericValue = Number(value);
       if (Number.isFinite(numericValue)) totals[nutrient] += numericValue * multiplier;
     }
+    usedDefaultWeights ||= weight.usedDefaultWeight;
     calculatedIngredientCount += 1;
   }
 
@@ -81,6 +111,7 @@ export const calculateRecipeNutrition = (recipe) => {
     calculatedIngredientCount,
     ingredientCount: recipe.recipeIngredients?.length || 0,
     estimated: true,
+    usedDefaultWeights,
   };
 };
 
@@ -287,6 +318,64 @@ export const getRecipesByIdService = async (recipeId, includeCookingDetails = fa
 
   if (!recipe){
     throw new Error("Recipe not found! ˏ(•́∧•̀)ˎ")
+  }
+
+  const ingredientsMissingNutrition = recipe.recipeIngredients
+    .filter(({ ingredient }) =>
+      [
+        ingredient?.calories_per_100g,
+        ingredient?.carbs_per_100g,
+        ingredient?.fat_per_100g,
+        ingredient?.protein_per_100g,
+      ].every((value) => value == null)
+    )
+    .map(({ ingredient }) => normalizeIngredient(ingredient?.name))
+    .filter(Boolean);
+
+  if (ingredientsMissingNutrition.length > 0) {
+    const nutritionProfiles = await prisma.ingredient.findMany({
+      where: {
+        AND: [
+          {
+            OR: [...new Set(ingredientsMissingNutrition)].map((name) => ({
+              name: { equals: name, mode: "insensitive" },
+            })),
+          },
+          {
+            OR: [
+              { calories_per_100g: { not: null } },
+              { carbs_per_100g: { not: null } },
+              { fat_per_100g: { not: null } },
+              { protein_per_100g: { not: null } },
+            ],
+          },
+        ],
+      },
+      select: {
+        name: true,
+        calories_per_100g: true,
+        carbs_per_100g: true,
+        fat_per_100g: true,
+        protein_per_100g: true,
+      },
+    });
+
+    const nutritionByName = new Map(
+      nutritionProfiles.map((profile) => [
+        normalizeIngredient(profile.name),
+        profile,
+      ])
+    );
+
+    recipe.recipeIngredients = recipe.recipeIngredients.map((row) => {
+      const profile = nutritionByName.get(
+        normalizeIngredient(row.ingredient?.name)
+      );
+
+      return profile
+        ? { ...row, ingredient: { ...row.ingredient, ...profile } }
+        : row;
+    });
   }
 
   const response = {

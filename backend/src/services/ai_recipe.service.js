@@ -41,6 +41,39 @@ const normalizeStep = (step) => {
   return String(step || "").trim();
 };
 
+export const getAIRecipeForUserService = async (aiRecipeId, userId) => {
+  if (!Number.isInteger(aiRecipeId) || aiRecipeId <= 0) {
+    throw serviceError("AI recipe ID must be a valid number", 400);
+  }
+
+  const hasAccess = await prisma.aIGenerationRequest.findFirst({
+    where: {
+      user_id: userId,
+      recipe_ids: { has: aiRecipeId },
+    },
+    select: { id: true },
+  });
+
+  const hasCooked = hasAccess
+    ? null
+    : await prisma.userAICooking.findFirst({
+        where: { user_id: userId, ai_recipe_id: aiRecipeId },
+        select: { id: true },
+      });
+
+  if (!hasAccess && !hasCooked) {
+    throw serviceError("AI recipe not found", 404);
+  }
+
+  const recipe = await prisma.aIGeneratedRecipe.findUnique({
+    where: { ai_recipe_id: aiRecipeId },
+  });
+
+  if (!recipe) throw serviceError("AI recipe not found", 404);
+
+  return recipe;
+};
+
 export const reviewAIRecipeService = async (aiRecipeId, status, adminId) => {
   if (!Number.isInteger(aiRecipeId) || aiRecipeId <= 0) {
     throw serviceError("AI recipe ID must be a valid number", 400);
