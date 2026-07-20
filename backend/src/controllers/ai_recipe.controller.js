@@ -9,6 +9,33 @@ export const getPendingAIRecipesController = async (_req, res) => {
   return res.json({ success: true, data: recipes });
 };
 
+export const getPendingAIRecipeByIdController = async (req, res) => {
+  const aiRecipeId = Number(req.params.id);
+
+  if (!Number.isInteger(aiRecipeId) || aiRecipeId <= 0) {
+    return res.status(400).json({
+      success: false,
+      message: "AI recipe ID must be a valid number",
+    });
+  }
+
+  const recipe = await prisma.aIGeneratedRecipe.findFirst({
+    where: {
+      ai_recipe_id: aiRecipeId,
+      status: "pending",
+    },
+  });
+
+  if (!recipe) {
+    return res.status(404).json({
+      success: false,
+      message: "Pending AI recipe not found",
+    });
+  }
+
+  return res.json({ success: true, data: recipe });
+};
+
 export const getAIRecipeStatsController = async (_req, res) => {
   try {
     const [pendingCount, publishedCount] = await prisma.$transaction([

@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Search } from "lucide-react";
 import AdminHeader from "../../components/AdminHeader";
 import { apiRequest } from "../../lib/api";
 import { RECIPE_PLACEHOLDER, handleRecipeImageError, } from "../../lib/recipeImage";
 
 export default function AdminApprove() {
+  const navigate = useNavigate();
   const [recipes, setRecipes] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -164,7 +166,16 @@ export default function AdminApprove() {
               {currentRecipes.map((recipe) => (
                 <tr
                   key={recipe.id}
-                  className="border-b hover:bg-gray-50"
+                  role="link"
+                  tabIndex={0}
+                  onClick={() => navigate(`/admin/pending-approve/${recipe.id}`)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      navigate(`/admin/pending-approve/${recipe.id}`);
+                    }
+                  }}
+                  className="cursor-pointer border-b hover:bg-gray-50 focus:bg-gray-50 focus:outline-none"
                 >
                   <td className="p-3 pl-10 flex items-center gap-3">
                     <img
@@ -188,7 +199,10 @@ export default function AdminApprove() {
                   <td>
                     <div className="flex gap-3">
                       <button
-                        onClick={() => approveRecipe(recipe.id)}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          approveRecipe(recipe.id);
+                        }}
                         disabled={processingId !== null}
                         className="text-[#468432] font-semibold disabled:cursor-not-allowed disabled:opacity-50"
                       >
@@ -196,7 +210,10 @@ export default function AdminApprove() {
                       </button>
 
                       <button
-                        onClick={() => rejectRecipe(recipe.id)}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          rejectRecipe(recipe.id);
+                        }}
                         disabled={processingId !== null}
                         className="text-red-600 font-semibold disabled:cursor-not-allowed disabled:opacity-50"
                       >

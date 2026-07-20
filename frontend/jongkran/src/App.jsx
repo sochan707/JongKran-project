@@ -28,6 +28,7 @@ const Language = lazy(() => import("./pages/Language"));
 const UserSuggestions = lazy(() => import("./pages/admin/UserSuggestions"));
 const RecipeSuggestionDetail = lazy(() => import("./pages/admin/RecipeSuggestionDetail"));
 const AdminApprove = lazy(() => import("./pages/admin/AdminApprove"));
+const ViewPendingAIRecipe = lazy(() => import("./pages/admin/ViewPendingAIRecipe"));
 const RecipeOverview = lazy(() => import("./pages/RecipeOverview"));
 
 export default function App() {
@@ -73,6 +74,7 @@ export default function App() {
           <Route path="suggestions" element={<UserSuggestions />} />
           <Route path="suggestions/:recipeId" element={<RecipeSuggestionDetail />} />
           <Route path="pending-approve" element={<AdminApprove />} />
+          <Route path="pending-approve/:id" element={<ViewPendingAIRecipe />} />
         </Route>
         </Routes>
       </Suspense>
