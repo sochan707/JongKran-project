@@ -11,6 +11,7 @@ export default function EditRecipe() {
 
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [showDiscardConfirmation, setShowDiscardConfirmation] = useState(false);
 
   const [title, setTitle] = useState("");
   const [imagePreview, setImagePreview] = useState(null);
@@ -533,19 +534,71 @@ export default function EditRecipe() {
               ))}
             </div>
 
-            {/* SAVE */}
-            <button
-              type="button"
-              onClick={(e) =>
-                handleSave(e)
-              }
-              className="w-full bg-[#FFA02E] text-black px-6 py-3 rounded-lg"
-            >
-              Save Edit
-            </button>
+            {/* EDIT ACTIONS */}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => setShowDiscardConfirmation(true)}
+                className="w-full rounded-lg border border-red-600 px-6 py-3 font-semibold text-red-600 transition hover:bg-red-50"
+              >
+                Discard Changes
+              </button>
+
+              <button
+                type="button"
+                onClick={(e) =>
+                  handleSave(e)
+                }
+                className="w-full rounded-lg bg-[#FFA02E] px-6 py-3 font-semibold text-black transition hover:bg-[#e89120]"
+              >
+                Save Edit
+              </button>
+            </div>
           </form>
         </div>
       </div>
+
+      {showDiscardConfirmation && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-4"
+          role="presentation"
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="discard-edit-title"
+            aria-describedby="discard-edit-message"
+            className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"
+          >
+            <h2 id="discard-edit-title" className="text-2xl font-bold text-gray-900">
+              Discard changes?
+            </h2>
+
+            <p id="discard-edit-message" className="mt-3 text-gray-600">
+              Are you sure you want to discard this edit? Any changes you made will not be saved.
+            </p>
+
+            <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => navigate("/admin", { replace: true })}
+                className="rounded-lg bg-red-600 px-5 py-3 font-semibold text-white transition hover:bg-red-700"
+              >
+                Discard
+              </button>
+
+              <button
+                type="button"
+                autoFocus
+                onClick={() => setShowDiscardConfirmation(false)}
+                className="rounded-lg border border-[#468432] px-5 py-3 font-semibold text-[#468432] transition hover:bg-green-50"
+              >
+                Continue Editing
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
