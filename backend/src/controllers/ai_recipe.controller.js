@@ -3,7 +3,6 @@ import prisma from "../prismaClient.js";
 
 export const getPendingAIRecipesController = async (_req, res) => {
   const recipes = await prisma.aIGeneratedRecipe.findMany({
-    where: { status: "pending" },
     orderBy: { created_at: "desc" },
   });
   return res.json({ success: true, data: recipes });
@@ -22,14 +21,13 @@ export const getPendingAIRecipeByIdController = async (req, res) => {
   const recipe = await prisma.aIGeneratedRecipe.findFirst({
     where: {
       ai_recipe_id: aiRecipeId,
-      status: "pending",
     },
   });
 
   if (!recipe) {
     return res.status(404).json({
       success: false,
-      message: "Pending AI recipe not found",
+      message: "AI recipe not found",
     });
   }
 

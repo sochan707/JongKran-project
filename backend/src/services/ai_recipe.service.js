@@ -78,8 +78,8 @@ export const reviewAIRecipeService = async (aiRecipeId, status, adminId) => {
     }
 
     const title = aiRecipe.title.trim();
-    if (!title || title.length > 30) {
-      throw serviceError("AI recipe title must contain 1 to 30 characters", 422);
+    if (!title) {
+      throw serviceError("AI recipe title is required", 422);
     }
 
     const ingredients = Array.isArray(aiRecipe.ingredients)
@@ -109,7 +109,7 @@ export const reviewAIRecipeService = async (aiRecipeId, status, adminId) => {
       const ingredient = await tx.ingredient.upsert({
         where: { name: ingredientData.name },
         update: {},
-        data: { name: ingredientData.name },
+        create: { name: ingredientData.name },
       });
       await tx.recipeIngredient.create({
         data: {

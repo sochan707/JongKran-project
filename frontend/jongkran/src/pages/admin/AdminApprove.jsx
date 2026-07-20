@@ -47,7 +47,11 @@ export default function AdminApprove() {
         method: "PATCH",
         body: JSON.stringify({ status: "approved" }),
       });
-      setRecipes((current) => current.filter((recipe) => recipe.id !== id));
+      setRecipes((current) =>
+        current.map((recipe) =>
+          recipe.id === id ? { ...recipe, status: "approved" } : recipe
+        )
+      );
       setMessage({
         type: "success",
         text: result.message || "Recipe approved and published successfully.",
@@ -68,7 +72,11 @@ export default function AdminApprove() {
         method: "PATCH",
         body: JSON.stringify({ status: "rejected" }),
       });
-      setRecipes((current) => current.filter((recipe) => recipe.id !== id));
+      setRecipes((current) =>
+        current.map((recipe) =>
+          recipe.id === id ? { ...recipe, status: "rejected" } : recipe
+        )
+      );
       setMessage({
         type: "success",
         text: result.message || "AI recipe rejected.",
@@ -113,7 +121,7 @@ export default function AdminApprove() {
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 p-4">
 
             <div className="text-2xl font-semibold">
-              Pending Recipes
+              AI Recipe Reviews
             </div>
 
             <div className="relative w-full sm:w-2/3 md:w-2/3 lg:w-[450px]">
@@ -150,7 +158,7 @@ export default function AdminApprove() {
               {!loading && currentRecipes.length === 0 && (
                 <tr>
                   <td colSpan="4" className="p-8 text-center text-gray-500">
-                    No pending AI recipes found.
+                    No AI recipes found.
                   </td>
                 </tr>
               )}
@@ -158,7 +166,7 @@ export default function AdminApprove() {
               {loading && (
                 <tr>
                   <td colSpan="4" className="p-8 text-center text-gray-500">
-                    Loading pending recipes...
+                    Loading AI recipes...
                   </td>
                 </tr>
               )}
@@ -189,14 +197,27 @@ export default function AdminApprove() {
                   </td>
 
                   <td>
-                    <span className="bg-yellow-500 text-white px-3 py-1 rounded-full text-xs">
-                      Pending
+                    <span
+                      className={`rounded-full px-3 py-1 text-xs font-semibold text-white ${
+                        recipe.status === "approved"
+                          ? "bg-[#468432]"
+                          : recipe.status === "rejected"
+                            ? "bg-red-600"
+                            : "bg-yellow-500"
+                      }`}
+                    >
+                      {recipe.status === "approved"
+                        ? "Approved"
+                        : recipe.status === "rejected"
+                          ? "Rejected"
+                          : "Pending"}
                     </span>
                   </td>
 
                   <td>{recipe.createdAt}</td>
 
                   <td>
+                    {recipe.status === "pending" ? (
                     <div className="flex gap-3">
                       <button
                         onClick={(event) => {
@@ -220,6 +241,11 @@ export default function AdminApprove() {
                         {processingId === recipe.id ? "Processing..." : "Reject"}
                       </button>
                     </div>
+                    ) : (
+                      <span className="text-sm font-medium text-gray-500">
+                        Review complete
+                      </span>
+                    )}
                   </td>
                 </tr>
               ))}

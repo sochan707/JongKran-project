@@ -59,7 +59,20 @@ export default function ViewPendingAIRecipe() {
               {error && <p role="alert" className="rounded-lg bg-red-100 p-4 text-red-700">{error}</p>}
 
               <section className="rounded-xl border border-[#468432] p-6 shadow">
-                <p className="mb-2 text-xl font-medium">Recipe Title</p>
+                <div className="mb-4 flex items-center justify-between gap-4">
+                  <p className="text-xl font-medium">Recipe Title</p>
+                  <span
+                    className={`rounded-full px-3 py-1 text-sm font-semibold text-white ${
+                      recipe.status === "approved"
+                        ? "bg-[#468432]"
+                        : recipe.status === "rejected"
+                          ? "bg-red-600"
+                          : "bg-yellow-500"
+                    }`}
+                  >
+                    {recipe.status === "approved" ? "Approved" : recipe.status === "rejected" ? "Rejected" : "Pending"}
+                  </span>
+                </div>
                 <div className="rounded-lg border bg-gray-50 p-3">{recipe.title}</div>
 
                 {recipe.description && (
@@ -100,8 +113,12 @@ export default function ViewPendingAIRecipe() {
 
               <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
                 <button type="button" onClick={() => navigate("/admin/pending-approve")} disabled={processing} className="rounded-lg border border-[#468432] px-6 py-3 font-semibold text-[#468432] disabled:opacity-50">Back</button>
-                <button type="button" onClick={() => reviewRecipe("rejected")} disabled={processing} className="rounded-lg bg-red-600 px-6 py-3 font-semibold text-white disabled:opacity-50">Reject</button>
-                <button type="button" onClick={() => reviewRecipe("approved")} disabled={processing} className="rounded-lg bg-[#468432] px-6 py-3 font-semibold text-white disabled:opacity-50">{processing ? "Processing..." : "Publish"}</button>
+                {recipe.status === "pending" && (
+                  <>
+                    <button type="button" onClick={() => reviewRecipe("rejected")} disabled={processing} className="rounded-lg bg-red-600 px-6 py-3 font-semibold text-white disabled:opacity-50">Reject</button>
+                    <button type="button" onClick={() => reviewRecipe("approved")} disabled={processing} className="rounded-lg bg-[#468432] px-6 py-3 font-semibold text-white disabled:opacity-50">{processing ? "Processing..." : "Publish"}</button>
+                  </>
+                )}
               </div>
             </div>
           )}

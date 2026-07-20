@@ -63,7 +63,7 @@ model Ingredient {
 
 model Recipe {
   recipe_id         Int                 @id @default(autoincrement())
-  title             String              @db.VarChar(30)
+  title             String              @db.VarChar(255)
   description       String?
   difficulty        Difficulty
   cook_time         Int                 @default(0)
