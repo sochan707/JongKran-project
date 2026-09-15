@@ -1,16 +1,11 @@
-import { useEffect, useState } from "react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
-import RecipeCart from "../components/RecipeCart";
-import { isAuthenticated, recipeApi } from "../lib/api";
+import RecipeGrid from "../components/recipes/RecipeGrid";
+import { isAuthenticated } from "../services/session";
+import { useFavorites } from "../features/recipes/context/FavoritesContext";
 
 export default function Favorite() {
-  const [favorites, setFavorites] = useState([]);
-
-  useEffect(() => {
-    if (!isAuthenticated()) return;
-    recipeApi.favorites().then(setFavorites).catch(() => setFavorites([]));
-  }, []);
+  const { favorites } = useFavorites();
 
   return (
     <>
@@ -37,15 +32,10 @@ export default function Favorite() {
             </p>
           </div>
         ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
-            {favorites.map((recipe) => (
-              <RecipeCart
-                key={recipe.id}
-                recipe={recipe}
-                onFavoriteChange={setFavorites}
-              />
-            ))}
-          </div>
+          <RecipeGrid
+            recipes={favorites}
+            className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-8"
+          />
         )}
       </main>
 

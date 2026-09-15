@@ -1,6 +1,6 @@
 import Header from "../components/Header";
 import Footer from "../components/Footer";
-import RecipeCart from "../components/RecipeCart";
+import RecipeGrid from "../components/recipes/RecipeGrid";
 import { Search } from "lucide-react";
 import {useState} from "react";
 import useRecipes from "../hooks/useRecipes";
@@ -45,13 +45,13 @@ export default function AllRecipes() {
             </div>
           </div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-8">
+        <RecipeGrid
+          recipes={filteredRecipes}
+          className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-8"
+        >
           {loading && <p>Loading recipes...</p>}
           {error && <p className="text-red-600">{error}</p>}
-          {filteredRecipes.map((recipe) => (
-            <RecipeCart key={recipe.id} recipe={recipe} />
-          ))}
-        </div>
+        </RecipeGrid>
       </main>
 
       <Footer />

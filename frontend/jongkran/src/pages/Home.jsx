@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
-import RecipeCart from "../components/RecipeCart";
+import RecipeGrid from "../components/recipes/RecipeGrid";
 import Hero from "../components/ui/homescreen/hero";
 import aboutImage from '../assets/about1.png';
 import useRecipes from "../hooks/useRecipes";
@@ -41,6 +41,9 @@ export default function Home() {
           <div key={index} className="rounded-xl overflow-hidden">
             <img
               src={img}
+              alt=""
+              loading="lazy"
+              decoding="async"
               className="h-32 md:h-48 w-full object-cover transition-transform duration-300 hover:scale-105"
             />
           </div>
@@ -54,11 +57,7 @@ export default function Home() {
             Popular This Week
           </h2>
 
-          <div className="grid gap-5 md:grid-cols-3">
-            {recipes.map((recipe) => (
-              <RecipeCart key={recipe.id} recipe={recipe} />
-            ))}
-          </div>
+          <RecipeGrid recipes={recipes} className="grid gap-5 md:grid-cols-3" />
         </section>
 
         <section className="mx-[25px] py-12">
@@ -68,6 +67,8 @@ export default function Home() {
             <img
               src={aboutImage}
               alt="About JongKran"
+              loading="lazy"
+              decoding="async"
               className="rounded-xl w-full h-[500px] object-cover shadow-md"
             />
 

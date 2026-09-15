@@ -1,16 +1,38 @@
-# React + Vite
+# JongKran frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React 18, Vite, React Router, and Tailwind CSS power the JongKran web client.
 
-Currently, two official plugins are available:
+## Commands
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```bash
+npm install
+npm run dev
+npm run build
+```
 
-## React Compiler
+Set `VITE_API_URL` when the API is not available through Vite's default `/api`
+proxy.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Source structure
 
-## Expanding the ESLint configuration
+```text
+src/
+  app/          application providers and route definitions
+  components/   reusable visual components
+  config/       shared UI configuration such as navigation
+  features/     domain code grouped by auth, recipes, and future features
+  hooks/        compatibility entry points for existing page imports
+  lib/          small shared helpers and compatibility exports
+  pages/        route-level screens
+  services/     API transport, session storage, and browser storage
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Keep route screens focused on page-specific behavior. Shared state and data
+loading belong in a feature context or feature hook, while raw HTTP and browser
+storage access belong in `services`.
+
+Recipe lists are cached for five minutes and in-flight requests are shared.
+Recipe details are cached by ID, so the overview, ingredient check, and cooking
+instruction flow do not download the same recipe repeatedly. Favorites and the
+current profile are loaded once at the application level and reused by every
+header and recipe card.

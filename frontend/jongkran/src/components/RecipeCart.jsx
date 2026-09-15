@@ -1,8 +1,10 @@
 import { Heart } from "lucide-react";
-import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { isAuthenticated, recipeApi } from "../lib/api";
+import { isAuthenticated } from "../services/session";
+import { readJson } from "../services/browserStorage";
+import { useFavorites } from "../features/recipes/context/FavoritesContext";
 import { getRecipeMatchPercentage } from "../lib/recipeMatching";
+import { RECIPE_PLACEHOLDER, handleRecipeImageError } from "../lib/recipeImage";
 
 export default function RecipeCart({
   recipe,
@@ -10,26 +12,16 @@ export default function RecipeCart({
   selectedIngredients = [],
   onFavoriteChange,
 }) {
-  const recipePlaceholder =
-  "https://madeinindiarestaurant.com/img/placeholders/comfort_food_placeholder.png";
   const navigate = useNavigate();
-  const [favorite, setFavorite] = useState(false);
-
-  useEffect(() => {
-    if (!isAuthenticated()) return;
-    recipeApi.favorites()
-      .then((items) => setFavorite(items.some((item) => item.id === recipe.id)))
-      .catch(() => {});
-  }, [recipe.id]);
+  const { favoriteIds, toggleFavorite: updateFavorite } = useFavorites();
+  const favorite = favoriteIds.has(String(recipe.id));
 
   // Use ingredients passed from the matching page.
   // If none are passed, get them from localStorage.
   const userIngredients =
     selectedIngredients.length > 0
       ? selectedIngredients
-      : JSON.parse(
-          localStorage.getItem("selectedIngredients")
-        ) || [];
+      : readJson("selectedIngredients", []);
 
   const matchPercentage = getRecipeMatchPercentage(recipe, userIngredients);
 
@@ -40,9 +32,7 @@ export default function RecipeCart({
       return;
     }
     try {
-      const result = await recipeApi.toggleFavorite(recipe.id);
-      const nextFavorite = result.action === "added";
-      setFavorite(nextFavorite);
+      const nextFavorite = await updateFavorite(recipe);
       if (onFavoriteChange && !nextFavorite) {
         onFavoriteChange((items) => items.filter((item) => item.id !== recipe.id));
       }
@@ -89,13 +79,11 @@ export default function RecipeCart({
         className="cursor-pointer"
       >
         <img
-          src={recipe.image || recipePlaceholder}
+          src={recipe.image || RECIPE_PLACEHOLDER}
           alt={recipe.name || "Recipe"}
           loading="lazy"
-          onError={(event) => {
-            event.currentTarget.onerror = null;
-            event.currentTarget.src = recipePlaceholder;
-          }}
+          decoding="async"
+          onError={handleRecipeImageError}
           className="w-full h-48 md:h-64 object-cover"
         />
 

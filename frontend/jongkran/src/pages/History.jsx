@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
-import RecipeCart from "../components/RecipeCart";
+import RecipeGrid from "../components/recipes/RecipeGrid";
 import { isAuthenticated, recipeApi } from "../lib/api";
 
 
@@ -74,11 +74,10 @@ export default function History() {
             Complete a recipe to add it to your cooking history.
           </p>
         )}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
-          {history.map((recipe) => (
-            <RecipeCart key={recipe.id} recipe={recipe} />
-          ))}
-        </div>
+        <RecipeGrid
+          recipes={history}
+          className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-8"
+        />
       </main>
 
       <Footer />
